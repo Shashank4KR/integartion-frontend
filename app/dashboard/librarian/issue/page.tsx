@@ -7,6 +7,7 @@ import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken, getStoredUser } from "@/lib/auth";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, BookOpen } from "lucide-react";
+import { listBookIssues } from "@/lib/services/libraryService";
 
 interface IssueRecord {
   id: string;
@@ -35,13 +36,20 @@ export default function IssueBookPage() {
           return;
         }
 
-        const mockIssues: IssueRecord[] = [
-          { id: "1", bookTitle: "The Alchemist", studentName: "Aarav Sharma", class: "Class 10-A", issueDate: "2026-06-08", dueDate: "2026-06-22", status: "issued" },
-          { id: "2", bookTitle: "Wings of Fire", studentName: "Riya Patel", class: "Class 9-B", issueDate: "2026-06-07", dueDate: "2026-06-21", status: "issued" },
-          { id: "3", bookTitle: "NCERT Physics", studentName: "Karan Singh", class: "Class 11-Sci", issueDate: "2026-06-06", dueDate: "2026-06-20", status: "issued" },
-        ];
-
-        setIssues(mockIssues);
+        const records = await listBookIssues(token);
+        setIssues(
+          records
+            .filter((item) => String(item.status ?? "").toUpperCase() === "ISSUED")
+            .map((item) => ({
+              id: String(item.id),
+              bookTitle: item.book_title ?? "Untitled book",
+              studentName: item.student_name ?? "Unknown student",
+              class: item.student_class ?? "-",
+              issueDate: String(item.issue_date ?? "-"),
+              dueDate: String(item.due_date ?? "-"),
+              status: "issued",
+            })),
+        );
         setError(null);
       } catch (err) {
         console.error("Error fetching issues:", err);

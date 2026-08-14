@@ -26,7 +26,12 @@ export default function CommunicationDateRangePicker({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event as any)) {
+      const target = event.target;
+      if (
+        containerRef.current &&
+        target instanceof Node &&
+        !containerRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -10,24 +10,69 @@ import InvoiceFilters from "@/components/dashboard/finance/invoices/InvoiceFilte
 import InvoicesTable from "@/components/dashboard/finance/invoices/InvoicesTable";
 import InvoicePagination from "@/components/dashboard/finance/invoices/InvoicePagination";
 import InvoiceDetailsCard from "@/components/dashboard/finance/invoices/InvoiceDetailsCard";
-import BalanceFeesOverview from "@/components/dashboard/finance/invoices/BalanceFeesOverview";
-import InvoiceTrendChart from "@/components/dashboard/finance/invoices/InvoiceTrendChart";
-import InvoicesByStatusChart from "@/components/dashboard/finance/invoices/InvoicesByStatusChart";
-import TopInvoiceTypes from "@/components/dashboard/finance/invoices/TopInvoiceTypes";
 import GenerateInvoiceDialog from "@/components/dashboard/finance/invoices/GenerateInvoiceDialog";
 import ImportInvoicesDialog from "@/components/dashboard/finance/invoices/ImportInvoicesDialog";
 import InvoiceActionDialog from "@/components/dashboard/finance/invoices/InvoiceActionDialog";
-import {
-  INVOICE_ROWS,
-  INVOICE_SUMMARY_CARDS,
-  INVOICE_STATUS_DATA,
-} from "@/lib/fixtures/invoices-reference-fixture";
-import type { InvoiceRow } from "@/lib/fixtures/invoices-reference-fixture";
+import { getToken } from "@/lib/auth";
+import { listInvoices } from "@/lib/services/financeService";
 
 const ITEMS_PER_PAGE = 10;
+interface InvoiceRow {
+  id: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  studentName: string;
+  studentId: string;
+  classGrade: string;
+  invoiceType: "Fee Invoice" | "Salary Invoice" | "Expense Invoice" | "Other Invoice";
+  dueDate: string;
+  amount: number;
+  paid: number;
+  balance: number;
+  status: "Paid" | "Partial" | "Overdue" | "Pending";
+}
+
+const formatCurrency = (value: number) =>
+  `INR ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+function mapInvoice(item: Record<string, unknown>): InvoiceRow {
+  const amount = Number(item.amount ?? item.total_amount ?? item.net_amount ?? 0);
+  const paid = Number(item.paid ?? item.paid_amount ?? item.amount_paid ?? 0);
+  const rawStatus = String(item.status ?? item.payment_status ?? "").toUpperCase();
+  const status =
+    rawStatus === "PAID" ? "Paid" :
+      rawStatus === "PARTIAL" ? "Partial" :
+        rawStatus === "OVERDUE" ? "Overdue" :
+          "Pending";
+
+  return {
+    id: String(item.id ?? crypto.randomUUID()),
+    invoiceNo: String(item.invoice_number ?? item.invoice_no ?? item.id ?? "-"),
+    invoiceDate: String(item.invoice_date ?? item.created_at ?? "-"),
+    studentName: String(item.student_name ?? item.student ?? "-"),
+    studentId: String(item.student_id ?? "-"),
+    classGrade: String(item.class_grade ?? item.className ?? "-"),
+    invoiceType: "Fee Invoice",
+    dueDate: String(item.due_date ?? "-"),
+    amount,
+    paid,
+    balance: Number(item.balance ?? item.balance_amount ?? Math.max(0, amount - paid)),
+    status,
+  };
+}
+
+function EmptyPanel({ title }: { title: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
+      {title}
+    </div>
+  );
+}
 
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useState<InvoiceRow[]>(INVOICE_ROWS);
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
@@ -42,7 +87,7 @@ export default function InvoicesPage() {
   const [invoiceType, setInvoiceType] = useState("All Types");
   const [classGrade, setClassGrade] = useState("All Classes");
   const [status, setStatus] = useState("All Status");
-  const [dateRange, setDateRange] = useState("12 May 2025 - 18 May 2025");
+  const [dateRange, setDateRange] = useState("This Month");
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
 
@@ -50,6 +95,32 @@ export default function InvoicesPage() {
     setToast({ open: true, message });
     setTimeout(() => setToast({ open: false, message: "" }), 3000);
   };
+
+  useEffect(() => {
+    const loadInvoices = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoadError("Please log in to view invoices.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const rows = await listInvoices(token);
+        const mapped = rows.map((item) => mapInvoice(item as Record<string, unknown>));
+        setInvoices(mapped);
+        setSelectedInvoice(mapped[0] ?? null);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load invoices.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadInvoices();
+  }, []);
 
   const filteredInvoices = useMemo(() => {
     let result = [...invoices];
@@ -81,8 +152,58 @@ export default function InvoicesPage() {
     const start = (safePage - 1) * ITEMS_PER_PAGE;
     const paginated = result.slice(start, start + ITEMS_PER_PAGE);
 
-    return { paginated, totalPages, total: result.length, originalTotal: INVOICE_STATUS_DATA.total };
+    return { paginated, totalPages, total: result.length, originalTotal: result.length };
   }, [invoices, invoiceType, classGrade, status, search, currentPage]);
+
+  const invoiceTotals = useMemo(() => {
+    const amount = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
+    const paid = invoices.reduce((sum, invoice) => sum + invoice.paid, 0);
+    const balance = invoices.reduce((sum, invoice) => sum + invoice.balance, 0);
+    return { amount, paid, balance };
+  }, [invoices]);
+
+  const invoiceSummaryCards = useMemo(() => [
+    {
+      title: "Total Invoices",
+      value: String(invoices.length),
+      footer: "Loaded from finance API",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
+      sparkline: [],
+      sparkColor: "#2563eb",
+      icon: "invoice" as const,
+    },
+    {
+      title: "Invoice Amount",
+      value: formatCurrency(invoiceTotals.amount),
+      footer: "Loaded from finance API",
+      iconBg: "bg-purple-50",
+      iconColor: "text-purple-600",
+      sparkline: [],
+      sparkColor: "#7c3aed",
+      icon: "amount" as const,
+    },
+    {
+      title: "Paid",
+      value: formatCurrency(invoiceTotals.paid),
+      footer: "Loaded from finance API",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      sparkline: [],
+      sparkColor: "#059669",
+      icon: "paid" as const,
+    },
+    {
+      title: "Outstanding",
+      value: formatCurrency(invoiceTotals.balance),
+      footer: "Loaded from finance API",
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-600",
+      sparkline: [],
+      sparkColor: "#d97706",
+      icon: "outstanding" as const,
+    },
+  ], [invoices.length, invoiceTotals]);
 
   const handleGenerateInvoice = () => setGenerateDialogOpen(true);
   const handleImportInvoices = () => setImportDialogOpen(true);
@@ -145,7 +266,7 @@ export default function InvoicesPage() {
     setInvoiceType("All Types");
     setClassGrade("All Classes");
     setStatus("All Status");
-    setDateRange("12 May 2025 - 18 May 2025");
+    setDateRange("This Month");
     setSearch("");
     setCurrentPage(1);
   };
@@ -164,7 +285,19 @@ export default function InvoicesPage() {
             onMoreOptions={handleMoreOptions}
           />
 
-          <InvoiceSummaryCards cards={INVOICE_SUMMARY_CARDS} />
+          {loadError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              Loading invoices...
+            </div>
+          )}
+
+          <InvoiceSummaryCards cards={invoiceSummaryCards} />
 
           <InvoiceFilters
             academicYear={academicYear}
@@ -186,39 +319,47 @@ export default function InvoicesPage() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2 space-y-6">
               <div className="bg-white rounded-lg border border-slate-200 p-4">
-                <InvoicesTable
-                  rows={filteredInvoices.paginated}
-                  onView={handleViewInvoice}
-                  onDownload={handleDownloadInvoice}
-                  onMore={handleMoreActions}
-                />
-                <InvoicePagination
-                  currentPage={currentPage}
-                  totalPages={filteredInvoices.totalPages}
-                  onPageChange={handlePageChange}
-                  totalItems={filteredInvoices.originalTotal}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                />
+                {!isLoading && !loadError && filteredInvoices.total === 0 ? (
+                  <div className="px-1 py-8 text-sm text-slate-600">
+                    No invoices found.
+                  </div>
+                ) : (
+                  <>
+                    <InvoicesTable
+                      rows={filteredInvoices.paginated}
+                      onView={handleViewInvoice}
+                      onDownload={handleDownloadInvoice}
+                      onMore={handleMoreActions}
+                    />
+                    <InvoicePagination
+                      currentPage={currentPage}
+                      totalPages={filteredInvoices.totalPages}
+                      onPageChange={handlePageChange}
+                      totalItems={filteredInvoices.originalTotal}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                    />
+                  </>
+                )}
               </div>
             </div>
             <div className="space-y-6">
               <InvoiceDetailsCard invoice={selectedInvoice} />
-              <BalanceFeesOverview />
+              <EmptyPanel title="No balance fee breakdown available." />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <InvoiceTrendChart />
+              <EmptyPanel title="No invoice trend data available." />
             </div>
             <div>
-              <InvoicesByStatusChart />
+              <EmptyPanel title="No invoice status chart data available." />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-3">
-              <TopInvoiceTypes />
+              <EmptyPanel title="No invoice type data available." />
             </div>
           </div>
 

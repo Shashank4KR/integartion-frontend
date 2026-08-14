@@ -18,7 +18,7 @@ export async function GET(
     const authHeader = request.headers.get("authorization");
 
     const response = await fetch(
-      `${backendUrl}/hostel/rooms/${encodeURIComponent(id)}`,
+      `${backendUrl}/hostel-rooms/${encodeURIComponent(id)}`,
       {
         method: "GET",
         headers: { ...(authHeader ? { Authorization: authHeader } : {}) },
@@ -63,7 +63,7 @@ export async function PUT(
     const authHeader = request.headers.get("authorization");
 
     const response = await fetch(
-      `${backendUrl}/hostel/rooms/${encodeURIComponent(id)}`,
+      `${backendUrl}/hostel-rooms/${encodeURIComponent(id)}`,
       {
         method: "PUT",
         headers: {
@@ -109,7 +109,7 @@ export async function DELETE(
     const authHeader = request.headers.get("authorization");
 
     const response = await fetch(
-      `${backendUrl}/hostel/rooms/${encodeURIComponent(id)}`,
+      `${backendUrl}/hostel-rooms/${encodeURIComponent(id)}`,
       {
         method: "DELETE",
         headers: { ...(authHeader ? { Authorization: authHeader } : {}) },

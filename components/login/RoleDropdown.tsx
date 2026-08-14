@@ -89,14 +89,14 @@ export default function RoleDropdown({ value, onChange }: RoleDropdownProps) {
         <span className="flex items-center gap-2">
           {selectedRole ? (
             <>
-              <selectedRole.icon className={`h-4 w-4 ${selectedRole.color}`} />
+              {selectedRole.icon && <selectedRole.icon className={`h-4 w-4 ${selectedRole.color}`} />}
               <span>{selectedRole.label}</span>
             </>
           ) : (
             <span className="text-slate-400">Select your role</span>
           )}
         </span>
-        <ChevronDown className="h-4 w-4 text-slate-400" />
+        <ChevronDown className="h-4 h-4 text-slate-400" />
       </button>
 
       {isOpen ? (

@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const query = url.search;
 
-    const response = await fetch(`${backendUrl}/leave/requests${query}`, {
+    const response = await fetch(`${backendUrl}/leave-requests${query}`, {
       method: "GET",
       headers: {
         ...(authHeader ? { Authorization: authHeader } : {}),
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       request.headers.get("content-type") || "application/json";
     const authHeader = request.headers.get("authorization");
 
-    const response = await fetch(`${backendUrl}/leave/requests`, {
+    const response = await fetch(`${backendUrl}/leave-requests`, {
       method: "POST",
       headers: {
         "Content-Type": contentType,

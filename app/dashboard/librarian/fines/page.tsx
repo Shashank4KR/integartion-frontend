@@ -7,6 +7,7 @@ import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken, getStoredUser } from "@/lib/auth";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, Wallet } from "lucide-react";
+import { listFinePayments } from "@/lib/services/libraryService";
 
 interface FineRecord {
   id: string;
@@ -35,14 +36,23 @@ export default function FinesPage() {
           return;
         }
 
-        const mockFines: FineRecord[] = [
-          { id: "1", studentName: "Vikram Reddy", class: "Class 10-B", bookTitle: "Atomic Habits", daysLate: 12, fineAmount: 60, status: "pending" },
-          { id: "2", studentName: "Meera Joshi", class: "Class 12-A", bookTitle: "Sapiens", daysLate: 9, fineAmount: 45, status: "pending" },
-          { id: "3", studentName: "Rohan Mehta", class: "Class 11-Com", bookTitle: "Rich Dad Poor Dad", daysLate: 7, fineAmount: 35, status: "paid" },
-          { id: "4", studentName: "Priya Singh", class: "Class 10-A", bookTitle: "The Alchemist", daysLate: 5, fineAmount: 25, status: "waived" },
-        ];
-
-        setFines(mockFines);
+        const records = await listFinePayments(token);
+        setFines(
+          records.map((item) => ({
+            id: String(item.id),
+            studentName: item.student_name ?? "Unknown student",
+            class: "-",
+            bookTitle: item.book_title ?? "Untitled book",
+            daysLate: 0,
+            fineAmount: Number(item.amount ?? 0),
+            status:
+              String(item.status ?? "").toUpperCase() === "WAIVED"
+                ? "waived"
+                : String(item.status ?? "").toUpperCase() === "PAID"
+                  ? "paid"
+                  : "pending",
+          })),
+        );
         setError(null);
       } catch (err) {
         console.error("Error fetching fines:", err);

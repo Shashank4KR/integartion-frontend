@@ -1,5 +1,22 @@
 const BASE = "/api/finance";
 
+function unwrapData<T>(payload: unknown, fallback: T): T {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const data = (payload as { data?: unknown }).data;
+    return (data ?? fallback) as T;
+  }
+  return (payload ?? fallback) as T;
+}
+
+function unwrapItems(payload: unknown): any[] {
+  const data = unwrapData<unknown>(payload, []);
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray((data as { items?: unknown }).items)) {
+    return (data as { items: any[] }).items;
+  }
+  return [];
+}
+
 export async function getFinanceOverview(
   token: string,
 ): Promise<any> {
@@ -12,7 +29,7 @@ export async function getFinanceOverview(
     throw new Error(data.detail ?? "Failed to fetch finance overview.");
   }
 
-  return (await response.json()) as any;
+  return unwrapData(await response.json(), {});
 }
 
 export async function listFeeStructures(
@@ -27,7 +44,7 @@ export async function listFeeStructures(
     throw new Error(data.detail ?? "Failed to fetch fee structures.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function createFeeStructure(
@@ -100,7 +117,7 @@ export async function listInvoices(
     throw new Error(data.detail ?? "Failed to fetch invoices.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function generateInvoice(
@@ -136,7 +153,7 @@ export async function listExpenses(
     throw new Error(data.detail ?? "Failed to fetch expenses.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function addExpense(
@@ -172,7 +189,7 @@ export async function listTransactions(
     throw new Error(data.detail ?? "Failed to fetch transactions.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function recordTransaction(
@@ -208,7 +225,7 @@ export async function listSalaryRecords(
     throw new Error(data.detail ?? "Failed to fetch salary records.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function processSalary(
@@ -251,7 +268,7 @@ export async function listFeeInstallments(token: string): Promise<any[]> {
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch fee installments.");
   }
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function createFeePayment(token: string, payload: any): Promise<any> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -12,26 +12,93 @@ import TransactionPagination from "@/components/dashboard/finance/TransactionPag
 import TransactionSummaryChart from "@/components/dashboard/finance/TransactionSummaryChart";
 import PaymentModeSummary from "@/components/dashboard/finance/PaymentModeSummary";
 import TransactionsQuickActions from "@/components/dashboard/finance/TransactionsQuickActions";
-import IncomeExpenseTrendChart from "@/components/dashboard/finance/IncomeExpenseTrendChart";
-import TopIncomeCategories from "@/components/dashboard/finance/TopIncomeCategories";
 import RecentActivity from "@/components/dashboard/finance/RecentActivity";
 import AddTransactionDialog from "@/components/dashboard/finance/AddTransactionDialog";
 import ImportTransactionsDialog from "@/components/dashboard/finance/ImportTransactionsDialog";
 import TransactionDetailsDialog from "@/components/dashboard/finance/TransactionDetailsDialog";
 import TransactionActionDialog from "@/components/dashboard/finance/TransactionActionDialog";
-import {
-  TRANSACTIONS,
-  TRANSACTION_SUMMARY_CARDS,
-  PAYMENT_MODE_SUMMARY,
-  QUICK_ACTIONS,
-  RECENT_ACTIVITY,
-} from "@/lib/fixtures/transactions-reference-fixture";
-import type { TransactionRow } from "@/lib/fixtures/transactions-reference-fixture";
+import { getToken } from "@/lib/auth";
+import { listTransactions } from "@/lib/services/financeService";
 
 const ITEMS_PER_PAGE = 10;
+interface TransactionRow {
+  id: string;
+  receiptRefNo: string;
+  date: string;
+  studentName: string;
+  classGrade: string;
+  type: "Income" | "Expense";
+  category: string;
+  paymentMode: string;
+  amount: number;
+  status: "Success" | "Pending" | "Failed";
+}
+
+interface SummaryCard {
+  title: string;
+  value: string;
+  footer: string;
+  iconBg: string;
+  iconColor: string;
+  sparkline: number[];
+  sparkColor: string;
+  icon: "transactions" | "income" | "expense" | "balance";
+}
+
+interface PaymentModeRow {
+  label: string;
+  amount: string;
+  percentage: number;
+}
+
+interface RecentActivityItem {
+  type: "Income" | "Expense";
+  text: string;
+  secondary: string;
+  amount: string;
+  date: string;
+}
+
+const QUICK_ACTIONS = [
+  { label: "Add Income", icon: "plus", color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  { label: "Add Expense", icon: "minus", color: "text-red-600", bgColor: "bg-red-50" },
+  { label: "Export", icon: "download", color: "text-blue-600", bgColor: "bg-blue-50" },
+];
+
+function mapTransaction(item: Record<string, unknown>): TransactionRow {
+  const amount = Number(item.amount ?? item.amount_paid ?? item.total_amount ?? 0);
+  const rawType = String(item.type ?? item.transaction_type ?? "").toLowerCase();
+  const rawStatus = String(item.status ?? item.payment_status ?? "").toLowerCase();
+
+  return {
+    id: String(item.id ?? crypto.randomUUID()),
+    receiptRefNo: String(item.receipt_number ?? item.receipt_no ?? item.reference_no ?? item.id ?? "-"),
+    date: String(item.payment_date ?? item.date ?? item.created_at ?? "-"),
+    studentName: String(item.student_name ?? item.student ?? "-"),
+    classGrade: String(item.class_grade ?? item.className ?? "-"),
+    type: rawType === "expense" ? "Expense" : "Income",
+    category: String(item.category ?? item.fee_type ?? item.description ?? "Transaction"),
+    paymentMode: String(item.payment_method ?? item.paymentMode ?? "-"),
+    amount,
+    status: rawStatus === "failed" ? "Failed" : rawStatus === "pending" ? "Pending" : "Success",
+  };
+}
+
+const formatCurrency = (value: number) =>
+  `INR ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+function EmptyPanel({ title }: { title: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
+      {title}
+    </div>
+  );
+}
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<TransactionRow[]>(TRANSACTIONS);
+  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [viewTransaction, setViewTransaction] = useState<TransactionRow | null>(null);
@@ -43,7 +110,7 @@ export default function TransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [transactionType, setTransactionType] = useState("All Types");
   const [paymentMode, setPaymentMode] = useState("All Modes");
-  const [dateRange, setDateRange] = useState("12 May 2025 - 18 May 2025");
+  const [dateRange, setDateRange] = useState("This Month");
   const [status, setStatus] = useState("All Status");
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
@@ -52,6 +119,30 @@ export default function TransactionsPage() {
     setToast({ open: true, message });
     setTimeout(() => setToast({ open: false, message: "" }), 3000);
   };
+
+  useEffect(() => {
+    const loadTransactions = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoadError("Please log in to view transactions.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const rows = await listTransactions(token);
+        setTransactions(rows.map((item) => mapTransaction(item as Record<string, unknown>)));
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load transactions.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadTransactions();
+  }, []);
 
   const filteredTransactions = useMemo(() => {
     let result = [...transactions];
@@ -82,8 +173,95 @@ export default function TransactionsPage() {
     const start = (safePage - 1) * ITEMS_PER_PAGE;
     const paginated = result.slice(start, start + ITEMS_PER_PAGE);
 
-    return { paginated, totalPages, total: result.length, originalTotal: 2584 };
+    return { paginated, totalPages, total: result.length, originalTotal: result.length };
   }, [transactions, transactionType, paymentMode, status, search, currentPage]);
+
+  const transactionTotals = useMemo(() => {
+    const income = transactions
+      .filter((transaction) => transaction.type === "Income")
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+    const expense = transactions
+      .filter((transaction) => transaction.type === "Expense")
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+    const total = income + expense;
+    const balance = income - expense;
+
+    return {
+      income,
+      expense,
+      total,
+      balance,
+      incomePercentage: total > 0 ? `${Math.round((income / total) * 100)}%` : "0%",
+      expensePercentage: total > 0 ? `${Math.round((expense / total) * 100)}%` : "0%",
+    };
+  }, [transactions]);
+
+  const summaryCards = useMemo<SummaryCard[]>(() => [
+    {
+      title: "Total Transactions",
+      value: String(transactions.length),
+      footer: "Loaded from finance API",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
+      sparkline: [],
+      sparkColor: "#2563eb",
+      icon: "transactions",
+    },
+    {
+      title: "Total Income",
+      value: formatCurrency(transactionTotals.income),
+      footer: "Loaded from finance API",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      sparkline: [],
+      sparkColor: "#059669",
+      icon: "income",
+    },
+    {
+      title: "Total Expense",
+      value: formatCurrency(transactionTotals.expense),
+      footer: "Loaded from finance API",
+      iconBg: "bg-pink-50",
+      iconColor: "text-pink-600",
+      sparkline: [],
+      sparkColor: "#db2777",
+      icon: "expense",
+    },
+    {
+      title: "Balance",
+      value: formatCurrency(transactionTotals.balance),
+      footer: "Loaded from finance API",
+      iconBg: "bg-purple-50",
+      iconColor: "text-purple-600",
+      sparkline: [],
+      sparkColor: "#7c3aed",
+      icon: "balance",
+    },
+  ], [transactions.length, transactionTotals]);
+
+  const paymentModeSummary = useMemo<PaymentModeRow[]>(() => {
+    const totals = transactions.reduce<Record<string, number>>((acc, transaction) => {
+      const label = transaction.paymentMode || "Unknown";
+      acc[label] = (acc[label] ?? 0) + transaction.amount;
+      return acc;
+    }, {});
+
+    return Object.entries(totals).map(([label, amount]) => ({
+      label,
+      amount: formatCurrency(amount),
+      percentage: transactionTotals.total > 0 ? Math.round((amount / transactionTotals.total) * 100) : 0,
+    }));
+  }, [transactions, transactionTotals.total]);
+
+  const recentActivity = useMemo<RecentActivityItem[]>(() =>
+    transactions.slice(0, 5).map((transaction) => ({
+      type: transaction.type,
+      text: `${transaction.type}: ${transaction.category}`,
+      secondary: transaction.studentName,
+      amount: formatCurrency(transaction.amount),
+      date: transaction.date,
+    })),
+  [transactions]);
 
   const handleAddTransaction = (newTx: TransactionRow) => {
     setTransactions((prev) => [newTx, ...prev]);
@@ -142,7 +320,19 @@ export default function TransactionsPage() {
             onMoreOptions={handleThreeDotMenu}
           />
 
-          <TransactionSummaryCards cards={TRANSACTION_SUMMARY_CARDS} />
+          {loadError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              Loading transactions...
+            </div>
+          )}
+
+          <TransactionSummaryCards cards={summaryCards} />
 
           <TransactionFilters
             transactionType={transactionType}
@@ -161,53 +351,61 @@ export default function TransactionsPage() {
               setPaymentMode("All Modes");
               setStatus("All Status");
               setSearch("");
-              setDateRange("12 May 2025 - 18 May 2025");
+              setDateRange("This Month");
               setCurrentPage(1);
             }}
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2 space-y-6">
-              <TransactionsTable
-                rows={filteredTransactions.paginated}
-                onView={handleViewDetails}
-                onDownload={handleDownload}
-                onMore={handleMoreOptions}
-              />
-              <TransactionPagination
-                currentPage={currentPage}
-                totalPages={filteredTransactions.totalPages}
-                onPageChange={handlePageAction}
-                totalItems={filteredTransactions.originalTotal}
-                itemsPerPage={ITEMS_PER_PAGE}
-              />
+              {!isLoading && !loadError && filteredTransactions.total === 0 ? (
+                <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
+                  No transactions found.
+                </div>
+              ) : (
+                <>
+                  <TransactionsTable
+                    rows={filteredTransactions.paginated}
+                    onView={handleViewDetails}
+                    onDownload={handleDownload}
+                    onMore={handleMoreOptions}
+                  />
+                  <TransactionPagination
+                    currentPage={currentPage}
+                    totalPages={filteredTransactions.totalPages}
+                    onPageChange={handlePageAction}
+                    totalItems={filteredTransactions.originalTotal}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                  />
+                </>
+              )}
             </div>
             <div className="space-y-6">
               <TransactionSummaryChart
-                incomeAmount="₹ 1,24,80,000"
-                incomePercentage="64.9%"
-                expenseAmount="₹ 67,45,000"
-                expensePercentage="35.1%"
-                totalAmount="₹ 1,92,25,000"
+                incomeAmount={formatCurrency(transactionTotals.income)}
+                incomePercentage={transactionTotals.incomePercentage}
+                expenseAmount={formatCurrency(transactionTotals.expense)}
+                expensePercentage={transactionTotals.expensePercentage}
+                totalAmount={formatCurrency(transactionTotals.total)}
               />
-              <PaymentModeSummary rows={PAYMENT_MODE_SUMMARY} />
+              <PaymentModeSummary rows={paymentModeSummary} />
               <TransactionsQuickActions actions={QUICK_ACTIONS} onAction={handleQuickAction} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <IncomeExpenseTrendChart />
+              <EmptyPanel title="No income and expense trend data available." />
             </div>
             <div>
-              <TopIncomeCategories />
+              <EmptyPanel title="No income category data available." />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-3">
               <RecentActivity
-                items={RECENT_ACTIVITY}
+                items={recentActivity}
                 onViewAll={() =>
                   setActionDialog({
                     open: true,

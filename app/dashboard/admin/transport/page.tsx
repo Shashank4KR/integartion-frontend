@@ -14,7 +14,15 @@ import TransportOverviewDialogs from "@/components/dashboard/transport/Transport
 import { getToken } from "@/lib/auth";
 import { listDrivers, listTransportRoutes, listVehicles } from "@/lib/services/transportService";
 
-import type { QuickNavItem } from "@/lib/fixtures/transport-overview-reference-fixture";
+interface QuickNavItem {
+  title: string;
+  description: string;
+  href: string;
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  action?: string;
+}
 
 const QUICK_NAVIGATION_ITEMS: QuickNavItem[] = [
   { title: "Transport Management", description: "Manage routes and fleet", href: "/dashboard/admin/transport/management", icon: "bus", iconBg: "bg-purple-50", iconColor: "text-purple-600" },
@@ -49,8 +57,8 @@ function buildSummaryCards(routes: Array<Record<string, unknown>>, vehicles: Arr
   return [
     {
       title: "Students on Route",
-      value: String(totalStudents || routes.length * 40),
-      footer: `${activeRoutes || routes.length} active routes`,
+      value: String(totalStudents),
+      footer: `${activeRoutes} active routes`,
       icon: "users-route",
       iconBg: "bg-purple-50",
       iconColor: "text-purple-600",
@@ -60,7 +68,7 @@ function buildSummaryCards(routes: Array<Record<string, unknown>>, vehicles: Arr
     {
       title: "Routes On Time",
       value: String(activeRoutes || routes.length),
-      footer: `${Math.max(1, activeVehicles)} vehicles tracked`,
+      footer: `${activeVehicles} vehicles tracked`,
       icon: "clock-check",
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",
@@ -69,7 +77,7 @@ function buildSummaryCards(routes: Array<Record<string, unknown>>, vehicles: Arr
     },
     {
       title: "Fleet Availability",
-      value: `${activeVehicles}/${vehicles.length || 1}`,
+      value: `${activeVehicles}/${vehicles.length}`,
       footer: "Vehicles ready for dispatch",
       icon: "bus-check",
       iconBg: "bg-blue-50",
@@ -98,7 +106,7 @@ function buildSegments(routes: Array<Record<string, unknown>>) {
   const palette = ["#3b82f6", "#10b981", "#eab308", "#ef4444", "#f97316", "#7c3aed"];
   return routes.slice(0, 6).map((route, index) => ({
     label: String(route.name ?? route.route_name ?? `Route ${index + 1}`),
-    value: Math.max(1, getNumericValue(route, ["student_count", "studentCount", "capacity", "students_on_route"])),
+    value: getNumericValue(route, ["student_count", "studentCount", "capacity", "students_on_route"]),
     color: palette[index % palette.length],
   }));
 }
@@ -112,7 +120,7 @@ function buildActivityRows(routes: Array<Record<string, unknown>>, vehicles: Arr
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-500",
       progressColor: "bg-emerald-500",
-      progressValue: Math.min(100, Math.max(20, routes.length * 10)),
+      progressValue: Math.min(100, routes.length * 10),
     },
     {
       label: "Vehicles In Service",
@@ -121,7 +129,7 @@ function buildActivityRows(routes: Array<Record<string, unknown>>, vehicles: Arr
       iconBg: "bg-blue-50",
       iconColor: "text-blue-500",
       progressColor: "bg-blue-500",
-      progressValue: Math.min(100, Math.max(20, vehicles.length * 12)),
+      progressValue: Math.min(100, vehicles.length * 12),
     },
   ];
 }
@@ -161,7 +169,7 @@ export default function TransportOverviewPage() {
         setSummaryCards(cards);
         setSegments(routeSegments);
         setActivityRows(buildActivityRows(routeRows as Array<Record<string, unknown>>, vehicleRows as Array<Record<string, unknown>>));
-        setTotalStudents(total || routeRows.length * 40);
+        setTotalStudents(total);
       })
       .catch((error) => {
         setLoadError(error instanceof Error ? error.message : "Failed to load transport data.");

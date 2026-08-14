@@ -11,6 +11,6 @@ export default function CatchAllPage({
 }: {
   params: { slug?: string[] };
 }) {
-  const title = params.slug ? formatTitle(params.slug) : "Coming Soon";
+  const title = params.slug ? formatTitle(params.slug) : "Module Unavailable";
   return <ComingSoon title={title} />;
 }

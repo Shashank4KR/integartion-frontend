@@ -7,6 +7,7 @@ import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken, getStoredUser } from "@/lib/auth";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, BookCheck } from "lucide-react";
+import { listBookIssues } from "@/lib/services/libraryService";
 
 interface ReturnRecord {
   id: string;
@@ -36,13 +37,24 @@ export default function ReturnBookPage() {
           return;
         }
 
-        const mockReturns: ReturnRecord[] = [
-          { id: "1", bookTitle: "The Alchemist", studentName: "Aarav Sharma", class: "Class 10-A", issueDate: "2026-05-20", returnDate: "2026-06-05", fine: 0, status: "returned" },
-          { id: "2", bookTitle: "Wings of Fire", studentName: "Riya Patel", class: "Class 9-B", issueDate: "2026-05-18", returnDate: "2026-06-10", fine: 20, status: "late" },
-          { id: "3", bookTitle: "NCERT Physics", studentName: "Karan Singh", class: "Class 11-Sci", issueDate: "2026-05-15", returnDate: "2026-06-01", fine: 0, status: "returned" },
-        ];
-
-        setReturns(mockReturns);
+        const records = await listBookIssues(token);
+        setReturns(
+          records
+            .filter((item) => String(item.status ?? "").toUpperCase() === "RETURNED")
+            .map((item) => {
+              const fine = Number(item.fine_amount ?? 0);
+              return {
+                id: String(item.id),
+                bookTitle: item.book_title ?? "Untitled book",
+                studentName: item.student_name ?? "Unknown student",
+                class: item.student_class ?? "-",
+                issueDate: String(item.issue_date ?? "-"),
+                returnDate: String(item.return_date ?? "-"),
+                fine,
+                status: fine > 0 ? "late" : "returned",
+              };
+            }),
+        );
         setError(null);
       } catch (err) {
         console.error("Error fetching returns:", err);

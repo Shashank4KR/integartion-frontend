@@ -32,7 +32,7 @@ function getDisplayCode(id: string): string {
 
 import type { ExamResponse } from "@/types/entities/exam";
 import type { ClassResponse } from "@/types/entities/class";
-import type { ExaminationRow } from "@/lib/fixtures/examinations-reference-fixture";
+type ExaminationRow = any;
 
 const ITEMS_PER_PAGE = 10;
 
@@ -245,7 +245,7 @@ export default function ExaminationsPage() {
       {
         title: "Students Appeared",
         value: "—",
-        footer: "Coming Soon",
+        footer: "No backend metric connected",
         iconBg: "bg-blue-50",
         iconColor: "text-blue-500",
         sparkline: [],
@@ -254,7 +254,7 @@ export default function ExaminationsPage() {
       {
         title: "Average Score",
         value: "—",
-        footer: "Coming Soon",
+        footer: "No backend metric connected",
         iconBg: "bg-pink-50",
         iconColor: "text-pink-500",
         sparkline: [],

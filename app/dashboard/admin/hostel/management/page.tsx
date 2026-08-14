@@ -1,582 +1,119 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
 import HostelManagementPageHeader from "@/components/dashboard/hostel/HostelManagementPageHeader";
 import HostelSummaryCards from "@/components/dashboard/hostel/HostelSummaryCards";
-import HostelFilters from "@/components/dashboard/hostel/HostelFilters";
-import HostelOccupancyTable from "@/components/dashboard/hostel/HostelOccupancyTable";
-import HostelBlockDetailsDialog from "@/components/dashboard/hostel/HostelBlockDetailsDialog";
-import RecentCheckInsTable from "@/components/dashboard/hostel/RecentCheckInsTable";
-import CheckInDetailsDialog from "@/components/dashboard/hostel/CheckInDetailsDialog";
-import HostelQuickActions from "@/components/dashboard/hostel/HostelQuickActions";
-import AddRoomDialog from "@/components/dashboard/hostel/AddRoomDialog";
-import AddBlockDialog from "@/components/dashboard/hostel/AddBlockDialog";
-import AssignStudentDialog from "@/components/dashboard/hostel/AssignStudentDialog";
-import AddVisitorDialog from "@/components/dashboard/hostel/AddVisitorDialog";
-import MessMenuDialog from "@/components/dashboard/hostel/MessMenuDialog";
-import MaintenanceRequestDialog from "@/components/dashboard/hostel/MaintenanceRequestDialog";
-import HostelReportDialog from "@/components/dashboard/hostel/HostelReportDialog";
-import type { OccupancyRow, CheckInRow, QuickAction } from "@/lib/fixtures/hostel-management-reference-fixture";
-
-interface SummaryCard {
-  title: string;
-  value: string;
-  footer: string;
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-  tint: string;
-}
-
-const SUMMARY_CARDS: SummaryCard[] = [
-  {
-    title: "Total Rooms",
-    value: "48",
-    footer: "Across 3 Blocks",
-    icon: "Bed",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    tint: "bg-blue-50/60",
-  },
-  {
-    title: "Total Students",
-    value: "236",
-    footer: "Residents",
-    icon: "Users",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-    tint: "bg-emerald-50/60",
-  },
-  {
-    title: "Boys",
-    value: "142",
-    footer: "60.17%",
-    icon: "User",
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-500",
-    tint: "bg-orange-50/60",
-  },
-  {
-    title: "Girls",
-    value: "94",
-    footer: "39.83%",
-    icon: "User",
-    iconBg: "bg-pink-50",
-    iconColor: "text-pink-500",
-    tint: "bg-pink-50/60",
-  },
-  {
-    title: "Vacant Beds",
-    value: "24",
-    footer: "Total Available",
-    icon: "ClipboardList",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    tint: "bg-blue-50/60",
-  },
-];
-
-const OCCUPANCY_ROWS: OccupancyRow[] = [
-  {
-    blockName: "Block A (Boys)",
-    totalRooms: 20,
-    totalBeds: 120,
-    occupiedBeds: 98,
-    vacantBeds: 22,
-    occupancyPercent: 81.67,
-    color: "bg-emerald-500",
-  },
-  {
-    blockName: "Block B (Boys)",
-    totalRooms: 16,
-    totalBeds: 96,
-    occupiedBeds: 76,
-    vacantBeds: 20,
-    occupancyPercent: 79.17,
-    color: "bg-amber-500",
-  },
-  {
-    blockName: "Block C (Girls)",
-    totalRooms: 12,
-    totalBeds: 72,
-    occupiedBeds: 62,
-    vacantBeds: 10,
-    occupancyPercent: 86.11,
-    color: "bg-rose-500",
-  },
-  {
-    blockName: "Total",
-    totalRooms: 48,
-    totalBeds: 288,
-    occupiedBeds: 236,
-    vacantBeds: 24,
-    occupancyPercent: 81.94,
-    color: "bg-slate-700",
-    isTotal: true,
-  },
-];
-
-const CHECK_IN_ROWS: CheckInRow[] = [
-  {
-    id: "1",
-    studentName: "Aditya Sharma",
-    rollNo: "23MIS101",
-    roomNo: "A-105",
-    block: "Block A",
-    checkInDate: "18/05/2025",
-    initials: "AS",
-  },
-  {
-    id: "2",
-    studentName: "Rahul Verma",
-    rollNo: "23MIS112",
-    roomNo: "A-106",
-    block: "Block A",
-    checkInDate: "18/05/2025",
-    initials: "RV",
-  },
-  {
-    id: "3",
-    studentName: "Sneha Patel",
-    rollNo: "23MIS221",
-    roomNo: "C-203",
-    block: "Block C",
-    checkInDate: "17/05/2025",
-    initials: "SP",
-  },
-  {
-    id: "4",
-    studentName: "Ananya Gupta",
-    rollNo: "23MIS223",
-    roomNo: "C-204",
-    block: "Block C",
-    checkInDate: "17/05/2025",
-    initials: "AG",
-  },
-  {
-    id: "5",
-    studentName: "Vikram Singh",
-    rollNo: "23MIS115",
-    roomNo: "B-102",
-    block: "Block B",
-    checkInDate: "16/05/2025",
-    initials: "VS",
-  },
-];
-
-const QUICK_ACTIONS: QuickAction[] = [
-  {
-    label: "Add Student",
-    icon: "UserPlus",
-    color: "text-[#7c3aed]",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
-  },
-  {
-    label: "Add Room",
-    icon: "Bed",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
-    borderColor: "border-emerald-200",
-  },
-  {
-    label: "Add Visitor",
-    icon: "UserPlus",
-    color: "text-orange-500",
-    bgColor: "bg-orange-50",
-    borderColor: "border-orange-200",
-  },
-  {
-    label: "Mess Menu",
-    icon: "Utensils",
-    color: "text-rose-500",
-    bgColor: "bg-rose-50",
-    borderColor: "border-rose-200",
-  },
-  {
-    label: "Maintenance Request",
-    icon: "Wrench",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
-  },
-  {
-    label: "Hostel Reports",
-    icon: "FileText",
-    color: "text-[#7c3aed]",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
-  },
-];
-
-const BLOCK_OPTIONS = ["All Blocks", "Block A", "Block B", "Block C"];
-
-const ROOM_TYPE_OPTIONS = ["All Types", "1 Seater", "2 Seater", "3 Seater", "4 Seater"];
-
-const STATUS_OPTIONS = ["All Status", "Available", "Partially Occupied", "Full", "Maintenance"];
-
-const GENDER_OPTIONS = ["All", "Boys", "Girls"];
+import { getToken } from "@/lib/auth";
+import { COMPANY_INFO } from "@/lib/constants";
+import { getHostelAllocations, getHostelDashboardStats, listHostelBlocks, listRooms } from "@/lib/services/hostelService";
 
 export default function HostelManagementPage() {
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
+  const [stats, setStats] = useState<any | null>(null);
+  const [blocks, setBlocks] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [allocations, setAllocations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [addRoomOpen, setAddRoomOpen] = useState(false);
-  const [addBlockOpen, setAddBlockOpen] = useState(false);
-  const [assignStudentOpen, setAssignStudentOpen] = useState(false);
-  const [addVisitorOpen, setAddVisitorOpen] = useState(false);
-  const [messMenuOpen, setMessMenuOpen] = useState(false);
-  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
-
-  const [blockFilter, setBlockFilter] = useState(BLOCK_OPTIONS[0]);
-  const [roomTypeFilter, setRoomTypeFilter] = useState(ROOM_TYPE_OPTIONS[0]);
-  const [statusFilter, setStatusFilter] = useState(STATUS_OPTIONS[0]);
-  const [genderFilter, setGenderFilter] = useState(GENDER_OPTIONS[0]);
-  const [search, setSearch] = useState("");
-
-  const [selectedBlock, setSelectedBlock] = useState<OccupancyRow | null>(null);
-  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckInRow | null>(null);
-  const [allCheckInsOpen, setAllCheckInsOpen] = useState(false);
-
-  const showToast = (message: string) => {
-    const toast = document.createElement("div");
-    toast.className = "fixed bottom-6 right-6 z-[200] rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-2xl";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 3000);
-  };
-
-  const handleAddClick = () => {
-    setAddMenuOpen((prev) => !prev);
-  };
-
-  const handleMoreOptions = () => {
-    setMoreOptionsOpen((prev) => !prev);
-  };
-
-  const handleQuickAction = (action: QuickAction) => {
-    switch (action.label) {
-      case "Add Student":
-        setAssignStudentOpen(true);
-        break;
-      case "Add Room":
-        setAddRoomOpen(true);
-        break;
-      case "Add Visitor":
-        setAddVisitorOpen(true);
-        break;
-      case "Mess Menu":
-        setMessMenuOpen(true);
-        break;
-      case "Maintenance Request":
-        setMaintenanceOpen(true);
-        break;
-      case "Hostel Reports":
-        setReportOpen(true);
-        break;
-      default:
-        showToast(`${action.label} workflow will be connected to the backend in the integration phase.`);
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setLoadError("Please log in to view hostel data.");
+      setIsLoading(false);
+      return;
     }
-  };
 
-  const handleSaveRoom = (data: {
-    roomNumber: string;
-    block: string;
-    roomType: string;
-    totalBeds: string;
-    gender: string;
-    floor: string;
-    warden: string;
-    status: string;
-    notes: string;
-  }) => {
-    showToast(`Room ${data.roomNumber} added successfully`);
-  };
+    setIsLoading(true);
+    setLoadError(null);
+    Promise.all([
+      getHostelDashboardStats(token),
+      listHostelBlocks(token),
+      listRooms(token),
+      getHostelAllocations(token),
+    ])
+      .then(([statsData, blockRows, roomRows, allocationRows]) => {
+        setStats(statsData ?? {});
+        setBlocks(Array.isArray(blockRows) ? blockRows : []);
+        setRooms(Array.isArray(roomRows) ? roomRows : []);
+        setAllocations(Array.isArray(allocationRows) ? allocationRows : []);
+      })
+      .catch((error) => {
+        setLoadError(error instanceof Error ? error.message : "Failed to load hostel data.");
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  const handleSaveBlock = (data: {
-    blockName: string;
-    gender: string;
-    totalFloors: string;
-    totalRooms: string;
-    warden: string;
-    contactNumber: string;
-    status: string;
-    notes: string;
-  }) => {
-    showToast(`Block ${data.blockName} added successfully`);
-  };
-
-  const handleAssignStudent = (data: {
-    student: string;
-    rollNo: string;
-    block: string;
-    room: string;
-    checkInDate: string;
-  }) => {
-    showToast(`Student ${data.student} assigned successfully`);
-  };
-
-  const handleAddVisitor = (data: {
-    visitorName: string;
-    studentName: string;
-    roomNo: string;
-    block: string;
-    purpose: string;
-    date: string;
-    time: string;
-  }) => {
-    showToast(`Visitor ${data.visitorName} added successfully`);
-  };
-
-  const handleMaintenanceSave = (data: {
-    block: string;
-    roomNo: string;
-    issueType: string;
-    description: string;
-    priority: string;
-    reportedBy: string;
-  }) => {
-    showToast(`Maintenance request submitted for Room ${data.roomNo}`);
-  };
-
-  const handleFilter = () => {
-    showToast("Filters applied");
-  };
-
-  const filteredCheckIns = useMemo(() => {
-    let result = [...CHECK_IN_ROWS];
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (r) =>
-          r.studentName.toLowerCase().includes(q) ||
-          r.rollNo.toLowerCase().includes(q) ||
-          r.roomNo.toLowerCase().includes(q) ||
-          r.block.toLowerCase().includes(q)
-      );
-    }
-    return result;
-  }, [search]);
+  const cards = useMemo(
+    () => [
+      { title: "Total Rooms", value: String(stats?.total_rooms ?? 0), footer: `${stats?.total_blocks ?? 0} blocks`, icon: "Bed", iconBg: "bg-blue-50", iconColor: "text-blue-600", tint: "bg-blue-50/60" },
+      { title: "Total Students", value: String(stats?.active_allocations ?? 0), footer: "Active allocations", icon: "Users", iconBg: "bg-emerald-50", iconColor: "text-emerald-600", tint: "bg-emerald-50/60" },
+      { title: "Occupied Beds", value: String(stats?.occupied_beds ?? 0), footer: `${stats?.occupancy_percentage ?? 0}% occupancy`, icon: "User", iconBg: "bg-orange-50", iconColor: "text-orange-500", tint: "bg-orange-50/60" },
+      { title: "Vacant Beds", value: String(stats?.available_beds ?? 0), footer: "Available beds", icon: "ClipboardList", iconBg: "bg-pink-50", iconColor: "text-pink-500", tint: "bg-pink-50/60" },
+      { title: "Total Beds", value: String(stats?.total_beds ?? 0), footer: "Across all rooms", icon: "ClipboardList", iconBg: "bg-blue-50", iconColor: "text-blue-600", tint: "bg-blue-50/60" },
+    ],
+    [stats],
+  );
 
   return (
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
       <div className="p-6">
         <div className="mx-auto max-w-[1400px]">
-          <HostelManagementPageHeader
-            onAddClick={handleAddClick}
-            onMoreOptions={handleMoreOptions}
-          />
+          <HostelManagementPageHeader onAddClick={() => {}} onMoreOptions={() => {}} />
 
-          <HostelSummaryCards cards={SUMMARY_CARDS} />
+          {loadError ? <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div> : null}
+          {isLoading ? <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">Loading hostel data...</div> : null}
 
-          <HostelFilters
-            block={blockFilter}
-            onBlockChange={setBlockFilter}
-            roomType={roomTypeFilter}
-            onRoomTypeChange={setRoomTypeFilter}
-            status={statusFilter}
-            onStatusChange={setStatusFilter}
-            gender={genderFilter}
-            onGenderChange={setGenderFilter}
-            search={search}
-            onSearchChange={setSearch}
-            onFilter={handleFilter}
-          />
+          {!isLoading && !loadError ? <HostelSummaryCards cards={cards} /> : null}
 
-          <div className="mb-6">
-            <HostelOccupancyTable rows={OCCUPANCY_ROWS} onView={setSelectedBlock} />
-          </div>
+          {!isLoading && !loadError ? (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+              <section className="rounded-lg border border-slate-200 bg-white">
+                <div className="border-b border-slate-100 px-5 py-4">
+                  <h2 className="text-sm font-bold text-slate-900">Hostel Blocks</h2>
+                </div>
+                {blocks.length === 0 ? (
+                  <p className="px-5 py-8 text-sm text-slate-500">No hostel blocks found.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead><tr className="border-b border-slate-100"><th className="px-4 py-3 text-left">Block</th><th className="px-4 py-3 text-left">Type</th><th className="px-4 py-3 text-left">Rooms</th><th className="px-4 py-3 text-left">Status</th></tr></thead>
+                      <tbody>{blocks.map((block) => <tr key={block.id} className="border-b border-slate-50"><td className="px-4 py-3">{block.block_name ?? "-"}</td><td className="px-4 py-3">{block.block_type ?? "-"}</td><td className="px-4 py-3">{block.total_rooms ?? 0}</td><td className="px-4 py-3">{block.status ?? "-"}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
 
-          <div className="mb-6">
-            <RecentCheckInsTable
-              rows={filteredCheckIns}
-              onView={setSelectedCheckIn}
-              onViewAll={() => setAllCheckInsOpen(true)}
-            />
-          </div>
+              <section className="rounded-lg border border-slate-200 bg-white">
+                <div className="border-b border-slate-100 px-5 py-4">
+                  <h2 className="text-sm font-bold text-slate-900">Recent Allocations</h2>
+                </div>
+                {allocations.length === 0 ? (
+                  <p className="px-5 py-8 text-sm text-slate-500">No hostel allocations found.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead><tr className="border-b border-slate-100"><th className="px-4 py-3 text-left">Student ID</th><th className="px-4 py-3 text-left">Bed ID</th><th className="px-4 py-3 text-left">Check In</th><th className="px-4 py-3 text-left">Status</th></tr></thead>
+                      <tbody>{allocations.slice(0, 10).map((row) => <tr key={row.id} className="border-b border-slate-50"><td className="px-4 py-3">{row.student_id ?? "-"}</td><td className="px-4 py-3">{row.bed_id ?? "-"}</td><td className="px-4 py-3">{row.check_in_date ?? "-"}</td><td className="px-4 py-3">{row.status ?? "-"}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
+          ) : null}
 
-          <HostelQuickActions actions={QUICK_ACTIONS} onAction={handleQuickAction} />
+          {!isLoading && !loadError && rooms.length === 0 && blocks.length === 0 && allocations.length === 0 ? (
+            <div className="rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500">No hostel records found.</div>
+          ) : null}
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
-            <span>© 2025 EdTech Smart Campus ERP. All rights reserved.</span>
-            <span>Version 1.0.0</span>
+            <span>{COMPANY_INFO.copyright}</span>
+            <span>Version {COMPANY_INFO.version}</span>
           </footer>
         </div>
       </div>
-
-      <AddRoomDialog open={addRoomOpen} onClose={() => setAddRoomOpen(false)} onSave={handleSaveRoom} />
-      <AddBlockDialog open={addBlockOpen} onClose={() => setAddBlockOpen(false)} onSave={handleSaveBlock} />
-      <AssignStudentDialog open={assignStudentOpen} onClose={() => setAssignStudentOpen(false)} onSave={handleAssignStudent} />
-      <AddVisitorDialog open={addVisitorOpen} onClose={() => setAddVisitorOpen(false)} onSave={handleAddVisitor} />
-      <MessMenuDialog open={messMenuOpen} onClose={() => setMessMenuOpen(false)} />
-      <MaintenanceRequestDialog open={maintenanceOpen} onClose={() => setMaintenanceOpen(false)} onSave={handleMaintenanceSave} />
-      <HostelReportDialog open={reportOpen} onClose={() => setReportOpen(false)} />
-      <HostelBlockDetailsDialog row={selectedBlock} open={!!selectedBlock} onClose={() => setSelectedBlock(null)} />
-      <CheckInDetailsDialog row={selectedCheckIn} open={!!selectedCheckIn} onClose={() => setSelectedCheckIn(null)} />
-
-      {allCheckInsOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAllCheckInsOpen(false)} />
-          <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h3 className="text-lg font-semibold text-slate-900">All Check-Ins</h3>
-              <button
-                onClick={() => setAllCheckInsOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Close"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Student Name</th>
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Roll No.</th>
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Room No.</th>
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Block</th>
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Check-In Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {CHECK_IN_ROWS.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-50 last:border-0">
-                      <td className="px-4 py-2 font-medium text-slate-700">{row.studentName}</td>
-                      <td className="px-4 py-2 text-slate-600">{row.rollNo}</td>
-                      <td className="px-4 py-2 text-slate-600">{row.roomNo}</td>
-                      <td className="px-4 py-2 text-slate-600">{row.block}</td>
-                      <td className="px-4 py-2 text-slate-600">{row.checkInDate}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {addMenuOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAddMenuOpen(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h3 className="text-lg font-semibold text-slate-900">Add Room / Block</h3>
-              <button
-                onClick={() => setAddMenuOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Close"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-4 space-y-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setAddMenuOpen(false);
-                  setAddRoomOpen(true);
-                }}
-                className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Add Room
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddMenuOpen(false);
-                  setAddBlockOpen(true);
-                }}
-                className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Add Block
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddMenuOpen(false);
-                  setAssignStudentOpen(true);
-                }}
-                className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Assign Student
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddMenuOpen(false);
-                  setAddVisitorOpen(true);
-                }}
-                className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Add Visitor
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {moreOptionsOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMoreOptionsOpen(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h3 className="text-lg font-semibold text-slate-900">More Options</h3>
-              <button
-                onClick={() => setMoreOptionsOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Close"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-4 space-y-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setMoreOptionsOpen(false);
-                  showToast("Hostel view exported successfully");
-                }}
-                className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Export Hostel View
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMoreOptionsOpen(false);
-                  showToast("Print dialog opened");
-                }}
-                className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Print Occupancy Report
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMoreOptionsOpen(false);
-                  showToast("Hostel Settings coming soon");
-                }}
-                className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-              >
-                Hostel Settings
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </MainLayout>
   );
 }

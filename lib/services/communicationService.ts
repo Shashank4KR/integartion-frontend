@@ -1,5 +1,33 @@
 const BASE = "/api/communication";
 
+async function parseError(response: Response, fallback: string): Promise<Error> {
+  try {
+    const data = (await response.json()) as { detail?: string; message?: string };
+    return new Error(data.detail ?? data.message ?? fallback);
+  } catch {
+    return new Error(fallback);
+  }
+}
+
+function unwrapData<T>(payload: unknown, fallback: T): T {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const data = (payload as { data?: unknown }).data;
+    return (data ?? fallback) as T;
+  }
+  return (payload ?? fallback) as T;
+}
+
+function unwrapItems(payload: unknown): any[] {
+  const data = unwrapData<unknown>(payload, []);
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    const record = data as { items?: unknown; results?: unknown };
+    if (Array.isArray(record.items)) return record.items;
+    if (Array.isArray(record.results)) return record.results;
+  }
+  return [];
+}
+
 export async function listAnnouncements(
   token: string,
 ): Promise<any[]> {
@@ -8,11 +36,10 @@ export async function listAnnouncements(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch announcements.");
+    throw await parseError(response, "Failed to fetch announcements.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function createAnnouncement(
@@ -29,11 +56,10 @@ export async function createAnnouncement(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to create announcement.");
+    throw await parseError(response, "Failed to create announcement.");
   }
 
-  return (await response.json()) as any;
+  return unwrapData(await response.json(), {});
 }
 
 export async function updateAnnouncement(
@@ -51,11 +77,10 @@ export async function updateAnnouncement(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to update announcement.");
+    throw await parseError(response, "Failed to update announcement.");
   }
 
-  return (await response.json()) as any;
+  return unwrapData(await response.json(), {});
 }
 
 export async function deleteAnnouncement(
@@ -68,8 +93,7 @@ export async function deleteAnnouncement(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to delete announcement.");
+    throw await parseError(response, "Failed to delete announcement.");
   }
 }
 
@@ -81,11 +105,10 @@ export async function listMessages(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch messages.");
+    throw await parseError(response, "Failed to fetch messages.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function sendMessage(
@@ -102,11 +125,10 @@ export async function sendMessage(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to send message.");
+    throw await parseError(response, "Failed to send message.");
   }
 
-  return (await response.json()) as any;
+  return unwrapData(await response.json(), {});
 }
 
 export async function getCommunicationStats(
@@ -117,9 +139,8 @@ export async function getCommunicationStats(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch communication statistics.");
+    throw await parseError(response, "Failed to fetch communication statistics.");
   }
 
-  return (await response.json()) as any;
+  return unwrapData(await response.json(), {});
 }

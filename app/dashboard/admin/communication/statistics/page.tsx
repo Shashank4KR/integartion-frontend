@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Printer, RefreshCw, Settings } from "lucide-react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
@@ -16,100 +16,32 @@ import TopCommunicationTypesCard from "@/components/dashboard/communication/TopC
 import CommunicationStatisticsReportDialog from "@/components/dashboard/communication/CommunicationStatisticsReportDialog";
 import CommunicationStatisticsExportDialog from "@/components/dashboard/communication/CommunicationStatisticsExportDialog";
 import Modal from "@/components/shared/Modal";
-import type { StatSummaryCard, ChannelStat, AudienceStat, DeliveryStat, TopCommunicationType, DonutSegment, ReportRow } from "@/lib/fixtures/communication-statistics-reference-fixture";
+import { getToken } from "@/lib/auth";
+import { getCommunicationStats } from "@/lib/services/communicationService";
 
-const STATS_SUMMARY_CARDS: StatSummaryCard[] = [
-  {
-    title: "Total Communications",
-    value: "2,438",
-    footer: "This Month",
-    icon: "send",
-    iconBg: "bg-purple-50",
-    iconColor: "text-[#7c3aed]",
-    sparkline: [18, 22, 19, 25, 23, 28, 26, 30, 27, 32],
-    sparkColor: "#7c3aed",
-  },
-  {
-    title: "Delivered",
-    value: "2,403",
-    footer: "98.6% Delivery Rate",
-    icon: "check-circle",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-500",
-    sparkline: [15, 18, 16, 22, 20, 24, 21, 26, 23, 28],
-    sparkColor: "#10b981",
-  },
-  {
-    title: "Failed",
-    value: "35",
-    footer: "1.4% Failure Rate",
-    icon: "x-circle",
-    iconBg: "bg-pink-50",
-    iconColor: "text-pink-500",
-    sparkline: [3, 4, 3, 5, 4, 6, 5, 7, 6, 8],
-    sparkColor: "#ec4899",
-  },
-  {
-    title: "Top Channel",
-    value: "SMS",
-    footer: "1,028 Messages",
-    icon: "message-circle",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-500",
-    sparkline: [20, 22, 21, 24, 23, 25, 24, 26, 25, 27],
-    sparkColor: "#3b82f6",
-  },
-];
+type StatSummaryCard = any;
+type ChannelStat = any;
+type AudienceStat = any;
+type DeliveryStat = any;
+type TopCommunicationType = any;
+type DonutSegment = any;
+type ReportRow = any;
 
-const CHANNEL_STATS: ChannelStat[] = [
-  { label: "Email", value: 842, percentage: "35.4%", color: "#10b981" },
-  { label: "SMS", value: 1028, percentage: "43.1%", color: "#3b82f6" },
-  { label: "In-App", value: 568, percentage: "23.8%", color: "#f97316" },
-];
+const colors = ["#3b82f6", "#ec4899", "#14b8a6", "#f97316", "#7c3aed"];
 
-const AUDIENCE_STATS: AudienceStat[] = [
-  { label: "Students", value: 984, percentage: "40.3%", color: "#7c3aed" },
-  { label: "Parents", value: 1056, percentage: "43.3%", color: "#3b82f6" },
-  { label: "Staff", value: 398, percentage: "16.4%", color: "#f97316" },
-];
-
-const DELIVERY_STATS: DeliveryStat[] = [
-  { label: "Delivered", value: 2403, percentage: "98.6%", color: "#10b981" },
-  { label: "Failed", value: 35, percentage: "1.4%", color: "#ec4899" },
-];
-
-const TOP_COMMUNICATION_TYPES: TopCommunicationType[] = [
-  { type: "Fee Reminder", messages: 452 },
-  { type: "General Announcement", messages: 318 },
-  { type: "Event Notification", messages: 276 },
-  { type: "Exam Related", messages: 248 },
-  { type: "Attendance Alert", messages: 186 },
-];
-
-const ALL_COMMUNICATION_TYPES: TopCommunicationType[] = [
-  ...TOP_COMMUNICATION_TYPES,
-  { type: "Holiday Notice", messages: 128 },
-  { type: "Fee Receipt", messages: 98 },
-  { type: "Transport Alert", messages: 72 },
-];
-
-const DONUT_SEGMENTS: DonutSegment[] = [
-  { label: "Announcements", value: 218, percentage: "38.4%", color: "#3b82f6" },
-  { label: "Circulars", value: 156, percentage: "27.5%", color: "#ec4899" },
-  { label: "Events", value: 98, percentage: "17.3%", color: "#14b8a6" },
-  { label: "Reminders", value: 64, percentage: "11.3%", color: "#f97316" },
-  { label: "Others", value: 32, percentage: "5.5%", color: "#7c3aed" },
-];
-
-const NOTIFICATION_REPORT_ROWS: ReportRow[] = [
-  { category: "Announcements", count: 218, percentage: "38.4%" },
-  { category: "Circulars", count: 156, percentage: "27.5%" },
-  { category: "Events", count: 98, percentage: "17.3%" },
-  { category: "Reminders", count: 64, percentage: "11.3%" },
-  { category: "Others", count: 32, percentage: "5.5%" },
-];
+function percent(value: number, total: number) {
+  return total > 0 ? `${Math.round((value / total) * 1000) / 10}%` : "0%";
+}
 
 export default function CommunicationStatisticsPage() {
+  const [summaryCards, setSummaryCards] = useState<StatSummaryCard[]>([]);
+  const [channelStats, setChannelStats] = useState<ChannelStat[]>([]);
+  const [audienceStats, setAudienceStats] = useState<AudienceStat[]>([]);
+  const [deliveryStats, setDeliveryStats] = useState<DeliveryStat[]>([]);
+  const [topTypes, setTopTypes] = useState<TopCommunicationType[]>([]);
+  const [donutSegments, setDonutSegments] = useState<DonutSegment[]>([]);
+  const [reportRows, setReportRows] = useState<ReportRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [viewAllDialogOpen, setViewAllDialogOpen] = useState(false);
@@ -123,7 +55,7 @@ export default function CommunicationStatisticsPage() {
   const [channel, setChannel] = useState("All Channels");
   const [audience, setAudience] = useState("All Audiences");
   const [commType, setCommType] = useState("All Types");
-  const [dateRange, setDateRange] = useState("12 May 2025 - 18 May 2025");
+  const [dateRange, setDateRange] = useState("This Month");
 
   const showToast = (message: string) => {
     setToast({ open: true, message });
@@ -154,29 +86,134 @@ export default function CommunicationStatisticsPage() {
     setChannel("All Channels");
     setAudience("All Audiences");
     setCommType("All Types");
-    setDateRange("12 May 2025 - 18 May 2025");
+    setDateRange("This Month");
     showToast("Filters reset");
   };
 
-  const total = useMemo(() => {
-    return CHANNEL_STATS.reduce((sum, item) => sum + item.value, 0);
+  useEffect(() => {
+    const loadStats = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoadError("Please log in to view communication statistics.");
+        return;
+      }
+
+      try {
+        setLoadError(null);
+        const stats = await getCommunicationStats(token);
+        const totalCommunications = Number(stats.total_communications ?? 0);
+        const delivered = Number(stats.delivered ?? 0);
+        const failed = Number(stats.failed ?? 0);
+        const deliveryRate = Number(stats.delivery_rate ?? 0);
+        const channels = Array.isArray(stats.channels) ? stats.channels : [];
+        const audiences = Array.isArray(stats.audiences) ? stats.audiences : [];
+        const delivery = Array.isArray(stats.delivery) ? stats.delivery : [];
+        const types = Array.isArray(stats.types) ? stats.types : [];
+
+        setSummaryCards([
+          {
+            title: "Total Communications",
+            value: String(totalCommunications),
+            footer: "Loaded from communication API",
+            icon: "send",
+            iconBg: "bg-purple-50",
+            iconColor: "text-[#7c3aed]",
+            sparkline: [],
+            sparkColor: "#7c3aed",
+          },
+          {
+            title: "Delivered",
+            value: String(delivered),
+            footer: `${deliveryRate}% Delivery Rate`,
+            icon: "check-circle",
+            iconBg: "bg-emerald-50",
+            iconColor: "text-emerald-500",
+            sparkline: [],
+            sparkColor: "#10b981",
+          },
+          {
+            title: "Failed",
+            value: String(failed),
+            footer: `${percent(failed, totalCommunications)} Failure Rate`,
+            icon: "x-circle",
+            iconBg: "bg-pink-50",
+            iconColor: "text-pink-500",
+            sparkline: [],
+            sparkColor: "#ec4899",
+          },
+          {
+            title: "Top Channel",
+            value: channels[0]?.label ?? "-",
+            footer: `${Number(channels[0]?.value ?? 0)} records`,
+            icon: "message-circle",
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-500",
+            sparkline: [],
+            sparkColor: "#3b82f6",
+          },
+        ]);
+
+        setChannelStats(channels.map((item: { label?: string; value?: number }, index: number) => ({
+          label: item.label ?? "Unknown",
+          value: Number(item.value ?? 0),
+          percentage: percent(Number(item.value ?? 0), totalCommunications),
+          color: colors[index % colors.length],
+        })));
+        setAudienceStats(audiences.map((item: { label?: string; value?: number }, index: number) => ({
+          label: item.label ?? "Unknown",
+          value: Number(item.value ?? 0),
+          percentage: percent(Number(item.value ?? 0), totalCommunications),
+          color: colors[index % colors.length],
+        })));
+        setDeliveryStats(delivery.map((item: { label?: string; value?: number }, index: number) => ({
+          label: item.label ?? "Unknown",
+          value: Number(item.value ?? 0),
+          percentage: percent(Number(item.value ?? 0), totalCommunications),
+          color: colors[index % colors.length],
+        })));
+        setTopTypes(types.map((item: { type?: string; messages?: number }) => ({
+          type: item.type ?? "Unknown",
+          messages: Number(item.messages ?? 0),
+        })));
+        const segments = types.map((item: { type?: string; messages?: number }, index: number) => ({
+          label: item.type ?? "Unknown",
+          value: Number(item.messages ?? 0),
+          percentage: percent(Number(item.messages ?? 0), totalCommunications),
+          color: colors[index % colors.length],
+        }));
+        setDonutSegments(segments);
+        setReportRows(segments.map((segment) => ({
+          category: segment.label,
+          count: segment.value,
+          percentage: segment.percentage,
+        })));
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load communication statistics.");
+      }
+    };
+
+    void loadStats();
   }, []);
+
+  const total = useMemo(() => {
+    return channelStats.reduce((sum, item) => sum + item.value, 0);
+  }, [channelStats]);
 
   const channelTotal = useMemo(() => {
-    return CHANNEL_STATS.reduce((sum, item) => sum + item.value, 0);
-  }, []);
+    return channelStats.reduce((sum, item) => sum + item.value, 0);
+  }, [channelStats]);
 
   const audienceTotal = useMemo(() => {
-    return AUDIENCE_STATS.reduce((sum, item) => sum + item.value, 0);
-  }, []);
+    return audienceStats.reduce((sum, item) => sum + item.value, 0);
+  }, [audienceStats]);
 
   const deliveryTotal = useMemo(() => {
-    return DELIVERY_STATS.reduce((sum, item) => sum + item.value, 0);
-  }, []);
+    return deliveryStats.reduce((sum, item) => sum + item.value, 0);
+  }, [deliveryStats]);
 
   const donutTotal = useMemo(() => {
-    return DONUT_SEGMENTS.reduce((sum, item) => sum + item.value, 0);
-  }, []);
+    return donutSegments.reduce((sum, item) => sum + item.value, 0);
+  }, [donutSegments]);
 
   return (
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
@@ -187,7 +224,13 @@ export default function CommunicationStatisticsPage() {
             onMoreOptions={() => setMenuDialogOpen(true)}
           />
 
-          <CommunicationStatisticsSummaryCards cards={STATS_SUMMARY_CARDS} />
+          {loadError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
+
+          <CommunicationStatisticsSummaryCards cards={summaryCards} />
 
           <CommunicationStatisticsFilters
             period={period}
@@ -206,7 +249,7 @@ export default function CommunicationStatisticsPage() {
 
           <NotificationSummaryCard
             period={period}
-            segments={DONUT_SEGMENTS}
+            segments={donutSegments}
             total={donutTotal}
             onViewReport={() => setReportDialogOpen(true)}
           />
@@ -216,11 +259,11 @@ export default function CommunicationStatisticsPage() {
               Communication Statistics ({period})
             </h2>
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-              <ByChannelCard data={CHANNEL_STATS} total={channelTotal} />
-              <ByAudienceCard data={AUDIENCE_STATS} total={audienceTotal} />
-              <DeliveryStatusCard data={DELIVERY_STATS} total={deliveryTotal} />
+              <ByChannelCard data={channelStats} total={channelTotal} />
+              <ByAudienceCard data={audienceStats} total={audienceTotal} />
+              <DeliveryStatusCard data={deliveryStats} total={deliveryTotal} />
               <TopCommunicationTypesCard
-                items={TOP_COMMUNICATION_TYPES}
+                items={topTypes}
                 onViewAll={() => setViewAllDialogOpen(true)}
               />
             </div>
@@ -243,7 +286,7 @@ export default function CommunicationStatisticsPage() {
         open={reportDialogOpen}
         onClose={() => setReportDialogOpen(false)}
         period={period}
-        rows={NOTIFICATION_REPORT_ROWS}
+        rows={reportRows}
       />
 
       <Modal
@@ -285,7 +328,7 @@ export default function CommunicationStatisticsPage() {
                 Messages Sent
               </span>
             </div>
-            {ALL_COMMUNICATION_TYPES.map((item) => (
+            {topTypes.map((item) => (
               <div
                 key={item.type}
                 className="grid grid-cols-2 border-b border-slate-100 last:border-b-0"

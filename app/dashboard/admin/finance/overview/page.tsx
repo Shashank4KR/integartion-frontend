@@ -19,8 +19,9 @@ import TransactionDetailsDialog from "@/components/dashboard/finance/Transaction
 import FinanceActionDialog from "@/components/dashboard/finance/FinanceActionDialog";
 import { getToken } from "@/lib/auth";
 import { getFinanceOverview, listTransactions, recordTransaction } from "@/lib/services/financeService";
-import type { BalanceCard, SummaryCard } from "@/lib/fixtures/finance-overview-reference-fixture";
-import type { TransactionRow } from "@/lib/fixtures/transactions-reference-fixture";
+type BalanceCard = any;
+type SummaryCard = any;
+type TransactionRow = any;
 
 type OutstandingSummary = {
   totalStudents: number;

@@ -361,6 +361,19 @@ export async function getMaintenanceDashboard(
   return (await response.json()) as any;
 }
 
+export async function listMaintenanceRequests(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch("/api/maintenance-requests", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch maintenance requests.");
+  }
+  return (await response.json()) as any[];
+}
+
 export async function getMessDashboard(
   token: string,
 ): Promise<any> {

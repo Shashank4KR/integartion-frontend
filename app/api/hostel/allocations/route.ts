@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   const backendUrl = process.env.BACKEND_API_URL;
 
   if (!backendUrl) {
@@ -11,18 +11,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.text();
-    const contentType =
-      request.headers.get("content-type") || "application/json";
     const authHeader = request.headers.get("authorization");
+    const url = new URL(request.url);
+    const query = url.search;
 
-    const response = await fetch(`${backendUrl}/hostel-allocations/allocate`, {
-      method: "POST",
+    const response = await fetch(`${backendUrl}/hostel-allocations${query}`, {
+      method: "GET",
       headers: {
-        "Content-Type": contentType,
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
-      body,
     });
 
     const responseBody = await response.text();

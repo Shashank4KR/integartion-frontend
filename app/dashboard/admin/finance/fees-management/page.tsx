@@ -1,28 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
 import FeesManagementPageHeader from "@/components/dashboard/finance/FeesManagementPageHeader";
 import FeesSummaryCards from "@/components/dashboard/finance/FeesSummaryCards";
 import FeesManagementFilters from "@/components/dashboard/finance/FeesManagementFilters";
-import FeesCollectionSummaryChart from "@/components/dashboard/finance/FeesCollectionSummaryChart";
-import CollectionTrendChart from "@/components/dashboard/finance/CollectionTrendChart";
-import FeeDueOverviewChart from "@/components/dashboard/finance/FeeDueOverviewChart";
-import FeesDetailsTabs from "@/components/dashboard/finance/FeesDetailsTabs";
-import FeeCollectionByTypeCard from "@/components/dashboard/finance/FeeCollectionByTypeCard";
 import FeesQuickActions from "@/components/dashboard/finance/FeesQuickActions";
-import FeesFooterCards from "@/components/dashboard/finance/FeesFooterCards";
 import AddFeeCollectionDialog from "@/components/dashboard/finance/AddFeeCollectionDialog";
 import FeesActionDialog from "@/components/dashboard/finance/FeesActionDialog";
-import {
-  SUMMARY_CARDS,
-  FEE_COLLECTION_BY_TYPE,
-  QUICK_ACTIONS,
-} from "@/lib/fixtures/fees-management-reference-fixture";
+import { getToken } from "@/lib/auth";
+import { getFinanceOverview } from "@/lib/services/financeService";
+
+interface SummaryCard {
+  title: string;
+  value: string;
+  footer: string;
+  iconBg: string;
+  iconColor: string;
+  icon: string;
+  sparkColor: string;
+  sparkline: number[];
+  secondaryIcon?: string;
+}
+
+const formatCurrency = (value: number) =>
+  `INR ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+function EmptyPanel({ title }: { title: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
+      {title}
+    </div>
+  );
+}
 
 export default function FeesManagementPage() {
+  const [summaryCards, setSummaryCards] = useState<SummaryCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [actionDialog, setActionDialog] = useState<{ open: boolean; title: string; message: string }>({
     open: false,
@@ -36,12 +53,80 @@ export default function FeesManagementPage() {
   const [feeType, setFeeType] = useState("All Fee Types");
   const [installment, setInstallment] = useState("All Installments");
   const [status, setStatus] = useState("All Status");
-  const [dateRange, setDateRange] = useState("12 May 2025 - 18 May 2025");
+  const [dateRange, setDateRange] = useState("This Month");
 
   const showToast = (message: string) => {
     setToast({ open: true, message });
     setTimeout(() => setToast({ open: false, message: "" }), 3000);
   };
+
+  useEffect(() => {
+    const loadSummary = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoadError("Please log in to view fee management.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const overview = await getFinanceOverview(token);
+        const revenue = Number(overview.total_revenue ?? overview.total_fee_collection ?? 0);
+        const outstanding = Number(overview.pending_fee_amount ?? overview.total_outstanding ?? 0);
+        const invoices = Number(overview.unpaid_invoices ?? overview.invoice_count ?? 0);
+        setSummaryCards([
+          {
+            title: "Collected Fees",
+            value: formatCurrency(revenue),
+            footer: "Loaded from finance API",
+            iconBg: "bg-emerald-50",
+            iconColor: "text-emerald-600",
+            icon: "wallet",
+            sparkColor: "#059669",
+            sparkline: [],
+          },
+          {
+            title: "Outstanding",
+            value: formatCurrency(outstanding),
+            footer: "Loaded from finance API",
+            iconBg: "bg-amber-50",
+            iconColor: "text-amber-600",
+            icon: "hourglass",
+            sparkColor: "#d97706",
+            sparkline: [],
+          },
+          {
+            title: "Open Invoices",
+            value: String(invoices),
+            footer: "Loaded from finance API",
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-600",
+            icon: "card",
+            sparkColor: "#2563eb",
+            sparkline: [],
+          },
+          {
+            title: "Concessions",
+            value: formatCurrency(Number(overview.total_concessions ?? 0)),
+            footer: "Loaded from finance API",
+            iconBg: "bg-purple-50",
+            iconColor: "text-purple-600",
+            icon: "users",
+            sparkColor: "#7c3aed",
+            sparkline: [],
+          },
+        ]);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load fee summary.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadSummary();
+  }, []);
 
   const handleAddCollection = () => {
     setAddDialogOpen(true);
@@ -90,7 +175,7 @@ export default function FeesManagementPage() {
     setFeeType("All Fee Types");
     setInstallment("All Installments");
     setStatus("All Status");
-    setDateRange("12 May 2025 - 18 May 2025");
+    setDateRange("This Month");
   };
 
   return (
@@ -102,7 +187,19 @@ export default function FeesManagementPage() {
             onMoreOptions={handleMoreOptions}
           />
 
-          <FeesSummaryCards cards={SUMMARY_CARDS} />
+          {loadError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              Loading fee summary...
+            </div>
+          )}
+
+          <FeesSummaryCards cards={summaryCards} />
 
           <FeesManagementFilters
             academicYear={academicYear}
@@ -122,22 +219,22 @@ export default function FeesManagementPage() {
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-            <FeesCollectionSummaryChart />
-            <CollectionTrendChart />
-            <FeeDueOverviewChart />
+            <EmptyPanel title="No fee collection chart data available." />
+            <EmptyPanel title="No collection trend data available." />
+            <EmptyPanel title="No fee due overview data available." />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2">
-              <FeesDetailsTabs />
+              <EmptyPanel title="No fee detail records available." />
             </div>
             <div className="space-y-6">
-              <FeeCollectionByTypeCard />
+              <EmptyPanel title="No fee collection type data available." />
               <FeesQuickActions onAction={handleQuickAction} />
             </div>
           </div>
 
-          <FeesFooterCards />
+          <EmptyPanel title="No additional fee statistics available." />
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
             <span>© 2025 EdTech Smart Campus ERP. All rights reserved.</span>

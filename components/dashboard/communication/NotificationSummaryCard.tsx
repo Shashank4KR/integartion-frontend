@@ -29,6 +29,7 @@ const DonutChart = ({
   const totalAvailable = circumference - segments.length * gapSize;
 
   let cumulativeArc = 0;
+  const safeTotal = total > 0 ? total : 1;
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -41,7 +42,7 @@ const DonutChart = ({
         strokeWidth={strokeWidth}
       />
       {segments.map((segment, i) => {
-        const segmentArc = (segment.value / total) * totalAvailable;
+        const segmentArc = (segment.value / safeTotal) * totalAvailable;
         const offset = cumulativeArc + i * gapSize;
         cumulativeArc += segmentArc;
 

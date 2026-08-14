@@ -7,6 +7,7 @@ import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken, getStoredUser } from "@/lib/auth";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, ScrollText } from "lucide-react";
+import { listOverdueBookIssues } from "@/lib/services/libraryService";
 
 interface OverdueRecord {
   id: string;
@@ -36,13 +37,26 @@ export default function OverduePage() {
           return;
         }
 
-        const mockOverdue: OverdueRecord[] = [
-          { id: "1", bookTitle: "Atomic Habits", studentName: "Vikram Reddy", class: "Class 10-B", issueDate: "2026-05-20", dueDate: "2026-06-01", daysLate: 12, fine: 60 },
-          { id: "2", bookTitle: "Sapiens", studentName: "Meera Joshi", class: "Class 12-A", issueDate: "2026-05-22", dueDate: "2026-06-02", daysLate: 9, fine: 45 },
-          { id: "3", bookTitle: "Rich Dad Poor Dad", studentName: "Rohan Mehta", class: "Class 11-Com", issueDate: "2026-05-25", dueDate: "2026-06-05", daysLate: 7, fine: 35 },
-        ];
-
-        setOverdue(mockOverdue);
+        const records = await listOverdueBookIssues(token);
+        const today = new Date();
+        setOverdue(
+          records.map((item) => {
+            const dueDate = item.due_date ? new Date(item.due_date) : null;
+            const daysLate = dueDate
+              ? Math.max(0, Math.floor((today.getTime() - dueDate.getTime()) / 86400000))
+              : 0;
+            return {
+              id: String(item.id),
+              bookTitle: item.book_title ?? "Untitled book",
+              studentName: item.student_name ?? "Unknown student",
+              class: item.student_class ?? "-",
+              issueDate: String(item.issue_date ?? "-"),
+              dueDate: String(item.due_date ?? "-"),
+              daysLate,
+              fine: Number(item.fine_amount ?? 0),
+            };
+          }),
+        );
         setError(null);
       } catch (err) {
         console.error("Error fetching overdue:", err);

@@ -98,7 +98,7 @@ interface ToastState {
   message: string;
 }
 
-// --- Real-analytics helpers (no mock values) -------------------------------
+// --- Real analytics helpers -------------------------------------------------
 
 export type SchoolLevel = "Primary" | "Middle" | "Secondary" | "Senior Secondary";
 

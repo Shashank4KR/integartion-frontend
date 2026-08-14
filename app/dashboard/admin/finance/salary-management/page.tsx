@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -8,26 +8,59 @@ import SalaryManagementPageHeader from "@/components/dashboard/finance/salary-ma
 import SalarySummaryCards from "@/components/dashboard/finance/salary-management/SalarySummaryCards";
 import SalaryFilters from "@/components/dashboard/finance/salary-management/SalaryFilters";
 import EmployeeSalaryOverview from "@/components/dashboard/finance/salary-management/EmployeeSalaryOverview";
-import PayrollSummaryChart from "@/components/dashboard/finance/salary-management/PayrollSummaryChart";
-import SalaryComponentsCard from "@/components/dashboard/finance/salary-management/SalaryComponentsCard";
 import SalaryQuickActions from "@/components/dashboard/finance/salary-management/SalaryQuickActions";
-import PayrollTrendChart from "@/components/dashboard/finance/salary-management/PayrollTrendChart";
-import TopDepartmentsByPayroll from "@/components/dashboard/finance/salary-management/TopDepartmentsByPayroll";
 import RecentSalaryActivities from "@/components/dashboard/finance/salary-management/RecentSalaryActivities";
-import MonthlySalarySummaryCards from "@/components/dashboard/finance/salary-management/MonthlySalarySummaryCards";
 import AddSalaryDialog from "@/components/dashboard/finance/salary-management/AddSalaryDialog";
 import ImportSalariesDialog from "@/components/dashboard/finance/salary-management/ImportSalariesDialog";
 import SalaryDetailsDialog from "@/components/dashboard/finance/salary-management/SalaryDetailsDialog";
 import SalaryActionDialog from "@/components/dashboard/finance/salary-management/SalaryActionDialog";
-import {
-  SALARY_ROWS,
-  SALARY_SUMMARY_CARDS,
-  RECENT_ACTIVITIES,
-} from "@/lib/fixtures/salary-management-reference-fixture";
-import type { SalaryRow } from "@/lib/fixtures/salary-management-reference-fixture";
+import { getToken } from "@/lib/auth";
+import { listSalaryRecords } from "@/lib/services/financeService";
+
+interface SalaryRow {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  designation: string;
+  basicSalary: number;
+  netSalary: number;
+  status: "Paid" | "Partial" | "Pending";
+  employeeType: "Teaching Staff" | "Non-Teaching Staff";
+}
+
+const formatCurrency = (value: number) =>
+  `INR ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+function mapSalary(item: Record<string, unknown>): SalaryRow {
+  const rawStatus = String(item.status ?? item.payment_status ?? "").toUpperCase();
+  return {
+    id: String(item.id ?? crypto.randomUUID()),
+    employeeId: String(item.employee_id ?? item.staff_id ?? item.id ?? "-"),
+    employeeName: String(item.employee_name ?? item.staff_name ?? item.name ?? "-"),
+    department: String(item.department ?? item.department_name ?? "-"),
+    designation: String(item.designation ?? item.role ?? "-"),
+    basicSalary: Number(item.basic_salary ?? item.gross_salary ?? item.amount ?? 0),
+    netSalary: Number(item.net_salary ?? item.amount_paid ?? item.amount ?? 0),
+    status: rawStatus === "PAID" ? "Paid" : rawStatus === "PARTIAL" ? "Partial" : "Pending",
+    employeeType: String(item.employee_type ?? item.staff_type ?? "").toLowerCase().includes("non")
+      ? "Non-Teaching Staff"
+      : "Teaching Staff",
+  };
+}
+
+function EmptyPanel({ title }: { title: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
+      {title}
+    </div>
+  );
+}
 
 export default function SalaryManagementPage() {
-  const [salaries, setSalaries] = useState<SalaryRow[]>(SALARY_ROWS);
+  const [salaries, setSalaries] = useState<SalaryRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [viewSalary, setViewSalary] = useState<SalaryRow | null>(null);
@@ -49,6 +82,30 @@ export default function SalaryManagementPage() {
     setToast({ open: true, message });
     setTimeout(() => setToast({ open: false, message: "" }), 3000);
   };
+
+  useEffect(() => {
+    const loadSalaries = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoadError("Please log in to view salaries.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const rows = await listSalaryRecords(token);
+        setSalaries(rows.map((item) => mapSalary(item as Record<string, unknown>)));
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load salaries.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadSalaries();
+  }, []);
 
   const handleAddSalary = (newSalary: SalaryRow) => {
     setSalaries((prev) => [newSalary, ...prev]);
@@ -141,6 +198,67 @@ export default function SalaryManagementPage() {
     return result;
   }, [salaries, department, employeeType, designation, paymentStatus, search]);
 
+  const salarySummaryCards = useMemo(() => {
+    const totalPayroll = salaries.reduce((sum, salary) => sum + salary.netSalary, 0);
+    const paidCount = salaries.filter((salary) => salary.status === "Paid").length;
+    const pendingCount = salaries.filter((salary) => salary.status === "Pending").length;
+    const partialCount = salaries.filter((salary) => salary.status === "Partial").length;
+
+    return [
+      {
+        title: "Total Payroll",
+        value: formatCurrency(totalPayroll),
+        footer: `${salaries.length} records from finance API`,
+        iconBg: "bg-purple-50",
+        iconColor: "text-purple-600",
+        sparkline: [],
+        sparkColor: "#7c3aed",
+        icon: "wallet" as const,
+      },
+      {
+        title: "Paid",
+        value: String(paidCount),
+        footer: "Loaded from finance API",
+        iconBg: "bg-emerald-50",
+        iconColor: "text-emerald-600",
+        sparkline: [],
+        sparkColor: "#059669",
+        icon: "card" as const,
+      },
+      {
+        title: "Pending",
+        value: String(pendingCount),
+        footer: "Loaded from finance API",
+        iconBg: "bg-amber-50",
+        iconColor: "text-amber-600",
+        sparkline: [],
+        sparkColor: "#d97706",
+        icon: "clock" as const,
+      },
+      {
+        title: "Partial",
+        value: String(partialCount),
+        footer: "Loaded from finance API",
+        iconBg: "bg-blue-50",
+        iconColor: "text-blue-600",
+        sparkline: [],
+        sparkColor: "#2563eb",
+        icon: "chart" as const,
+      },
+    ];
+  }, [salaries]);
+
+  const recentSalaryActivities = useMemo(() =>
+    salaries.slice(0, 5).map((salary) => ({
+      icon: salary.status === "Paid" ? "check" as const : "document" as const,
+      text: `${salary.status} salary: ${salary.employeeName}`,
+      secondary: `${salary.department} - ${formatCurrency(salary.netSalary)}`,
+      date: month,
+      iconBg: salary.status === "Paid" ? "bg-emerald-50" : "bg-amber-50",
+      iconColor: salary.status === "Paid" ? "text-emerald-600" : "text-amber-600",
+    })),
+  [salaries, month]);
+
   return (
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
       <div className="p-6">
@@ -151,7 +269,19 @@ export default function SalaryManagementPage() {
             onMoreOptions={handleThreeDotMenu}
           />
 
-          <SalarySummaryCards cards={SALARY_SUMMARY_CARDS} />
+          {loadError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              Loading salaries...
+            </div>
+          )}
+
+          <SalarySummaryCards cards={salarySummaryCards} />
 
           <SalaryFilters
             month={month}
@@ -172,29 +302,35 @@ export default function SalaryManagementPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2">
-              <EmployeeSalaryOverview
-                rows={filteredSalaries}
-                onView={handleViewSalary}
-                onDownload={handleDownload}
-                onMore={handleMoreOptions}
-                originalTotal={128}
-              />
+              {!isLoading && !loadError && filteredSalaries.length === 0 ? (
+                <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
+                  No salary records found.
+                </div>
+              ) : (
+                <EmployeeSalaryOverview
+                  rows={filteredSalaries}
+                  onView={handleViewSalary}
+                  onDownload={handleDownload}
+                  onMore={handleMoreOptions}
+                  originalTotal={filteredSalaries.length}
+                />
+              )}
             </div>
             <div className="space-y-6">
-              <PayrollSummaryChart />
-              <SalaryComponentsCard />
+              <EmptyPanel title="No payroll summary chart data available." />
+              <EmptyPanel title="No salary component data available." />
               <SalaryQuickActions onAction={handleQuickAction} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <PayrollTrendChart />
-            <TopDepartmentsByPayroll />
+            <EmptyPanel title="No payroll trend data available." />
+            <EmptyPanel title="No department payroll data available." />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <RecentSalaryActivities items={RECENT_ACTIVITIES} />
-            <MonthlySalarySummaryCards />
+            <RecentSalaryActivities items={recentSalaryActivities} />
+            <EmptyPanel title="No monthly salary summary data available." />
           </div>
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">

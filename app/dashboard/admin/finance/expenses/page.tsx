@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -17,22 +17,55 @@ import AddExpenseDialog from "@/components/dashboard/finance/expenses/AddExpense
 import ImportExpensesDialog from "@/components/dashboard/finance/expenses/ImportExpensesDialog";
 import ExpenseDetailsDialog from "@/components/dashboard/finance/expenses/ExpenseDetailsDialog";
 import ExpenseActionDialog from "@/components/dashboard/finance/expenses/ExpenseActionDialog";
-import {
-  EXPENSES,
-  SUMMARY_CARDS,
-  TOP_EXPENSE_CATEGORIES,
-  BUDGET_VS_ACTUAL,
-  BUDGET_UTILIZATION,
-  PAYMENT_MODE_SEGMENTS,
-  PAYMENT_MODE_TOTAL,
-  RECENT_ACTIVITIES,
-  EXPENSE_QUICK_ACTIONS,
-  TOTAL_EXPENSES_COUNT,
-} from "@/lib/fixtures/expenses-management-reference-fixture";
-import type { Expense } from "@/lib/fixtures/expenses-management-reference-fixture";
+import { getToken } from "@/lib/auth";
+import { listExpenses } from "@/lib/services/financeService";
+
+interface Expense {
+  id: string;
+  expenseId: string;
+  expenseDate: string;
+  expenseName: string;
+  category: string;
+  department: string;
+  amount: number;
+  paymentMode: string;
+  status: "Approved" | "Pending" | "Rejected";
+  refNo?: string;
+  vendor?: string;
+  description?: string;
+}
+
+const EXPENSE_QUICK_ACTIONS = [
+  { label: "Add Expense", icon: "plus", color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  { label: "Import Expenses", icon: "upload", color: "text-blue-600", bgColor: "bg-blue-50" },
+  { label: "Export Report", icon: "download", color: "text-purple-600", bgColor: "bg-purple-50" },
+];
+
+const formatCurrency = (value: number) =>
+  `INR ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+function mapExpense(item: Record<string, unknown>): Expense {
+  const rawStatus = String(item.status ?? item.approval_status ?? "").toLowerCase();
+  return {
+    id: String(item.id ?? crypto.randomUUID()),
+    expenseId: String(item.expense_id ?? item.voucher_number ?? item.reference_no ?? item.id ?? "-"),
+    expenseDate: String(item.expense_date ?? item.date ?? item.created_at ?? "-"),
+    expenseName: String(item.expense_name ?? item.title ?? item.description ?? "Expense"),
+    category: String(item.category ?? item.expense_category ?? "Expense"),
+    department: String(item.department ?? item.department_name ?? "-"),
+    amount: Number(item.amount ?? 0),
+    paymentMode: String(item.payment_mode ?? item.payment_method ?? "-"),
+    status: rawStatus === "rejected" ? "Rejected" : rawStatus === "pending" ? "Pending" : "Approved",
+    refNo: item.reference_no ? String(item.reference_no) : undefined,
+    vendor: item.vendor ? String(item.vendor) : undefined,
+    description: item.description ? String(item.description) : undefined,
+  };
+}
 
 export default function ExpensesManagementPage() {
-  const [expenses, setExpenses] = useState<Expense[]>(EXPENSES);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [viewExpense, setViewExpense] = useState<Expense | null>(null);
@@ -55,13 +88,37 @@ export default function ExpensesManagementPage() {
   const [department, setDepartment] = useState("All Departments");
   const [category, setCategory] = useState("All Categories");
   const [paymentMode, setPaymentMode] = useState("All Modes");
-  const [dateRange, setDateRange] = useState("12 May 2025 - 18 May 2025");
+  const [dateRange, setDateRange] = useState("This Month");
   const [search, setSearch] = useState("");
 
   const showToast = (message: string) => {
     setToast({ open: true, message });
     setTimeout(() => setToast({ open: false, message: "" }), 3000);
   };
+
+  useEffect(() => {
+    const loadExpenses = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoadError("Please log in to view expenses.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const rows = await listExpenses(token);
+        setExpenses(rows.map((item) => mapExpense(item as Record<string, unknown>)));
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load expenses.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadExpenses();
+  }, []);
 
   const handleAddExpense = (newExpense: Expense) => {
     setExpenses((prev) => [newExpense, ...prev]);
@@ -182,7 +239,7 @@ export default function ExpensesManagementPage() {
     setDepartment("All Departments");
     setCategory("All Categories");
     setPaymentMode("All Modes");
-    setDateRange("12 May 2025 - 18 May 2025");
+    setDateRange("This Month");
     setSearch("");
   };
 
@@ -223,6 +280,95 @@ export default function ExpensesManagementPage() {
     return result;
   }, [expenses, department, category, paymentMode, search]);
 
+  const totalExpenseAmount = useMemo(
+    () => expenses.reduce((sum, expense) => sum + expense.amount, 0),
+    [expenses],
+  );
+
+  const summaryCards = useMemo(() => [
+    {
+      title: "Total Expenses",
+      value: formatCurrency(totalExpenseAmount),
+      footer: `${expenses.length} records from finance API`,
+      iconBg: "bg-pink-50",
+      iconColor: "text-pink-600",
+      sparkline: [],
+      sparkColor: "#db2777",
+      icon: "money" as const,
+    },
+    {
+      title: "Approved",
+      value: String(expenses.filter((expense) => expense.status === "Approved").length),
+      footer: "Loaded from finance API",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      sparkline: [],
+      sparkColor: "#059669",
+      icon: "wallet" as const,
+    },
+    {
+      title: "Pending",
+      value: String(expenses.filter((expense) => expense.status === "Pending").length),
+      footer: "Loaded from finance API",
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-600",
+      sparkline: [],
+      sparkColor: "#d97706",
+      icon: "clock" as const,
+    },
+    {
+      title: "Rejected",
+      value: String(expenses.filter((expense) => expense.status === "Rejected").length),
+      footer: "Loaded from finance API",
+      iconBg: "bg-red-50",
+      iconColor: "text-red-600",
+      sparkline: [],
+      sparkColor: "#dc2626",
+      icon: "warning" as const,
+    },
+  ], [expenses, totalExpenseAmount]);
+
+  const topExpenseCategories = useMemo(() => {
+    const totals = expenses.reduce<Record<string, number>>((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] ?? 0) + expense.amount;
+      return acc;
+    }, {});
+    return Object.entries(totals).map(([categoryName, amount]) => ({
+      category: categoryName,
+      amount: formatCurrency(amount),
+      percentage: totalExpenseAmount > 0 ? `${Math.round((amount / totalExpenseAmount) * 100)}%` : "0%",
+      barWidth: totalExpenseAmount > 0 ? Math.round((amount / totalExpenseAmount) * 100) : 0,
+      amountNum: amount,
+    }));
+  }, [expenses, totalExpenseAmount]);
+
+  const paymentModeSegments = useMemo(() => {
+    const colors = ["#10b981", "#3b82f6", "#f59e0b", "#7c3aed", "#ef4444"];
+    const totals = expenses.reduce<Record<string, number>>((acc, expense) => {
+      acc[expense.paymentMode] = (acc[expense.paymentMode] ?? 0) + expense.amount;
+      return acc;
+    }, {});
+    return Object.entries(totals).map(([label, amount], index) => ({
+      label,
+      value: formatCurrency(amount),
+      amountNum: amount,
+      percentage: totalExpenseAmount > 0 ? `${Math.round((amount / totalExpenseAmount) * 100)}%` : "0%",
+      color: colors[index % colors.length],
+    }));
+  }, [expenses, totalExpenseAmount]);
+
+  const recentActivities = useMemo(() =>
+    expenses.slice(0, 5).map((expense) => ({
+      id: expense.id,
+      text: expense.expenseName,
+      subText: `${expense.category} - ${formatCurrency(expense.amount)}`,
+      date: expense.expenseDate,
+      type: expense.status === "Approved" ? "approved" as const : expense.status === "Rejected" ? "rejected" as const : "pending" as const,
+      iconColor: expense.status === "Approved" ? "text-emerald-600" : expense.status === "Rejected" ? "text-red-600" : "text-amber-600",
+      bgColor: expense.status === "Approved" ? "bg-emerald-50" : expense.status === "Rejected" ? "bg-red-50" : "bg-amber-50",
+    })),
+  [expenses]);
+
   return (
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
       <div className="p-6">
@@ -233,7 +379,19 @@ export default function ExpensesManagementPage() {
             onMoreOptions={handleThreeDotMenu}
           />
 
-          <ExpenseSummaryCards cards={SUMMARY_CARDS} />
+          {loadError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              Loading expenses...
+            </div>
+          )}
+
+          <ExpenseSummaryCards cards={summaryCards} />
 
           <ExpenseFilters
             financialYear={financialYear}
@@ -252,21 +410,27 @@ export default function ExpensesManagementPage() {
             onReset={handleReset}
           />
 
-          <ExpensesList
-            expenses={filteredExpenses}
-            onView={handleViewExpense}
-            onDownload={handleDownload}
-            onAction={handleRowAction}
-          />
+          {!isLoading && !loadError && filteredExpenses.length === 0 ? (
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
+              No expenses found.
+            </div>
+          ) : (
+            <ExpensesList
+              expenses={filteredExpenses}
+              onView={handleViewExpense}
+              onDownload={handleDownload}
+              onAction={handleRowAction}
+            />
+          )}
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-            <TopExpenseCategories data={TOP_EXPENSE_CATEGORIES} />
-            <BudgetVsActual data={BUDGET_VS_ACTUAL} utilization={BUDGET_UTILIZATION} />
-            <ExpensePaymentModeChart segments={PAYMENT_MODE_SEGMENTS} total={PAYMENT_MODE_TOTAL} />
+            <TopExpenseCategories data={topExpenseCategories} />
+            <BudgetVsActual data={[]} utilization={0} />
+            <ExpensePaymentModeChart segments={paymentModeSegments} total={formatCurrency(totalExpenseAmount)} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <RecentExpenseActivities items={RECENT_ACTIVITIES} onViewAll={handleViewAllActivities} />
+            <RecentExpenseActivities items={recentActivities} onViewAll={handleViewAllActivities} />
             <ExpenseQuickActions items={EXPENSE_QUICK_ACTIONS} onAction={handleQuickAction} />
           </div>
 

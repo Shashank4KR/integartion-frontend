@@ -1,5 +1,37 @@
 const BASE = "/api/transport";
 
+async function parseError(response: Response, fallback: string): Promise<Error> {
+  try {
+    const data = (await response.json()) as { detail?: string; message?: string };
+    return new Error(data.detail ?? data.message ?? fallback);
+  } catch {
+    return new Error(fallback);
+  }
+}
+
+function unwrapItems(payload: unknown): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const record = payload as {
+    data?: unknown;
+    items?: unknown;
+    results?: unknown;
+  };
+
+  if (Array.isArray(record.data)) return record.data;
+  if (Array.isArray(record.items)) return record.items;
+  if (Array.isArray(record.results)) return record.results;
+
+  if (record.data && typeof record.data === "object") {
+    const data = record.data as { items?: unknown; results?: unknown };
+    if (Array.isArray(data.items)) return data.items;
+    if (Array.isArray(data.results)) return data.results;
+  }
+
+  return [];
+}
+
 export async function listTransportRoutes(
   token: string,
 ): Promise<any[]> {
@@ -8,11 +40,10 @@ export async function listTransportRoutes(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch transport routes.");
+    throw await parseError(response, "Failed to fetch transport routes.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function getTransportRoute(
@@ -24,8 +55,7 @@ export async function getTransportRoute(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch transport route.");
+    throw await parseError(response, "Failed to fetch transport route.");
   }
 
   return (await response.json()) as any;
@@ -45,8 +75,7 @@ export async function createTransportRoute(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to create transport route.");
+    throw await parseError(response, "Failed to create transport route.");
   }
 
   return (await response.json()) as any;
@@ -67,8 +96,7 @@ export async function updateTransportRoute(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to update transport route.");
+    throw await parseError(response, "Failed to update transport route.");
   }
 
   return (await response.json()) as any;
@@ -84,8 +112,7 @@ export async function deleteTransportRoute(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to delete transport route.");
+    throw await parseError(response, "Failed to delete transport route.");
   }
 }
 
@@ -97,11 +124,10 @@ export async function listVehicles(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch vehicles.");
+    throw await parseError(response, "Failed to fetch vehicles.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function getVehicle(
@@ -113,8 +139,7 @@ export async function getVehicle(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch vehicle.");
+    throw await parseError(response, "Failed to fetch vehicle.");
   }
 
   return (await response.json()) as any;
@@ -134,8 +159,7 @@ export async function createVehicle(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to create vehicle.");
+    throw await parseError(response, "Failed to create vehicle.");
   }
 
   return (await response.json()) as any;
@@ -156,8 +180,7 @@ export async function updateVehicle(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to update vehicle.");
+    throw await parseError(response, "Failed to update vehicle.");
   }
 
   return (await response.json()) as any;
@@ -173,8 +196,7 @@ export async function deleteVehicle(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to delete vehicle.");
+    throw await parseError(response, "Failed to delete vehicle.");
   }
 }
 
@@ -186,11 +208,10 @@ export async function listDrivers(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to fetch drivers.");
+    throw await parseError(response, "Failed to fetch drivers.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapItems(await response.json());
 }
 
 export async function assignDriver(
@@ -207,8 +228,7 @@ export async function assignDriver(
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to assign driver.");
+    throw await parseError(response, "Failed to assign driver.");
   }
 
   return (await response.json()) as any;

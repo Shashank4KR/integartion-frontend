@@ -1,90 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
 import CommunicationOverviewPageHeader from "@/components/dashboard/communication/CommunicationOverviewPageHeader";
 import CommunicationOverviewSummaryCards from "@/components/dashboard/communication/CommunicationOverviewSummaryCards";
-import CommunicationActivityChart from "@/components/dashboard/communication/CommunicationActivityChart";
+import Card from "@/components/shared/Card";
 import CommunicationRecentHighlights from "@/components/dashboard/communication/CommunicationRecentHighlights";
 import CommunicationDeliveryHealth from "@/components/dashboard/communication/CommunicationDeliveryHealth";
 import CommunicationQuickNavigation from "@/components/dashboard/communication/CommunicationQuickNavigation";
 import CommunicationOverviewDialogs from "@/components/dashboard/communication/CommunicationOverviewDialogs";
-import type { OverviewSummaryCard, HighlightItem, DeliveryHealthData, QuickNavigationItem } from "@/lib/fixtures/communication-overview-reference-fixture";
+import { getToken } from "@/lib/auth";
+import { getCommunicationStats } from "@/lib/services/communicationService";
 
-const OVERVIEW_SUMMARY_CARDS: OverviewSummaryCard[] = [
-  {
-    title: "Messages This Month",
-    value: "1,245",
-    footer: "Across all channels",
-    icon: "send",
-    iconBg: "bg-purple-50",
-    iconColor: "text-[#7c3aed]",
-    sparkline: [18, 22, 19, 25, 23, 28, 26, 30, 27, 32],
-    sparkColor: "#7c3aed",
-  },
-  {
-    title: "Delivery Rate",
-    value: "98.6%",
-    footer: "2,403 successfully delivered",
-    icon: "check-circle",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-500",
-    sparkline: [10, 12, 11, 14, 13, 16, 15, 18, 17, 20],
-    sparkColor: "#10b981",
-  },
-  {
-    title: "Active Conversations",
-    value: "24",
-    footer: "12 unread conversations",
-    icon: "chat",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-500",
-    sparkline: [8, 10, 9, 11, 10, 12, 11, 13, 12, 14],
-    sparkColor: "#3b82f6",
-  },
-  {
-    title: "Published Updates",
-    value: "18",
-    footer: "Announcements, circulars and events",
-    icon: "megaphone",
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-500",
-    sparkline: [3, 5, 4, 6, 5, 7, 6, 8, 7, 9],
-    sparkColor: "#f97316",
-  },
-];
-
-const RECENT_HIGHLIGHTS: HighlightItem[] = [
-  {
-    type: "conversation",
-    icon: "chat",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-500",
-    title: "Class 10-A Parents Group",
-    text: "12 unread messages",
-    time: "10:30 AM",
-  },
-  {
-    type: "announcement",
-    icon: "megaphone",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-500",
-    title: "Summer Vacation Notice",
-    text: "Published to all students and parents",
-    time: "18 May 2025",
-  },
-  {
-    type: "circular",
-    icon: "file-text",
-    iconBg: "bg-pink-50",
-    iconColor: "text-pink-500",
-    title: "Fee Payment Reminder",
-    text: "Sent to 154 parents with pending fees",
-    time: "15 May 2025",
-  },
-];
+type OverviewSummaryCard = any;
+type HighlightItem = any;
+type DeliveryHealthData = any;
+type QuickNavigationItem = any;
 
 const QUICK_NAVIGATION_ITEMS: QuickNavigationItem[] = [
   {
@@ -121,14 +54,15 @@ const QUICK_NAVIGATION_ITEMS: QuickNavigationItem[] = [
   },
 ];
 
-const DELIVERY_HEALTH: DeliveryHealthData = {
-  rate: 98.6,
-  delivered: 2403,
-  failed: 35,
-  topChannel: "SMS",
-};
-
 export default function CommunicationOverviewPage() {
+  const [summaryCards, setSummaryCards] = useState<OverviewSummaryCard[]>([]);
+  const [deliveryHealth, setDeliveryHealth] = useState<DeliveryHealthData>({
+    rate: 0,
+    delivered: 0,
+    failed: 0,
+    topChannel: "-",
+  });
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
   const [sendNotificationOpen, setSendNotificationOpen] = useState(false);
@@ -160,6 +94,73 @@ export default function CommunicationOverviewPage() {
     showToast("Template opened for editing");
   };
 
+  useEffect(() => {
+    const loadStats = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoadError("Please log in to view communication statistics.");
+        return;
+      }
+
+      try {
+        setLoadError(null);
+        const stats = await getCommunicationStats(token);
+        setSummaryCards([
+          {
+            title: "Messages This Month",
+            value: String(stats.total_messages ?? 0),
+            footer: "Loaded from communication API",
+            icon: "send",
+            iconBg: "bg-purple-50",
+            iconColor: "text-[#7c3aed]",
+            sparkline: [],
+            sparkColor: "#7c3aed",
+          },
+          {
+            title: "Delivery Rate",
+            value: `${Number(stats.delivery_rate ?? 0)}%`,
+            footer: `${stats.delivered ?? 0} delivered`,
+            icon: "check-circle",
+            iconBg: "bg-emerald-50",
+            iconColor: "text-emerald-500",
+            sparkline: [],
+            sparkColor: "#10b981",
+          },
+          {
+            title: "Unread Messages",
+            value: String(stats.unread_messages ?? 0),
+            footer: "Loaded from communication API",
+            icon: "chat",
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-500",
+            sparkline: [],
+            sparkColor: "#3b82f6",
+          },
+          {
+            title: "Published Updates",
+            value: String(stats.total_announcements ?? 0),
+            footer: "Announcements from database",
+            icon: "megaphone",
+            iconBg: "bg-orange-50",
+            iconColor: "text-orange-500",
+            sparkline: [],
+            sparkColor: "#f97316",
+          },
+        ]);
+        setDeliveryHealth({
+          rate: Number(stats.delivery_rate ?? 0),
+          delivered: Number(stats.delivered ?? 0),
+          failed: Number(stats.failed ?? 0),
+          topChannel: "-",
+        });
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load communication statistics.");
+      }
+    };
+
+    void loadStats();
+  }, []);
+
   return (
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
       <div className="p-6">
@@ -169,13 +170,21 @@ export default function CommunicationOverviewPage() {
             onCreateAnnouncement={() => setCreateAnnouncementOpen(true)}
           />
 
-          <CommunicationOverviewSummaryCards cards={OVERVIEW_SUMMARY_CARDS} />
+          {loadError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
 
-          <CommunicationActivityChart />
+          <CommunicationOverviewSummaryCards cards={summaryCards} />
+
+          <Card className="mb-6 p-5">
+            <p className="text-sm text-slate-600">No communication activity trend data available.</p>
+          </Card>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-            <CommunicationRecentHighlights items={RECENT_HIGHLIGHTS} />
-            <CommunicationDeliveryHealth data={DELIVERY_HEALTH} />
+            <CommunicationRecentHighlights items={[]} />
+            <CommunicationDeliveryHealth data={deliveryHealth} />
           </div>
 
           <CommunicationQuickNavigation

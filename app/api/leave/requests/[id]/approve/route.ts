@@ -18,9 +18,9 @@ export async function POST(
     const authHeader = request.headers.get("authorization");
 
     const response = await fetch(
-      `${backendUrl}/leave/requests/${encodeURIComponent(id)}/approve`,
+      `${backendUrl}/leave-requests/${encodeURIComponent(id)}/approve`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           ...(authHeader ? { Authorization: authHeader } : {}),
