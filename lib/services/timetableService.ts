@@ -100,6 +100,28 @@ export async function getClassTimetable(
   return JSON.parse(text) as TimetableResponse[];
 }
 
+export type StudentTimetableResponse = TimetableResponse & {
+  subject_name?: string | null;
+  teacher_name?: string | null;
+};
+
+export async function getCurrentStudentTimetable(
+  token: string,
+): Promise<StudentTimetableResponse[]> {
+  const response = await fetch("/api/students/me/timetable", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch your timetable.");
+  }
+
+  const text = await response.text();
+  if (!text) return [];
+  return JSON.parse(text) as StudentTimetableResponse[];
+}
+
 export async function deleteTimetable(
   token: string,
   id: string,

@@ -169,6 +169,21 @@ export async function getStudentAttendanceSummary(
   });
 }
 
+export async function getCurrentStudentAttendanceSummary(
+  token: string,
+): Promise<StudentAttendanceSummary> {
+  const response = await fetch("/api/students/me/attendance", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch your attendance summary.");
+  }
+
+  return (await response.json()) as StudentAttendanceSummary;
+}
+
 export async function getAttendanceByTeacher(
   token: string,
   teacherId: string,

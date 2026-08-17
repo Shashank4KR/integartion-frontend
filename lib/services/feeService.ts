@@ -48,3 +48,15 @@ export async function getStudentFeeSummary(
   return await response.json();
 }
 
+export async function getCurrentStudentFees(token: string): Promise<any> {
+  const response = await fetch(`${BASE}/me/fees`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch your fee information.");
+  }
+
+  return await response.json();
+}

@@ -102,6 +102,19 @@ export async function getStudentExamResults(
   return (await response.json()) as any[];
 }
 
+export async function getCurrentStudentExamResults(token: string): Promise<any[]> {
+  const response = await fetch(`${BASE}/me/exam-results`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch your exam results.");
+  }
+
+  return (await response.json()) as any[];
+}
+
 export async function getStudentReportCards(
   token: string,
   studentId: string,

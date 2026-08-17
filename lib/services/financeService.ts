@@ -192,6 +192,38 @@ export async function listTransactions(
   return unwrapItems(await response.json());
 }
 
+export async function listPayments(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch(`${BASE}/payments`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch payments.");
+  }
+
+  return unwrapItems(await response.json());
+}
+
+export async function getFinanceReport(
+  token: string,
+  report: string,
+  query = "",
+): Promise<any> {
+  const response = await fetch(`${BASE}/reports/${report}${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? `Failed to fetch ${report} report.`);
+  }
+
+  return unwrapData(await response.json(), {});
+}
+
 export async function recordTransaction(
   token: string,
   payload: any,

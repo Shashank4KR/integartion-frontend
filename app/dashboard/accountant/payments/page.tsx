@@ -1,8 +1,7 @@
 "use client";
 
-import RoleComingSoon from "@/components/shared/layout/RoleComingSoon";
-import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
+import AccountantFinancePage from "@/components/dashboard/accountant/AccountantFinancePage";
 
 export default function AccountantPaymentsPage() {
-  return <RoleComingSoon config={ROLE_CONFIGS.accountant} title="Payments" />;
+  return <AccountantFinancePage kind="payments" />;
 }

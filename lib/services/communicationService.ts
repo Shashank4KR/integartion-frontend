@@ -42,6 +42,20 @@ export async function listAnnouncements(
   return unwrapItems(await response.json());
 }
 
+export async function listNotifications(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch(`${BASE}/notifications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to fetch notifications.");
+  }
+
+  return unwrapItems(await response.json());
+}
+
 export async function createAnnouncement(
   token: string,
   payload: any,

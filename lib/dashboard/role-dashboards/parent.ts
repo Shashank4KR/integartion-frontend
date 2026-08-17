@@ -54,6 +54,8 @@ export const parentQuickActions: RoleQuickAction[] = [
   { id: "fees", label: "Pay Fees", icon: Wallet, href: "/dashboard/parent/fees" },
   { id: "message", label: "Message Teacher", icon: MessageSquare, href: "/dashboard/parent/messages" },
   { id: "attendance", label: "View Attendance", icon: CheckCircle2, href: "/dashboard/parent/attendance" },
+  { id: "notifications", label: "Notifications", icon: Megaphone, href: "/dashboard/parent/notifications" },
+  { id: "events", label: "Events", icon: CalendarClock, href: "/dashboard/parent/events" },
 ];
 
 export const childProfile: InfoRow[] = [

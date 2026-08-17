@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { getClassTimetable } from "@/lib/services/timetableService";
-import type { StudentResponse } from "@/types/entities/student";
-import type { TimetableResponse } from "@/types/entities/timetable";
+import { getCurrentStudentProfile } from "@/lib/services/dashboardService";
+import {
+  getCurrentStudentTimetable,
+  type StudentTimetableResponse,
+} from "@/lib/services/timetableService";
 
 const WEEK_DAYS = [
   "Monday",
@@ -18,54 +21,29 @@ const WEEK_DAYS = [
   "Sunday",
 ];
 
-function getStoredStudent(): StudentResponse | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("edtech_student");
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw) as StudentResponse;
-  } catch {
-    return null;
-  }
-}
-
 export default function StudentTimetablePage() {
-  const [student, setStudent] = useState<StudentResponse | null>(null);
-  const [timetable, setTimetable] = useState<TimetableResponse[]>([]);
+  const router = useRouter();
+  const [studentClass, setStudentClass] = useState<string | null>(null);
+  const [timetable, setTimetable] = useState<StudentTimetableResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = getStoredStudent();
-    if (!stored) {
-      setError("Student profile not found. Please refresh or log in again.");
-      setLoading(false);
-      return;
-    }
-    setStudent(stored);
-  }, []);
-
-  useEffect(() => {
-    if (!student) return;
-
-    const token = getToken();
-    if (!token) {
-      setError("Authentication token is missing. Please refresh the page.");
-      setLoading(false);
-      return;
-    }
-
-    if (!student.class_id) {
-      setError("Your student profile is not linked to a class yet.");
-      setLoading(false);
-      return;
-    }
-
     const fetchTimetable = async () => {
+      const token = getToken();
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
       try {
-        const entries = await getClassTimetable(token, student.class_id ?? "");
+        const [profile, entries] = await Promise.all([
+          getCurrentStudentProfile(),
+          getCurrentStudentTimetable(token),
+        ]);
+        setStudentClass(profile.class_name ?? profile.class_id ?? null);
         setTimetable(entries ?? []);
+        setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load timetable.");
       } finally {
@@ -73,8 +51,8 @@ export default function StudentTimetablePage() {
       }
     };
 
-    fetchTimetable();
-  }, [student]);
+    void fetchTimetable();
+  }, [router]);
 
   const sortedTimetable = useMemo(() => {
     return [...timetable].sort((a, b) => {
@@ -117,7 +95,7 @@ export default function StudentTimetablePage() {
             <div className="space-y-6">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                 <p>
-                  Class: <span className="font-semibold">{student?.class_name ?? student?.class_id}</span>
+                  Class: <span className="font-semibold">{studentClass ?? "Not assigned"}</span>
                 </p>
                 <p className="mt-1">Total periods: {sortedTimetable.length}</p>
               </div>
@@ -142,8 +120,8 @@ export default function StudentTimetablePage() {
                         <td className="px-4 py-4">
                           {entry.start_time} - {entry.end_time}
                         </td>
-                        <td className="px-4 py-4">{entry.subject_id}</td>
-                        <td className="px-4 py-4">{entry.teacher_id}</td>
+                        <td className="px-4 py-4">{entry.subject_name ?? entry.subject_id}</td>
+                        <td className="px-4 py-4">{entry.teacher_name ?? entry.teacher_id}</td>
                         <td className="px-4 py-4">{entry.room_no ?? "—"}</td>
                       </tr>
                     ))}

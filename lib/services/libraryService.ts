@@ -77,6 +77,18 @@ export async function listStudentBookIssues(
   return unwrapItems(await response.json());
 }
 
+export async function getCurrentStudentLibrary(token: string): Promise<any> {
+  const response = await fetch("/api/students/me/library", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to fetch your library data.");
+  }
+
+  return unwrapData(await response.json(), {});
+}
+
 export async function listBooks(token: string): Promise<any[]> {
   const response = await fetch("/api/books", {
     headers: { Authorization: `Bearer ${token}` },

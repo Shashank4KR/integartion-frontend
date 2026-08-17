@@ -88,7 +88,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Attendance", icon: CheckCircle2, href: "/dashboard/parent/attendance" },
       { label: "Fees", icon: Wallet, href: "/dashboard/parent/fees" },
       { label: "Messages", icon: MessageSquare, href: "/dashboard/parent/messages" },
-      { label: "Notices", icon: Megaphone, href: "/dashboard/parent/notices" },
+      { label: "Notifications", icon: Megaphone, href: "/dashboard/parent/notifications" },
       { label: "Events", icon: CalendarDays, href: "/dashboard/parent/events" },
     ],
   },
