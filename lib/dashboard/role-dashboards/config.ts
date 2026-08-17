@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Clock,
   Wrench,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import type { RoleConfig } from "./types";
@@ -40,6 +41,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Transport", icon: Bus, href: "/dashboard/admin/transport" },
       { label: "Hostel", icon: BedDouble, href: "/dashboard/admin/hostel" },
       { label: "Reports", icon: ScrollText, href: "/dashboard/admin/reports" },
+      { label: "Settings", icon: Settings, href: "/dashboard/admin/settings" },
     ],
   },
   student: {
@@ -57,6 +59,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Fees", icon: Wallet, href: "/dashboard/student/fees" },
       { label: "Library", icon: Library, href: "/dashboard/student/library" },
       { label: "Notices", icon: Megaphone, href: "/dashboard/student/notices" },
+      { label: "Settings", icon: Settings, href: "/dashboard/student/settings" },
     ],
   },
   teacher: {
@@ -74,6 +77,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Marks", icon: FileBarChart, href: "/dashboard/teacher/marks" },
       { label: "Messages", icon: MessageSquare, href: "/dashboard/teacher/messages" },
       { label: "Events", icon: Megaphone, href: "/dashboard/teacher/events" },
+      { label: "Settings", icon: Settings, href: "/dashboard/teacher/settings" },
     ],
   },
   parent: {
@@ -90,6 +94,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Messages", icon: MessageSquare, href: "/dashboard/parent/messages" },
       { label: "Notifications", icon: Megaphone, href: "/dashboard/parent/notifications" },
       { label: "Events", icon: CalendarDays, href: "/dashboard/parent/events" },
+      { label: "Settings", icon: Settings, href: "/dashboard/parent/settings" },
     ],
   },
   accountant: {
@@ -105,6 +110,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Dues", icon: FileBarChart, href: "/dashboard/accountant/dues" },
       { label: "Defaulters", icon: Users2, href: "/dashboard/accountant/defaulters" },
       { label: "Reports", icon: ScrollText, href: "/dashboard/accountant/reports" },
+      { label: "Settings", icon: Settings, href: "/dashboard/accountant/settings" },
     ],
   },
   librarian: {
@@ -120,6 +126,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Catalog", icon: Library, href: "/dashboard/librarian/catalog" },
       { label: "Overdue", icon: ScrollText, href: "/dashboard/librarian/overdue" },
       { label: "Fines", icon: Wallet, href: "/dashboard/librarian/fines" },
+      { label: "Settings", icon: Settings, href: "/dashboard/librarian/settings" },
     ],
   },
   warden: {

@@ -41,7 +41,7 @@ export default function StudentTimetablePage() {
           getCurrentStudentProfile(),
           getCurrentStudentTimetable(token),
         ]);
-        setStudentClass(profile.class_name ?? profile.class_id ?? null);
+        setStudentClass(profile.class_name ?? null);
         setTimetable(entries ?? []);
         setError(null);
       } catch (err) {

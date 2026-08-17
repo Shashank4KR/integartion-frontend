@@ -51,7 +51,7 @@ export default function HostelStudentsPage() {
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
       <div className="p-6">
         <div className="mx-auto max-w-[1400px]">
-          <HostelStudentsPageHeader onAddStudent={() => {}} onMoreOptions={() => {}} />
+          <HostelStudentsPageHeader onAddClick={() => {}} onMoreOptions={() => {}} />
           {loadError ? <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div> : null}
           {isLoading ? <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">Loading hostel students...</div> : null}
           {!isLoading && !loadError ? <HostelStudentsSummaryCards cards={cards} /> : null}

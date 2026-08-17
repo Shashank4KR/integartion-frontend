@@ -13,16 +13,7 @@ import TransportQuickNavigation from "@/components/dashboard/transport/Transport
 import TransportOverviewDialogs from "@/components/dashboard/transport/TransportOverviewDialogs";
 import { getToken } from "@/lib/auth";
 import { listDrivers, listTransportRoutes, listVehicles } from "@/lib/services/transportService";
-
-interface QuickNavItem {
-  title: string;
-  description: string;
-  href: string;
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-  action?: string;
-}
+import type { QuickNavItem } from "@/lib/fixtures/transport-overview-reference-fixture";
 
 const QUICK_NAVIGATION_ITEMS: QuickNavItem[] = [
   { title: "Transport Management", description: "Manage routes and fleet", href: "/dashboard/admin/transport/management", icon: "bus", iconBg: "bg-purple-50", iconColor: "text-purple-600" },

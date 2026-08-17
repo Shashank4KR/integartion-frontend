@@ -42,6 +42,7 @@ export function clearAuth(): void {
   if (!isBrowser()) return;
   localStorage.removeItem(TOKEN_STORAGE_KEY);
   localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem("edtech_student");
 }
 
 export const ROLE_DASHBOARD_PATHS: Record<string, string> = {

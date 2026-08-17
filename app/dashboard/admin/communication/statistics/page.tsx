@@ -175,7 +175,7 @@ export default function CommunicationStatisticsPage() {
           type: item.type ?? "Unknown",
           messages: Number(item.messages ?? 0),
         })));
-        const segments = types.map((item: { type?: string; messages?: number }, index: number) => ({
+        const segments: Array<{ label: string; value: number; percentage: string; color: string }> = types.map((item: { type?: string; messages?: number }, index: number) => ({
           label: item.type ?? "Unknown",
           value: Number(item.messages ?? 0),
           percentage: percent(Number(item.messages ?? 0), totalCommunications),

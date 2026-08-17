@@ -425,7 +425,7 @@ export default function ExpensesManagementPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <TopExpenseCategories data={topExpenseCategories} />
-            <BudgetVsActual data={[]} utilization={0} />
+            <BudgetVsActual data={[]} utilization="0%" />
             <ExpensePaymentModeChart segments={paymentModeSegments} total={formatCurrency(totalExpenseAmount)} />
           </div>
 

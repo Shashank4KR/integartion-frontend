@@ -7,8 +7,7 @@ import SettingsPage, { type SchoolRole } from "@/components/settings/SettingsPag
 const roles: SchoolRole[] = ["Admin", "Teacher", "Student", "Parent", "Librarian", "Accountant"];
 
 function SettingsContent() {
-  const searchParams = useSearchParams();
-  const requestedRole = searchParams.get("role");
+  const requestedRole = useSearchParams().get("role");
   const currentRole = roles.find((role) => role.toLowerCase() === requestedRole?.toLowerCase()) ?? "Admin";
 
   return <SettingsPage currentRole={currentRole} />;

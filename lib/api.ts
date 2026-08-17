@@ -9,10 +9,11 @@ export async function handleLogin(
   password: string,
 ): Promise<{ token: string; user: UserResponse }> {
   const data = await loginRequest({ username, password });
+  // Clear the previous identity before resolving and storing the new one.
+  clearAuth();
 
   const user = await getCurrentUser(data.access_token);
 
-  clearAuth();
   saveToken(data.access_token);
   saveUser(user);
 

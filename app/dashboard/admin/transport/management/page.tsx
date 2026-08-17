@@ -21,6 +21,7 @@ import TransportReportDialog from "@/components/dashboard/transport/TransportRep
 import TripDetailsDialog from "@/components/dashboard/transport/TripDetailsDialog";
 import { getToken } from "@/lib/auth";
 import { listDrivers, listTransportRoutes, listVehicles } from "@/lib/services/transportService";
+import type { RouteListItem } from "@/lib/fixtures/transport-management-reference-fixture";
 
 interface VehicleTrip {
   id: string;
@@ -85,7 +86,7 @@ function readNumber(entry: Record<string, unknown>, keys: string[]) {
   return 0;
 }
 
-function mapRouteList(routes: Array<Record<string, unknown>>, vehicles: Array<Record<string, unknown>>, drivers: Array<Record<string, unknown>>) {
+function mapRouteList(routes: Array<Record<string, unknown>>, vehicles: Array<Record<string, unknown>>, drivers: Array<Record<string, unknown>>): RouteListItem[] {
   return routes.map((route, index) => {
     const vehicle = vehicles[index] as Record<string, unknown> | undefined;
     const driver = drivers[index] as Record<string, unknown> | undefined;
