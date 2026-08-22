@@ -14,7 +14,20 @@ export async function listStudents(token: string): Promise<StudentResponse[]> {
 
   return (await response.json()) as StudentResponse[];
 }
+export async function getCurrentStudent(
+  token: string,
+): Promise<StudentResponse> {
+  const response = await fetch(`${BASE}/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch your student profile.");
+  }
+
+  return (await response.json()) as StudentResponse;
+}
 export async function getStudent(
   token: string,
   id: string,
