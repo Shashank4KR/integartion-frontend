@@ -13,6 +13,7 @@ import {
   listPayments,
   listTransactions,
 } from "@/lib/services/financeService";
+import GenerateInvoiceDialog from "@/components/dashboard/accountant/GenerateInvoiceDialog";
 
 type PageKind = "invoices" | "payments" | "dues" | "defaulters" | "reports";
 
@@ -104,8 +105,20 @@ function mapInvoice(item: Record<string, unknown>, paymentTotals: Record<string,
     id: text(item.id, crypto.randomUUID()),
     primary: text(item.invoice_number ?? item.invoice_no ?? item.id),
     secondary: text(item.fee_type ?? item.fee_type_id, "Fee Invoice"),
-    student: text(item.student_name ?? item.student ?? item.student_id),
-    className: text(item.class_name ?? item.class_grade ?? item.class),
+student: (() => {
+  const s = item.student as Record<string, unknown> | undefined;
+  if (s && typeof s === "object") {
+    const name = [s.first_name, s.last_name].filter(Boolean).join(" ").trim();
+    if (name) return name;
+  }
+  return text(item.student_name ?? item.student_id);
+})(),
+    className: (() => {
+  const s = item.student as Record<string, unknown> | undefined;
+  const cls = s?.class_ as Record<string, unknown> | undefined;
+  if (cls?.class_name) return text(cls.class_name);
+  return text(item.class_name ?? item.class_grade ?? item.class);
+})(),
     amount,
     paid,
     balance: num(item.balance_due ?? item.balance ?? Math.max(amount - paid, 0)),
@@ -302,6 +315,7 @@ export default function AccountantFinancePage({ kind }: { kind: PageKind }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showGenerateInvoice, setShowGenerateInvoice] = useState(false);
 
   const loadData = async () => {
     const token = getToken();
@@ -426,14 +440,26 @@ export default function AccountantFinancePage({ kind }: { kind: PageKind }) {
           <h1 className="text-2xl font-bold text-slate-900">{copy.title}</h1>
           <p className="mt-1 text-sm text-slate-600">{copy.subtitle}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadData()}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-        >
-          <RefreshCcw className="h-4 w-4" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          {kind === "invoices" && (
+            <button
+              type="button"
+              onClick={() => setShowGenerateInvoice(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              <FileText className="h-4 w-4" />
+              Generate Invoice
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => void loadData()}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="mb-6">
@@ -510,6 +536,12 @@ export default function AccountantFinancePage({ kind }: { kind: PageKind }) {
         <span>© 2025 EdTech Smart Campus ERP. All rights reserved.</span>
         <span>Version 1.0.0</span>
       </footer>
+
+      <GenerateInvoiceDialog
+        open={showGenerateInvoice}
+        onClose={() => setShowGenerateInvoice(false)}
+        onGenerated={() => void loadData()}
+      />
     </RoleDashboardLayout>
   );
 }
