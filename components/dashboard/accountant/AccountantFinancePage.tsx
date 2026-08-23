@@ -14,7 +14,8 @@ import {
   listTransactions,
 } from "@/lib/services/financeService";
 import GenerateInvoiceDialog from "@/components/dashboard/accountant/GenerateInvoiceDialog";
-
+import { generateInvoicePdf } from "@/lib/utils/generateInvoicePdf";
+import { Download } from "lucide-react";
 type PageKind = "invoices" | "payments" | "dues" | "defaulters" | "reports";
 
 type FinanceRow = {
@@ -192,49 +193,145 @@ function SummaryCards({ cards }: { cards: SummaryCard[] }) {
 }
 
 function DataTable({ rows, kind, onSelect }: { rows: FinanceRow[]; kind: PageKind; onSelect: (row: FinanceRow) => void }) {
+
   return (
+
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[860px] text-left">
+
+      <table className="w-full min-w-[920px] text-left">
+
         <thead>
+
           <tr className="border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-500">
+
             <th className="pb-3 pr-4">{kind === "payments" ? "Receipt" : kind === "dues" || kind === "defaulters" ? "Student" : "Invoice"}</th>
+
             <th className="pb-3 pr-4">Student</th>
+
             <th className="pb-3 pr-4">Class</th>
+
             <th className="pb-3 pr-4">Date</th>
+
             <th className="pb-3 pr-4">Due Date</th>
+
             <th className="pb-3 pr-4 text-right">Amount</th>
+
             <th className="pb-3 pr-4 text-right">Paid</th>
+
             <th className="pb-3 pr-4 text-right">Balance</th>
-            <th className="pb-3">Status</th>
+
+            <th className="pb-3 pr-4">Status</th>
+
+            {kind === "invoices" && <th className="pb-3"></th>}
+
           </tr>
+
         </thead>
+
         <tbody>
+
           {rows.map((row) => (
+
             <tr key={row.id} className="border-b border-slate-100 text-sm hover:bg-slate-50">
+
               <td className="py-3 pr-4">
+
                 <button className="text-left font-semibold text-slate-900 hover:text-[#6d28d9]" onClick={() => onSelect(row)}>
+
                   {row.primary}
+
                 </button>
+
                 <p className="text-xs text-slate-500">{row.secondary}</p>
+
               </td>
+
               <td className="py-3 pr-4 text-slate-700">{row.student}</td>
+
               <td className="py-3 pr-4 text-slate-700">{row.className}</td>
+
               <td className="py-3 pr-4 text-slate-700">{displayDate(row.date)}</td>
+
               <td className="py-3 pr-4 text-slate-700">{displayDate(row.dueDate)}</td>
+
               <td className="py-3 pr-4 text-right font-medium text-slate-900">{money(row.amount)}</td>
+
               <td className="py-3 pr-4 text-right text-slate-700">{money(row.paid)}</td>
+
               <td className="py-3 pr-4 text-right font-medium text-slate-900">{money(row.balance)}</td>
-              <td className="py-3">
+
+              <td className="py-3 pr-4">
+
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+
                   {row.status}
+
                 </span>
+
               </td>
+
+              {kind === "invoices" && (
+
+                <td className="py-3 pl-2">
+
+                  <button
+
+                    onClick={() =>
+
+                      generateInvoicePdf({
+
+                        invoiceNumber: row.primary,
+
+                        studentName: row.student,
+
+                        className: row.className,
+
+                        admissionNo: "-",
+
+                        feeType: row.secondary,
+
+                        amount: row.amount,
+
+                        paid: row.paid,
+
+                        balance: row.balance,
+
+                        status: row.status,
+
+                        invoiceDate: row.date,
+
+                        dueDate: row.dueDate,
+
+                      })
+
+                    }
+
+                    className="rounded-lg border border-slate-300 p-1.5 text-slate-600 hover:bg-slate-50"
+
+                    title="Download PDF"
+
+                  >
+
+                    <Download className="h-4 w-4" />
+
+                  </button>
+
+                </td>
+
+              )}
+
             </tr>
+
           ))}
+
         </tbody>
+
       </table>
+
     </div>
+
   );
+
 }
 
 function DetailsPanel({ row }: { row: FinanceRow | null }) {
