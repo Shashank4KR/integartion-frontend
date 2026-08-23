@@ -95,3 +95,22 @@ export async function getCurrentParentStudents(): Promise<Array<{
 }>> {
   return requestJson(`/api/parents/me/students`);
 }
+export async function getTeacherTimetable(teacherId: string): Promise<any[]> {
+  return requestJson(`/api/teachers/${teacherId}/timetable`);
+}
+
+export async function getTeacherPendingSubmissions(teacherId: string): Promise<any[]> {
+  return requestJson(`/api/teachers/${teacherId}/pending-submissions`);
+}
+
+export async function getTeacherPerformance(teacherId: string): Promise<any[]> {
+  return requestJson(`/api/teachers/${teacherId}/performance`);
+}
+
+export async function getTeacherMessages(teacherId: string): Promise<any[]> {
+  return requestJson(`/api/teachers/${teacherId}/messages`);
+}
+
+export async function getTeacherEvents(teacherId: string): Promise<any[]> {
+  return requestJson(`/api/teachers/${teacherId}/events`);
+}
