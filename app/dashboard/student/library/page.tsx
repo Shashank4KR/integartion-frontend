@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { listStudentBookIssues } from "@/lib/services/libraryService";
+import { getCurrentStudentLibrary } from "@/lib/services/studentService";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, BookOpen } from "lucide-react";
 
@@ -29,28 +29,23 @@ export default function StudentLibraryPage() {
     const fetchBookIssues = async () => {
       try {
         const token = getToken();
-        const studentJson = localStorage.getItem("edtech_student");
-
-        if (!token || !studentJson) {
+        if (!token) {
           router.replace("/login");
           return;
         }
 
-        const student = JSON.parse(studentJson);
-        if (!student.id) {
-          setError("Student ID not found");
-          setLoading(false);
-          return;
-        }
-
-        const data = await listStudentBookIssues(token, student.id);
-        const formatted: BookIssue[] = (data || []).map((issue: any) => ({
+        const data = await getCurrentStudentLibrary(token);
+        const allIssues = [
+          ...(data.active_issues || []),
+          ...(data.overdue_issues || []),
+        ];
+        const formatted: BookIssue[] = allIssues.map((issue: any) => ({
           id: issue.id || "",
-          bookTitle: issue.book_title || issue.book_name || "Book",
-          author: issue.author,
+          bookTitle: issue.book_title || "Book",
+          author: issue.book_author,
           issueDate: issue.issue_date || "",
-          dueDate: issue.due_date || issue.return_date || "",
-          status: issue.status || "active",
+          dueDate: issue.due_date || "",
+          status: (issue.status || "").toLowerCase().includes("overdue") ? "overdue" : "active",
           fine: issue.fine_amount,
         }));
         setBookIssues(formatted);

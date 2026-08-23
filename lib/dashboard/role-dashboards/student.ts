@@ -49,12 +49,16 @@ export const studentStats: RoleStat[] = [
   },
 ];
 
+import { FolderOpen } from "lucide-react";
+
 export const studentQuickActions: RoleQuickAction[] = [
   { id: "timetable", label: "View Timetable", icon: CalendarClock, href: "/dashboard/student/timetable" },
+  { id: "notes", label: "Chapter Notes", icon: FolderOpen, href: "/dashboard/student/notes" },
   { id: "assignment", label: "Submit Assignment", icon: ClipboardList, href: "/dashboard/student/assignments" },
   { id: "results", label: "Check Results", icon: FileBarChart, href: "/dashboard/student/results" },
   { id: "fees", label: "Pay Fees", icon: Wallet, href: "/dashboard/student/fees" },
 ];
+
 
 export const todaysTimetable: InfoRow[] = [
   { id: "1", title: "Mathematics", description: "Room 201 · Mr. Rao", meta: "08:30 - 09:15", iconBg: "bg-purple-50", iconColor: "text-purple-500" },

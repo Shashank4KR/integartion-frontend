@@ -195,6 +195,64 @@ export async function getTeacherAssignments(
   }>;
 }
 
+export async function getTeacherPendingSubmissions(
+  token: string,
+  teacherId: string,
+): Promise<Array<{
+  id: string;
+  assignment_id: string;
+  assignment_title: string;
+  class_name?: string | null;
+  subject_name?: string | null;
+  student_name: string;
+  submitted_on: string;
+  file_path?: string | null;
+}>> {
+  const response = await fetch(`${BASE}/${teacherId}/pending-submissions`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch pending submissions.");
+  }
+
+  return (await response.json()) as Array<{
+    id: string;
+    assignment_id: string;
+    assignment_title: string;
+    class_name?: string | null;
+    subject_name?: string | null;
+    student_name: string;
+    submitted_on: string;
+    file_path?: string | null;
+  }>;
+}
+
+export async function getTeacherPerformance(
+  token: string,
+  teacherId: string,
+): Promise<Array<{
+  class_id: string;
+  class_name: string;
+  average_marks: number;
+}>> {
+  const response = await fetch(`${BASE}/${teacherId}/performance`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch teacher performance.");
+  }
+
+  return (await response.json()) as Array<{
+    class_id: string;
+    class_name: string;
+    average_marks: number;
+  }>;
+}
+
 export async function getTeacherMessages(
   token: string,
   teacherId: string,

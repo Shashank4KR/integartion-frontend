@@ -124,7 +124,7 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
   const sidebar = (
     <aside className="flex h-full flex-col bg-[#211a3d] text-white shadow-xl lg:shadow-none">
       <div className="flex h-[74px] items-center justify-between border-b border-white/10 px-5">
-        <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-violet-400 to-purple-600"><GraduationCap className="h-5 w-5" /></span><div><p className="text-sm font-bold">Cognora School</p><p className="text-xs text-violet-200">Settings center</p></div></div>
+        <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-violet-400 to-purple-600"><GraduationCap className="h-5 w-5" /></span><div><p className="text-sm font-bold">School settings</p><p className="text-xs text-violet-200">Settings center</p></div></div>
         <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-violet-100 lg:hidden" aria-label="Close settings menu"><X className="h-5 w-5" /></button>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-5">

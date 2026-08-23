@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredUser, getStoredRoleId, clearAuth, getToken } from "@/lib/auth";
-import { listStudents } from "@/lib/services/studentService";
+import { getCurrentStudent } from "@/lib/services/studentService";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -44,10 +44,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
     const fetchStudentProfile = async () => {
       try {
-        const students = await listStudents(token);
-        const match = students.find((s) => s.user_id === user.id);
-        if (match) {
-          localStorage.setItem("edtech_student", JSON.stringify(match));
+        const student = await getCurrentStudent(token);
+        if (student.user_id === user.id) {
+          localStorage.setItem("edtech_student", JSON.stringify(student));
           setAuthorized(true);
         } else {
           // Logged in as student role, but no student profile found in DB

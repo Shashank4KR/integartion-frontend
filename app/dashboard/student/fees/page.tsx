@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { getStudentFeeSummary, listStudentInvoices } from "@/lib/services/feeService";
+import { getCurrentStudentFees } from "@/lib/services/studentService";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, Wallet } from "lucide-react";
 
@@ -37,38 +37,25 @@ export default function StudentFeesPage() {
     const fetchFeeData = async () => {
       try {
         const token = getToken();
-        const studentJson = localStorage.getItem("edtech_student");
-
-        if (!token || !studentJson) {
+        if (!token) {
           router.replace("/login");
           return;
         }
 
-        const student = JSON.parse(studentJson);
-        if (!student.id) {
-          setError("Student ID not found");
-          setLoading(false);
-          return;
-        }
-
-        const [summaryData, invoicesData] = await Promise.all([
-          getStudentFeeSummary(token, student.id),
-          listStudentInvoices(token, student.id),
-        ]);
-
+        const data = await getCurrentStudentFees(token);
         setSummary({
-          totalFees: summaryData.total_fees || 0,
-          paidAmount: summaryData.paid_amount || 0,
-          pendingAmount: summaryData.pending_amount || 0,
+          totalFees: data.total_fees || 0,
+          paidAmount: data.paid_amount || 0,
+          pendingAmount: data.pending_amount || 0,
         });
 
-        const formattedInvoices: Invoice[] = (invoicesData || []).map((inv: any) => ({
+        const formattedInvoices: Invoice[] = (data.invoices || []).map((inv: any) => ({
           id: inv.id || "",
-          invoiceNo: inv.invoice_no || inv.id || "Invoice",
+          invoiceNo: inv.invoice_number || inv.id || "Invoice",
           amount: inv.amount || 0,
           paidAmount: inv.paid_amount || 0,
-          pendingAmount: (inv.amount || 0) - (inv.paid_amount || 0),
-          status: (inv.paid_amount || 0) >= (inv.amount || 0) ? "paid" : (inv.paid_amount || 0) > 0 ? "partial" : "pending",
+          pendingAmount: inv.pending_amount || 0,
+          status: (inv.status || "").toLowerCase().includes("paid") ? "paid" : "pending",
           dueDate: inv.due_date,
           date: inv.invoice_date,
         }));
