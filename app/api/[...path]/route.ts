@@ -33,8 +33,9 @@ async function handleProxy(
 
     let body: any = undefined;
     if (method !== "GET" && method !== "DELETE" && method !== "HEAD") {
-      body = await request.text();
+      body = await request.arrayBuffer();
     }
+
 
     const response = await fetch(`${backendUrl}/${fullPath}${query}`, {
       method,

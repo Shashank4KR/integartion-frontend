@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getStoredUser,
-  getStoredRoleId,
-  clearAuth,
-  getToken,
-} from "@/lib/auth";
+import { getStoredUser, getStoredRoleId, clearAuth, getToken } from "@/lib/auth";
 import { getCurrentStudent } from "@/lib/services/studentService";
 
 export default function StudentLayout({
@@ -57,13 +52,8 @@ export default function StudentLayout({
     const fetchStudentProfile = async () => {
       try {
         const student = await getCurrentStudent(token);
-
-        if (student) {
-          localStorage.setItem(
-            "edtech_student",
-            JSON.stringify(student),
-          );
-
+        if (student.user_id === user.id) {
+          localStorage.setItem("edtech_student", JSON.stringify(student));
           setAuthorized(true);
         } else {
           clearAuth();

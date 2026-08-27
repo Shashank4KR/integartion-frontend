@@ -1,4 +1,4 @@
-﻿import type { ClassCreate, ClassResponse, ClassUpdate } from "@/types/entities/class";
+import type { ClassCreate, ClassResponse, ClassUpdate } from "@/types/entities/class";
 import type { ClassSubjectSummary } from "@/types/entities/class-subject-summary";
 import type { ClassTeacherSummary } from "@/types/entities/class-teacher-summary";
 
@@ -119,4 +119,21 @@ export async function getClassTeachers(
 
   return (await response.json()) as ClassTeacherSummary[];
 }
+
+export async function getClassStudents(
+  token: string,
+  classId: string,
+): Promise<any[]> {
+  const response = await fetch(`${BASE}/${classId}/students`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch class students.");
+  }
+
+  return (await response.json()) as any[];
+}
+
 

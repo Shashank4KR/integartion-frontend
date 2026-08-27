@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { getStudentExamResults } from "@/lib/services/studentService";
+import { getCurrentStudentExamResults } from "@/lib/services/studentService";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, FileBarChart } from "lucide-react";
 
@@ -30,21 +30,12 @@ export default function StudentResultsPage() {
     const fetchResults = async () => {
       try {
         const token = getToken();
-        const studentJson = localStorage.getItem("edtech_student");
-
-        if (!token || !studentJson) {
+        if (!token) {
           router.replace("/login");
           return;
         }
 
-        const student = JSON.parse(studentJson);
-        if (!student.id) {
-          setError("Student ID not found");
-          setLoading(false);
-          return;
-        }
-
-        const data = await getStudentExamResults(token, student.id);
+        const data = await getCurrentStudentExamResults(token);
         const formattedResults: ExamResult[] = (data || []).map((result: any) => ({
           id: result.id || "",
           examName: result.exam_name || "Exam",

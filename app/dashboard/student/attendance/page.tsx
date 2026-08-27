@@ -5,51 +5,27 @@ import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { getStudentAttendanceSummary } from "@/lib/services/attendanceService";
+import { getCurrentStudentAttendance } from "@/lib/services/studentService";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-
-interface AttendanceSummary {
-  present: number;
-  absent: number;
-  late: number;
-  total: number;
-  percentage: number;
-}
 
 export default function StudentAttendancePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
+  const [attendance, setAttendance] = useState<any>(null);
 
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
         const token = getToken();
-        const studentJson = localStorage.getItem("edtech_student");
-
-        if (!token || !studentJson) {
+        if (!token) {
           router.replace("/login");
           return;
         }
 
-        const student = JSON.parse(studentJson);
-        if (!student.id) {
-          setError("Student ID not found");
-          setLoading(false);
-          return;
-        }
-
-        const data = await getStudentAttendanceSummary(token, student.id);
-        const summary: AttendanceSummary = {
-          present: data.present || 0,
-          absent: data.absent || 0,
-          late: data.late || 0,
-          total: (data.total_classes || data.present + data.absent + data.late) as number,
-          percentage: data.attendance_percentage || 0,
-        };
-        setAttendance(summary);
+        const data = await getCurrentStudentAttendance(token);
+        setAttendance(data);
         setError(null);
       } catch (err) {
         console.error("Error fetching attendance:", err);
@@ -74,6 +50,8 @@ export default function StudentAttendancePage() {
     return "bg-red-50 border-red-200";
   };
 
+  const records = attendance?.records || [];
+
   return (
     <RoleDashboardLayout config={ROLE_CONFIGS.student}>
       <div className="space-y-6">
@@ -82,7 +60,7 @@ export default function StudentAttendancePage() {
             <CheckCircle2 className="h-8 w-8 text-purple-600" />
             Attendance
           </h1>
-          <p className="text-slate-600 mt-1">Track your attendance records for the current term</p>
+          <p className="text-slate-600 mt-1">Track your verified subject-wise and daily attendance records</p>
         </div>
 
         {loading && (
@@ -105,57 +83,78 @@ export default function StudentAttendancePage() {
 
         {!loading && !error && attendance && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className={`border ${getAttendanceBg(attendance.percentage)} p-6`}>
+            <Card className={`border ${getAttendanceBg(attendance.attendance_percentage || 0)} p-6`}>
               <p className="text-sm font-medium text-slate-600">Overall Attendance</p>
-              <p className={`text-4xl font-bold ${getAttendanceColor(attendance.percentage)} mt-2`}>
-                {attendance.percentage.toFixed(1)}%
+              <p className={`text-4xl font-bold ${getAttendanceColor(attendance.attendance_percentage || 0)} mt-2`}>
+                {(attendance.attendance_percentage || 0).toFixed(1)}%
               </p>
             </Card>
 
             <Card className="border-blue-200 bg-blue-50 p-6">
               <p className="text-sm font-medium text-slate-600">Present</p>
-              <p className="text-4xl font-bold text-blue-600 mt-2">{attendance.present}</p>
-              <p className="text-xs text-blue-600 mt-1">days</p>
+              <p className="text-4xl font-bold text-blue-600 mt-2">{attendance.present || 0}</p>
+              <p className="text-xs text-blue-600 mt-1">classes</p>
             </Card>
 
             <Card className="border-amber-200 bg-amber-50 p-6">
               <p className="text-sm font-medium text-slate-600">Absent</p>
-              <p className="text-4xl font-bold text-amber-600 mt-2">{attendance.absent}</p>
-              <p className="text-xs text-amber-600 mt-1">days</p>
+              <p className="text-4xl font-bold text-amber-600 mt-2">{attendance.absent || 0}</p>
+              <p className="text-xs text-amber-600 mt-1">classes</p>
             </Card>
 
             <Card className="border-slate-200 bg-slate-50 p-6">
               <p className="text-sm font-medium text-slate-600">Late</p>
-              <p className="text-4xl font-bold text-slate-600 mt-2">{attendance.late}</p>
-              <p className="text-xs text-slate-600 mt-1">days</p>
+              <p className="text-4xl font-bold text-slate-600 mt-2">{attendance.late || 0}</p>
+              <p className="text-xs text-slate-600 mt-1">classes</p>
             </Card>
           </div>
         )}
 
-        {!loading && !error && attendance && (
+        {!loading && !error && (
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6">Summary</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Total Classes</span>
-                <span className="font-semibold text-slate-900">{attendance.total}</span>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Detailed Records ({records.length})</h2>
+            {records.length === 0 ? (
+              <p className="text-sm text-slate-500 py-4">No individual attendance logs found for your profile.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm text-slate-700">
+                  <thead className="border-b border-slate-200 bg-slate-100 text-slate-900">
+                    <tr>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Subject</th>
+                      <th className="px-4 py-3">Period</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.map((r: any) => (
+                      <tr key={r.id} className="border-b border-slate-200 hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-900">{r.date}</td>
+                        <td className="px-4 py-3">{r.subject_name}</td>
+                        <td className="px-4 py-3">Period {r.period_no}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              r.status === "PRESENT"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : r.status === "ABSENT"
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {r.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Present</span>
-                <span className="font-semibold text-blue-600">{attendance.present} ({((attendance.present / attendance.total) * 100).toFixed(1)}%)</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Absent</span>
-                <span className="font-semibold text-amber-600">{attendance.absent} ({((attendance.absent / attendance.total) * 100).toFixed(1)}%)</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Late</span>
-                <span className="font-semibold text-slate-600">{attendance.late} ({((attendance.late / attendance.total) * 100).toFixed(1)}%)</span>
-              </div>
-            </div>
+            )}
           </Card>
         )}
       </div>
     </RoleDashboardLayout>
   );
 }
+
