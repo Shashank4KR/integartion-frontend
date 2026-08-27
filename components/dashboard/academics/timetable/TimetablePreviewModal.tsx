@@ -157,11 +157,13 @@ export default function TimetablePreviewModal({
 
   const subjectOptionsForRender = editingItem ? subjectOptions : localSubjects;
 
-  // Auto-select the only valid Subject once it has loaded.
+  // Auto-select the first valid Subject once it has loaded.
   useEffect(() => {
     if (editingItem || subjectsLoading) return;
-    if (localSubjects.length === 1) {
-      setSubjectId((prev) => (prev === localSubjects[0].id ? prev : localSubjects[0].id));
+    if (localSubjects.length > 0) {
+      setSubjectId((prev) => (localSubjects.some((s) => s.id === prev) ? prev : localSubjects[0].id));
+    } else {
+      setSubjectId("");
     }
   }, [editingItem, subjectsLoading, localSubjects]);
 
@@ -177,13 +179,15 @@ export default function TimetablePreviewModal({
     return teacherOptions.filter((t) => validTeacherIds.has(t.id));
   }, [editingItem, classId, subjectId, allTeacherSubjects, teacherOptions]);
 
-  // Auto-select the only valid Teacher once the relationship has resolved.
+  // Auto-select the first valid Teacher once the relationship has resolved.
   useEffect(() => {
     if (editingItem || teachersLoading) return;
-    if (validTeacherOptions.length === 1) {
+    if (validTeacherOptions.length > 0) {
       setTeacherId((prev) =>
-        prev === validTeacherOptions[0].id ? prev : validTeacherOptions[0].id,
+        validTeacherOptions.some((t) => t.id === prev) ? prev : validTeacherOptions[0].id,
       );
+    } else {
+      setTeacherId("");
     }
   }, [editingItem, teachersLoading, validTeacherOptions]);
 

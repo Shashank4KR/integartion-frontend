@@ -409,39 +409,15 @@ export default function TimetablePage() {
   );
 
   const modalSubjectOptions: TimetableOption[] = useMemo(() => {
-    if (selectedClassId && classSubjects.length > 0) {
-      const subjectMap = new Map(subjects.map((s) => [s.id, s]));
-      return classSubjects
-        .map((cs) => {
-          const s = subjectMap.get(cs.id);
-          return s ? { id: s.id, label: `${s.subject_code} — ${s.subject_name}` } : null;
-        })
-        .filter((o): o is TimetableOption => o !== null);
-    }
     return subjects.map((s) => ({ id: s.id, label: `${s.subject_code} — ${s.subject_name}` }));
-  }, [selectedClassId, classSubjects, subjects]);
+  }, [subjects]);
 
   const modalTeacherOptions: TimetableOption[] = useMemo(() => {
-    if (selectedClassId && classSubjects.length > 0) {
-      const validSubjectIds = new Set(classSubjects.map((cs) => cs.id));
-      const validTeacherIds = new Set(
-        allTeacherSubjects
-          .filter((ts) => ts.class_id === selectedClassId && validSubjectIds.has(ts.subject_id))
-          .map((ts) => ts.teacher_id),
-      );
-      return teachers
-        .filter((t) => validTeacherIds.has(t.id))
-        .map((t) => ({
-          id: t.id,
-          label: teacherLabel(t.id),
-        }));
-    }
-    const baseTeacherOptions = teachers.map((t) => ({
+    return teachers.map((t) => ({
       id: t.id,
       label: teacherLabel(t.id),
     }));
-    return baseTeacherOptions;
-  }, [selectedClassId, classSubjects, allTeacherSubjects, teachers, teacherLabel]);
+  }, [teachers, teacherLabel]);
 
   const academicYearOptions = useMemo(
     () => [ALL_ACADEMIC_YEARS, ...Array.from(new Set(classes.map((c) => c.academic_year))).sort()],
@@ -535,7 +511,7 @@ export default function TimetablePage() {
   const isWeekly = reflectedFilters.viewType === "Weekly View";
 
   const summaryValues: TimetableSummaryValues = useMemo(() => {
-    const total = timetables.length;
+    const total = classes.length;
     const classSet = new Set(timetables.map((t) => t.class_id));
     const teacherSet = new Set(timetables.map((t) => t.teacher_id));
     const distinctPeriodKeys = new Set(
@@ -551,7 +527,7 @@ export default function TimetablePage() {
       teachersInvolved: teacherSet.size,
       periodsPerWeek: distinctPeriodKeys.size,
     };
-  }, [timetables]);
+  }, [timetables, classes]);
 
   const overviewSegments: PreviewDonutSegment[] = useMemo(() => {
     const counts: Record<string, number> = {};
