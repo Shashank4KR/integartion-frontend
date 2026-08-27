@@ -79,17 +79,11 @@ export default function AddTransactionDialog({ open, onClose, onSave }: AddTrans
     "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent";
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <div>
-        <h2>Add Transaction</h2>
-        <button onClick={onClose} aria-label="Close">
-          <X />
-        </button>
-      </div>
-      <form onSubmit={handleSubmit}>
-        <div>
+    <Modal open={open} onClose={onClose} title="Add Transaction" maxWidth="max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label>Transaction Type</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Transaction Type</label>
             <Dropdown
               value={form.type}
               options={TRANSACTION_TYPE_OPTIONS.filter((o) => o !== "All Types")}
@@ -97,64 +91,60 @@ export default function AddTransactionDialog({ open, onClose, onSave }: AddTrans
             />
           </div>
           <div>
-            <label>Receipt / Reference Number</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Receipt / Reference Number</label>
             <input
               type="text"
               value={form.receiptRefNo}
               onChange={(e) => setForm({ ...form, receiptRefNo: e.target.value })}
               className={inputClass}
-              placeholder="e.g. RCP10001"
-              required
+              placeholder="e.g. REC-2025-001"
             />
-            {errors.receiptRefNo && <p>{errors.receiptRefNo}</p>}
+            {errors.receiptRefNo && <p className="text-xs text-red-500 mt-1">{errors.receiptRefNo}</p>}
           </div>
           <div>
-            <label>Date</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Date</label>
             <input
               type="date"
               value={form.date}
               onChange={(e) => setForm({ ...form, date: e.target.value })}
               className={inputClass}
-              required
             />
-            {errors.date && <p>{errors.date}</p>}
+            {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date}</p>}
           </div>
           <div>
-            <label>Student / Party Name</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Student / Party Name</label>
             <input
               type="text"
               value={form.studentName}
               onChange={(e) => setForm({ ...form, studentName: e.target.value })}
               className={inputClass}
               placeholder="Enter name"
-              required
             />
-            {errors.studentName && <p>{errors.studentName}</p>}
+            {errors.studentName && <p className="text-xs text-red-500 mt-1">{errors.studentName}</p>}
           </div>
           <div>
-            <label>Class / Grade</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Class / Grade</label>
             <input
               type="text"
               value={form.classGrade}
               onChange={(e) => setForm({ ...form, classGrade: e.target.value })}
               className={inputClass}
-              placeholder="e.g. VIII - A"
+              placeholder="e.g. Grade 5 (Optional)"
             />
           </div>
           <div>
-            <label>Category</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Category</label>
             <input
               type="text"
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className={inputClass}
               placeholder="e.g. Tuition Fee"
-              required
             />
-            {errors.category && <p>{errors.category}</p>}
+            {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
           </div>
           <div>
-            <label>Payment Mode</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Payment Mode</label>
             <Dropdown
               value={form.paymentMode}
               options={PAYMENT_MODE_OPTIONS.filter((o) => o !== "All Modes")}
@@ -162,7 +152,7 @@ export default function AddTransactionDialog({ open, onClose, onSave }: AddTrans
             />
           </div>
           <div>
-            <label>Amount (₹)</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Amount (₹)</label>
             <input
               type="number"
               value={form.amount}
@@ -171,18 +161,18 @@ export default function AddTransactionDialog({ open, onClose, onSave }: AddTrans
               placeholder="0.00"
               required
             />
-            {errors.amount && <p>{errors.amount}</p>}
+            {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount}</p>}
           </div>
           <div>
-            <label>Status</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
             <Dropdown
               value={form.status}
               options={STATUS_OPTIONS.filter((o) => o !== "All Status")}
               onChange={(v) => setForm({ ...form, status: v as "Success" | "Pending" | "Failed" })}
             />
           </div>
-          <div>
-            <label>Notes</label>
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Notes</label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -192,17 +182,17 @@ export default function AddTransactionDialog({ open, onClose, onSave }: AddTrans
             />
           </div>
         </div>
-        <div>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
           <button
             type="button"
             onClick={onClose}
-           
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
           >
             Cancel
           </button>
           <button
             type="submit"
-           
+            className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-4 py-2 text-sm font-semibold transition"
           >
             Save Transaction
           </button>
@@ -211,4 +201,3 @@ export default function AddTransactionDialog({ open, onClose, onSave }: AddTrans
     </Modal>
   );
 }
-

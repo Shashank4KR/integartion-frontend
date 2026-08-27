@@ -126,3 +126,16 @@ export async function getLibrarySummary(token: string): Promise<any> {
 
   return unwrapData(await response.json(), {});
 }
+
+export async function getFineSummary(token: string): Promise<any> {
+  const response = await fetch("/api/library/fine-payments/summary", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to fetch fine summary.");
+  }
+
+  return unwrapData(await response.json(), {});
+}
+

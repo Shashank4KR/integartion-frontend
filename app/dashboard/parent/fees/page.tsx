@@ -100,8 +100,8 @@ export default function ParentFeesPage() {
 
         setSummary({
           totalFees: Number(summaryData.total_fees ?? 0),
-          paidAmount: Number(summaryData.paid_amount ?? 0),
-          pendingAmount: Number(summaryData.pending_amount ?? 0),
+          paidAmount: Number(summaryData.paid ?? 0),
+          pendingAmount: Number(summaryData.pending ?? 0),
         });
         setInvoices((invoiceData ?? []).map((invoice: any) => {
           const amount = Number(invoice.amount ?? invoice.total_amount ?? 0);
@@ -197,7 +197,7 @@ export default function ParentFeesPage() {
                           </span>
                         </div>
                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                          <div><span className="text-slate-500">Amount</span><p className="font-semibold">{money(invoice.amount)}</p></div>
+                          <div><span className="text-slate-500">Amount</span><p className="font-semibold text-slate-900">{money(invoice.amount)}</p></div>
                           <div><span className="text-slate-500">Paid</span><p className="font-semibold text-green-700">{money(invoice.paidAmount)}</p></div>
                           <div><span className="text-slate-500">Pending</span><p className="font-semibold text-red-700">{money(pending)}</p></div>
                         </div>

@@ -59,25 +59,22 @@ export default function ImportSalariesDialog({ open, onClose, onImport }: Import
   };
 
   return (
-    <Modal open={open} onClose={handleClose}>
-      <div>
-        <h2>Import Salaries</h2>
-        <button onClick={handleClose} aria-label="Close">
-          <X />
-        </button>
-      </div>
-      <div>
+    <Modal open={open} onClose={handleClose} title="Import Salaries" maxWidth="max-w-lg">
+      <div className="space-y-4 pt-2">
         {imported ? (
-          <div>
-            <CheckCircle2 />
-            <p>Import Complete</p>
-            <p>{selectedFile?.name} has been processed successfully.</p>
-            <button
-              onClick={handleClose}
-             
-            >
-              Done
-            </button>
+          <div className="text-center py-6 space-y-3">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+            <p className="text-base font-semibold text-slate-800">Import Complete</p>
+            <p className="text-sm text-slate-500">{selectedFile?.name} has been processed successfully.</p>
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-6 py-2 text-sm font-semibold transition"
+              >
+                Done
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -88,7 +85,7 @@ export default function ImportSalariesDialog({ open, onClose, onImport }: Import
               onDrop={handleDrop}
               onClick={() => inputRef.current?.click()}
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${
-                dragActive ? "border-[#7c3aed] bg-purple-50" : "border-slate-200 hover:border-slate-300"
+                dragActive ? "border-[#7c3aed] bg-purple-50" : "border-slate-200 hover:border-purple-300"
               }`}
             >
               <input
@@ -96,40 +93,46 @@ export default function ImportSalariesDialog({ open, onClose, onImport }: Import
                 type="file"
                 accept=".csv,.xlsx"
                 onChange={handleFileChange}
-               
+                className="hidden"
               />
-              <FileSpreadsheet />
-              <p>
+              <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-400 mb-3" />
+              <p className="text-sm font-medium text-slate-600 mb-1">
                 {selectedFile ? selectedFile.name : "Drag & drop your file here"}
               </p>
-              <p>or click to browse</p>
-              <p>Accepted formats: CSV, XLSX</p>
+              {!selectedFile && <p className="text-xs text-slate-400">or click to browse</p>}
+              <p className="text-xs text-slate-400 mt-2">Accepted formats: CSV, XLSX</p>
             </div>
-            <div>
+            <div className="flex items-center justify-between text-sm">
               <button
                 type="button"
-               
                 onClick={() => alert("Template download simulated")}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#7c3aed] hover:text-[#6d28d9] transition"
               >
+                <Upload className="h-4 w-4" />
                 Download Template
               </button>
-              <div>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                 
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleImport}
-                  disabled={!selectedFile || importing}
-                 
-                >
-                  {importing ? "Importing..." : "Import"}
-                </button>
-              </div>
+              {selectedFile && (
+                <span className="text-xs text-slate-500">
+                  Selected: <span className="font-semibold text-slate-800">{selectedFile.name}</span>
+                </span>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleImport}
+                disabled={!selectedFile || importing}
+                className="bg-[#7c3aed] hover:bg-[#6d28d9] disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-lg px-4 py-2 text-sm font-semibold transition"
+              >
+                {importing ? "Importing..." : "Import"}
+              </button>
             </div>
           </>
         )}

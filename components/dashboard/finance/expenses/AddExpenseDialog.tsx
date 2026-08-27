@@ -87,62 +87,54 @@ export default function AddExpenseDialog({ open, onClose, onSave }: AddExpenseDi
     "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent";
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="max-w-2xl">
-      <div>
-        <h2>Add Expense</h2>
-        <button onClick={onClose} aria-label="Close">
-          <X />
-        </button>
-      </div>
-      <form onSubmit={handleSubmit}>
-        <div>
+    <Modal open={open} onClose={onClose} title="Add Expense" maxWidth="max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label>Expense Name *</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Expense Name</label>
             <input
               type="text"
               value={form.expenseName}
               onChange={(e) => setForm({ ...form, expenseName: e.target.value })}
               className={inputClass}
               placeholder="e.g. Office Supplies"
+              required
             />
-            {errors.expenseName && <p>{errors.expenseName}</p>}
+            {errors.expenseName && <p className="text-xs text-red-500 mt-1">{errors.expenseName}</p>}
           </div>
           <div>
-            <label>Expense Date</label>
-            <div>
-              <input
-                type="text"
-                value={form.expenseDate}
-                readOnly
-                onClick={() => setCalendarOpen((o) => !o)}
-                className={`${inputClass} cursor-pointer`}
-              />
-              <Calendar />
-              {calendarOpen && (
-                <div>
-                  <CalendarPicker
-                    selectedDate={new Date()}
-                    onSelect={(d) => {
-                      const dateStr = d.toLocaleDateString("en-GB");
-                      setForm({ ...form, expenseDate: dateStr });
-                      setCalendarOpen(false);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Expense Date</label>
+            <input
+              type="text"
+              value={form.expenseDate}
+              readOnly
+              onClick={() => setCalendarOpen((o) => !o)}
+              className={`${inputClass} cursor-pointer`}
+            />
+            {calendarOpen && (
+              <div className="absolute z-10">
+                <CalendarPicker
+                  selectedDate={new Date()}
+                  onSelect={(d) => {
+                    const dateStr = d.toLocaleDateString("en-GB");
+                    setForm({ ...form, expenseDate: dateStr });
+                    setCalendarOpen(false);
+                  }}
+                />
+              </div>
+            )}
           </div>
           <div>
-            <label>Category *</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Category</label>
             <Dropdown
               value={form.category}
               options={EXPENSE_CATEGORIES_FOR_FORM}
               onChange={(v) => setForm({ ...form, category: v })}
             />
-            {errors.category && <p>{errors.category}</p>}
+            {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
           </div>
           <div>
-            <label>Department</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Department</label>
             <Dropdown
               value={form.department}
               options={["Administration", "Computer Science", "Electronics", "Mechanical", "Management", "NSS"]}
@@ -150,18 +142,19 @@ export default function AddExpenseDialog({ open, onClose, onSave }: AddExpenseDi
             />
           </div>
           <div>
-            <label>Amount (₹) *</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Amount (₹)</label>
             <input
               type="number"
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
               className={inputClass}
               placeholder="0.00"
+              required
             />
-            {errors.amount && <p>{errors.amount}</p>}
+            {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount}</p>}
           </div>
           <div>
-            <label>Payment Mode</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Payment Mode</label>
             <Dropdown
               value={form.paymentMode}
               options={PAYMENT_MODES_FOR_FORM}
@@ -169,7 +162,15 @@ export default function AddExpenseDialog({ open, onClose, onSave }: AddExpenseDi
             />
           </div>
           <div>
-            <label>Reference Number</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Approval Status</label>
+            <Dropdown
+              value={form.approvalStatus}
+              options={APPROVAL_STATUSES_FOR_FORM}
+              onChange={(v) => setForm({ ...form, approvalStatus: v })}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Reference Number</label>
             <input
               type="text"
               value={form.referenceNumber}
@@ -179,15 +180,7 @@ export default function AddExpenseDialog({ open, onClose, onSave }: AddExpenseDi
             />
           </div>
           <div>
-            <label>Approval Status</label>
-            <Dropdown
-              value={form.approvalStatus}
-              options={APPROVAL_STATUSES_FOR_FORM}
-              onChange={(v) => setForm({ ...form, approvalStatus: v })}
-            />
-          </div>
-          <div>
-            <label>Vendor / Party</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Vendor / Party</label>
             <input
               type="text"
               value={form.vendor}
@@ -196,8 +189,8 @@ export default function AddExpenseDialog({ open, onClose, onSave }: AddExpenseDi
               placeholder="Vendor name"
             />
           </div>
-          <div>
-            <label>Description</label>
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -207,17 +200,17 @@ export default function AddExpenseDialog({ open, onClose, onSave }: AddExpenseDi
             />
           </div>
         </div>
-        <div>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
           <button
             type="button"
             onClick={onClose}
-           
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
           >
             Cancel
           </button>
           <button
             type="submit"
-           
+            className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-4 py-2 text-sm font-semibold transition"
           >
             Save
           </button>
@@ -226,4 +219,3 @@ export default function AddExpenseDialog({ open, onClose, onSave }: AddExpenseDi
     </Modal>
   );
 }
-

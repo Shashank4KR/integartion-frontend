@@ -1,4 +1,4 @@
-﻿import { getToken } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 import type { UserResponse } from "@/types/auth";
 
 export interface DashboardStats {
@@ -114,3 +114,36 @@ export async function getTeacherMessages(teacherId: string): Promise<any[]> {
 export async function getTeacherEvents(teacherId: string): Promise<any[]> {
   return requestJson(`/api/teachers/${teacherId}/events`);
 }
+
+export async function getRecentActivities(): Promise<any[]> {
+  return requestJson(`/api/audit/recent-activities`);
+}
+
+export async function getUpcomingEvents(): Promise<any[]> {
+  return requestJson(`/api/events/upcoming`);
+}
+
+export async function getClasses(): Promise<any[]> {
+  return requestJson(`/api/classes`);
+}
+
+export async function getStudents(): Promise<any[]> {
+  return requestJson(`/api/students`);
+}
+
+export async function getStudentTimetable(): Promise<any[]> {
+  return requestJson(`/api/students/me/timetable`);
+}
+
+export async function getStudentAssignments(): Promise<any[]> {
+  return requestJson(`/api/students/me/assignments`);
+}
+
+export async function getExams(): Promise<any[]> {
+  return requestJson(`/api/exams`);
+}
+
+export async function getAnnouncements(): Promise<any[]> {
+  return requestJson(`/api/announcements`);
+}
+

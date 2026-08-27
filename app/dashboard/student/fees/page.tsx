@@ -58,8 +58,8 @@ export default function StudentFeesPage() {
 
         setSummary({
           totalFees: summaryData.total_fees || 0,
-          paidAmount: summaryData.paid_amount || 0,
-          pendingAmount: summaryData.pending_amount || 0,
+          paidAmount: summaryData.paid || 0,
+          pendingAmount: summaryData.pending || 0,
         });
 
         const formattedInvoices: Invoice[] = (invoicesData || []).map((inv: any) => ({

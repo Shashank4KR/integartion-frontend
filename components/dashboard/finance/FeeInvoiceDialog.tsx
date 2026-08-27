@@ -11,56 +11,64 @@ interface FeeInvoiceDialogProps {
 
 export default function FeeInvoiceDialog({ student, onClose }: FeeInvoiceDialogProps) {
   return (
-    <Modal open={!!student} onClose={onClose}>
-      <div>
-        <h2>Fee Invoice</h2>
-        <button onClick={onClose} aria-label="Close">
-          <X />
-        </button>
-      </div>
-      <div>
-        <div>
-          <div>
+    <Modal open={!!student} onClose={onClose} title="Fee Invoice" maxWidth="max-w-md">
+      <div className="space-y-4 pt-2">
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
             <div>
-              <p>EdTech Smart Campus</p>
-              <p>Invoice</p>
+              <p className="text-sm font-bold text-slate-800">EdTech Smart Campus</p>
+              <p className="text-xs text-slate-500">Official Invoice Receipt</p>
             </div>
-            <div>
-              <p>Date</p>
-              <p>18 May 2025</p>
+            <div className="text-right">
+              <p className="text-xs font-semibold text-slate-500">Date</p>
+              <p className="text-sm font-medium text-slate-800">18 May 2025</p>
             </div>
           </div>
-          <div>
-            <div>
-              <span>Student</span>
-              <span>{student.studentName}</span>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-medium">Student</span>
+              <span className="font-semibold text-slate-800">{student.studentName}</span>
             </div>
-            <div>
-              <span>Roll No.</span>
-              <span>{student.rollNo}</span>
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-medium">Roll No.</span>
+              <span className="font-semibold text-slate-800">{student.rollNo}</span>
             </div>
-            <div>
-              <span>Class</span>
-              <span>{student.classGrade}</span>
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-medium">Class</span>
+              <span className="text-slate-700">{student.classGrade}</span>
             </div>
-            <div>
-              <span>Total Fee</span>
-              <span>₹ {student.totalFee.toLocaleString()}</span>
+            <div className="border-t border-slate-200 my-2 pt-2" />
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-medium">Total Fee</span>
+              <span className="font-semibold text-slate-800">₹ {student.totalFee.toLocaleString()}</span>
             </div>
-            <div>
-              <span>Paid</span>
-              <span>₹ {student.paid.toLocaleString()}</span>
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-medium">Paid</span>
+              <span className="font-semibold text-emerald-600">₹ {student.paid.toLocaleString()}</span>
             </div>
-            <div>
-              <span>Outstanding</span>
-              <span>₹ {student.outstanding.toLocaleString()}</span>
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-medium">Outstanding</span>
+              <span className="font-semibold text-pink-600">₹ {student.outstanding.toLocaleString()}</span>
             </div>
           </div>
         </div>
-        <button>
-          <Download />
-          Download Invoice
-        </button>
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={() => alert("Downloading invoice simulated...")}
+            className="flex items-center justify-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-4 py-2 text-sm font-semibold transition"
+          >
+            <Download className="h-4 w-4" />
+            Download Invoice
+          </button>
+        </div>
       </div>
     </Modal>
   );

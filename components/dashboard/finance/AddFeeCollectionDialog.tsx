@@ -105,17 +105,11 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
     "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent";
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <div>
-        <h2>Add Fee Collection</h2>
-        <button onClick={onClose} aria-label="Close">
-          <X />
-        </button>
-      </div>
-      <form onSubmit={handleSubmit}>
-        <div>
+    <Modal open={open} onClose={onClose} title="Add Fee Collection" maxWidth="max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label>Student</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Student</label>
             <input
               type="text"
               value={form.studentName}
@@ -123,40 +117,40 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
               className={inputClass}
               placeholder="Enter student name"
             />
-            {errors.studentName && <p>{errors.studentName}</p>}
+            {errors.studentName && <p className="text-xs text-red-500 mt-1">{errors.studentName}</p>}
           </div>
           <div>
-            <label>Class / Grade</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Class / Grade</label>
             <Dropdown
               label=""
               value={form.classGrade}
               options={CLASS_GRADE_OPTIONS}
               onChange={(v) => setForm({ ...form, classGrade: v })}
             />
-            {errors.classGrade && <p>{errors.classGrade}</p>}
+            {errors.classGrade && <p className="text-xs text-red-500 mt-1">{errors.classGrade}</p>}
           </div>
           <div>
-            <label>Fee Type</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Fee Type</label>
             <Dropdown
               label=""
               value={form.feeType}
               options={FEE_TYPE_OPTIONS}
               onChange={(v) => setForm({ ...form, feeType: v })}
             />
-            {errors.feeType && <p>{errors.feeType}</p>}
+            {errors.feeType && <p className="text-xs text-red-500 mt-1">{errors.feeType}</p>}
           </div>
           <div>
-            <label>Installment</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Installment</label>
             <Dropdown
               label=""
               value={form.installment}
               options={INSTALLMENT_OPTIONS}
               onChange={(v) => setForm({ ...form, installment: v })}
             />
-            {errors.installment && <p>{errors.installment}</p>}
+            {errors.installment && <p className="text-xs text-red-500 mt-1">{errors.installment}</p>}
           </div>
           <div>
-            <label>Total Amount (₹)</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Total Amount (₹)</label>
             <input
               type="number"
               value={form.totalAmount}
@@ -164,10 +158,10 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
               className={inputClass}
               placeholder="0.00"
             />
-            {errors.totalAmount && <p>{errors.totalAmount}</p>}
+            {errors.totalAmount && <p className="text-xs text-red-500 mt-1">{errors.totalAmount}</p>}
           </div>
           <div>
-            <label>Amount Paid (₹)</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Amount Paid (₹)</label>
             <input
               type="number"
               value={form.amountPaid}
@@ -175,35 +169,35 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
               className={inputClass}
               placeholder="0.00"
             />
-            {errors.amountPaid && <p>{errors.amountPaid}</p>}
+            {errors.amountPaid && <p className="text-xs text-red-500 mt-1">{errors.amountPaid}</p>}
           </div>
           <div>
-            <label>Payment Mode</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Payment Mode</label>
             <select
               value={form.paymentMode}
               onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}
-              className={inputClass}
+              className={`${inputClass} text-slate-800 bg-white`}
             >
-              <option>Cash</option>
-              <option>Online</option>
-              <option>UPI</option>
-              <option>Cheque</option>
-              <option>Bank Transfer</option>
+              <option className="text-slate-800 bg-white">Cash</option>
+              <option className="text-slate-800 bg-white">Online</option>
+              <option className="text-slate-800 bg-white">UPI</option>
+              <option className="text-slate-800 bg-white">Cheque</option>
+              <option className="text-slate-800 bg-white">Bank Transfer</option>
             </select>
-            {errors.paymentMode && <p>{errors.paymentMode}</p>}
+            {errors.paymentMode && <p className="text-xs text-red-500 mt-1">{errors.paymentMode}</p>}
           </div>
           <div>
-            <label>Payment Date</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Payment Date</label>
             <input
               type="date"
               value={form.paymentDate}
               onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
               className={inputClass}
             />
-            {errors.paymentDate && <p>{errors.paymentDate}</p>}
+            {errors.paymentDate && <p className="text-xs text-red-500 mt-1">{errors.paymentDate}</p>}
           </div>
           <div>
-            <label>Receipt Number</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Receipt Number</label>
             <input
               type="text"
               value={form.receiptNumber}
@@ -211,20 +205,20 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
               className={inputClass}
               placeholder="RCPT-XXXX"
             />
-            {errors.receiptNumber && <p>{errors.receiptNumber}</p>}
+            {errors.receiptNumber && <p className="text-xs text-red-500 mt-1">{errors.receiptNumber}</p>}
           </div>
           <div>
-            <label>Status</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
             <Dropdown
               label=""
               value={form.status}
               options={STATUS_OPTIONS}
               onChange={(v) => setForm({ ...form, status: v })}
             />
-            {errors.status && <p>{errors.status}</p>}
+            {errors.status && <p className="text-xs text-red-500 mt-1">{errors.status}</p>}
           </div>
-          <div>
-            <label>Notes</label>
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Notes</label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -234,24 +228,24 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
             />
           </div>
         </div>
-        <div>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
           <button
             type="button"
             onClick={onClose}
-           
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
           >
             Cancel
           </button>
           <button
             type="submit"
-           
+            className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-4 py-2 text-sm font-semibold transition"
           >
             Save
           </button>
         </div>
       </form>
       {toast.open && (
-        <div>
+        <div className="fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-2 rounded-lg shadow-lg">
           {toast.message}
         </div>
       )}

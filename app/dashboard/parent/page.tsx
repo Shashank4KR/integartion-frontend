@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
@@ -10,9 +10,10 @@ import InfoList from "@/components/dashboard/role-dashboards/InfoList";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { parentQuickActions } from "@/lib/dashboard/role-dashboards/parent";
 import { COMPANY_INFO } from "@/lib/constants";
-import { getCurrentParentStudents } from "@/lib/services/dashboardService";
+import { getCurrentParentStudents, getExams } from "@/lib/services/dashboardService";
 import { getStudentFeeSummary } from "@/lib/services/feeService";
 import { getStudentExamResults } from "@/lib/services/studentService";
+import { listSubjects } from "@/lib/services/subjectService";
 import { listAnnouncements, listMessages } from "@/lib/services/communicationService";
 import { listEvents } from "@/lib/services/calendarService";
 import { getToken } from "@/lib/auth";
@@ -152,9 +153,11 @@ export default function ParentDashboardPage() {
         );
 
         if (childId) {
-          const [feeSummary, examResults] = await Promise.all([
+          const [feeSummary, examResults, subjects, exams] = await Promise.all([
             getStudentFeeSummary(token, childId).catch(() => null),
             getStudentExamResults(token, childId).catch(() => []),
+            listSubjects(token).catch(() => []),
+            getExams().catch(() => []),
           ]);
 
           if (!mounted) return;
@@ -186,10 +189,14 @@ export default function ParentDashboardPage() {
               const marks = num(r.marks_obtained ?? r.marks);
               const total = num(r.total_marks) || 100;
               const pct = total > 0 ? Math.round((marks / total) * 100) : 0;
+
+              const subjectObj = subjects.find((s: any) => String(s.id) === String(r.subject_id));
+              const examObj = exams.find((e: any) => String(e.id) === String(r.exam_id));
+
               return {
                 id: text(r.id, String(idx)),
-                title: text(r.subject_name ?? r.subject, "Subject"),
-                description: text(r.exam_name ?? r.exam_type, "Exam"),
+                title: text(subjectObj?.subject_name ?? r.subject_name ?? r.subject, "Subject"),
+                description: text(examObj?.exam_name ?? r.exam_name ?? r.exam_type, "Exam"),
                 meta: `${pct}%`,
               };
             }),
