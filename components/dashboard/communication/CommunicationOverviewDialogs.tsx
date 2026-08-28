@@ -3,6 +3,7 @@
 import { useState } from "react";
 import NewMessageDialog from "@/components/dashboard/communication/NewMessageDialog";
 import SendNotificationDialog from "@/components/dashboard/communication/SendNotificationDialog";
+import CreateAnnouncementDialog from "@/components/dashboard/communication/CreateAnnouncementDialog";
 import Modal from "@/components/shared/Modal";
 import type { Template } from "@/lib/fixtures/communications-announcements-reference-fixture";
 
@@ -98,67 +99,11 @@ export default function CommunicationOverviewDialogs({
         onSend={onSendNotification}
       />
 
-      <Modal
+      <CreateAnnouncementDialog
         open={createAnnouncementOpen}
         onClose={onCloseCreateAnnouncement}
-        maxWidth="max-w-2xl"
-      >
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900">Create Announcement</h2>
-          <button
-            onClick={onCloseCreateAnnouncement}
-            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 transition"
-            aria-label="Close"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Title</label>
-            <input
-              type="text"
-              placeholder="Announcement title"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Audience</label>
-            <select className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent">
-              <option>All Students & Parents</option>
-              <option>Students Only</option>
-              <option>Parents Only</option>
-              <option>Staff Only</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Message</label>
-            <textarea
-              rows={4}
-              placeholder="Type your announcement..."
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
-            />
-          </div>
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onCloseCreateAnnouncement}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => { onAnnouncementCreated(); onCloseCreateAnnouncement(); }}
-              className="rounded-lg bg-[#7c3aed] px-4 py-2 text-sm font-semibold text-white hover:brightness-110 transition"
-            >
-              Publish
-            </button>
-          </div>
-        </div>
-      </Modal>
+        onCreated={onAnnouncementCreated}
+      />
 
       <Modal
         open={templatesOpen}

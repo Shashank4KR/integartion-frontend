@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { listAnnouncements } from "@/lib/services/announcementService";
+import { listAnnouncements } from "@/lib/services/communicationService";
 import Card from "@/components/shared/Card";
 import { Loader2, AlertCircle, Megaphone } from "lucide-react";
 

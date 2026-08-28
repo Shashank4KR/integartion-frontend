@@ -630,7 +630,7 @@ export default function AccountantFinancePage({ kind }: { kind: PageKind }) {
       )}
 
       <footer className="mt-8 flex items-center justify-between border-t border-slate-200 px-6 py-4 text-xs text-slate-500">
-        <span>© 2025 EdTech Smart Campus ERP. All rights reserved.</span>
+        <span>© 2026 EdTech Smart Campus ERP. All rights reserved.</span>
         <span>Version 1.0.0</span>
       </footer>
 

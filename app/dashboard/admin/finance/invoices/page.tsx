@@ -45,11 +45,23 @@ function mapInvoice(item: Record<string, unknown>): InvoiceRow {
         rawStatus === "OVERDUE" ? "Overdue" :
           "Pending";
 
+  const studentName = (() => {
+    if (item.student_name) return String(item.student_name);
+    if (item.student && typeof item.student === "object") {
+      const stud = item.student as Record<string, any>;
+      const first = stud.first_name || stud.firstName || "";
+      const last = stud.last_name || stud.lastName || "";
+      const name = `${first} ${last}`.trim();
+      return name || stud.name || stud.username || "-";
+    }
+    return String(item.student ?? "-");
+  })();
+
   return {
     id: String(item.id ?? crypto.randomUUID()),
     invoiceNo: String(item.invoice_number ?? item.invoice_no ?? item.id ?? "-"),
     invoiceDate: String(item.invoice_date ?? item.created_at ?? "-"),
-    studentName: String(item.student_name ?? item.student ?? "-"),
+    studentName,
     studentId: String(item.student_id ?? "-"),
     classGrade: String(item.class_grade ?? item.className ?? "-"),
     invoiceType: "Fee Invoice",
@@ -364,7 +376,7 @@ export default function InvoicesPage() {
           </div>
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
-            <span>© 2025 EdTech Smart Campus ERP. All rights reserved.</span>
+            <span>© 2026 EdTech Smart Campus ERP. All rights reserved.</span>
             <span>Version 1.0.0</span>
           </footer>
         </div>

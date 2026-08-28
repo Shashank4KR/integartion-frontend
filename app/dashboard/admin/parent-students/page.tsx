@@ -6,7 +6,7 @@ import SectionHeader from "@/components/shared/SectionHeader";
 import Modal from "@/components/shared/Modal";
 import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { listParentStudents, createParentStudent, updateParentStudent, deleteParentStudent } from "@/lib/services/parentStudentService";
-import { listParents } from "@/lib/services/parentService";
+import { listParents, createParent } from "@/lib/services/parentService";
 import { listStudents } from "@/lib/services/studentService";
 import { listUsers } from "@/lib/services/userService";
 import { listClasses } from "@/lib/services/classService";
@@ -67,18 +67,32 @@ export default function ParentStudentsPage() {
           listClasses(token),
         ]);
         setItems(relsData);
-        setParents(
-          parentsData.map((p) => {
-            const user = usersData.find((u) => u.id === p.user_id);
-            return {
-              id: p.id,
-              user_id: p.user_id,
-              phone: p.phone,
-              username: user?.username ?? p.user_id,
-              email: user?.email ?? "",
-            };
-          }),
+        const parentsList: any[] = [];
+        const parentUsers = usersData.filter(
+          (u) => u.role?.role_name === "PARENT" || u.role_id === "0003"
         );
+        for (const u of parentUsers) {
+          const profile = parentsData.find((p) => p.user_id === u.id);
+          if (profile) {
+            parentsList.push({
+              id: profile.id,
+              user_id: profile.user_id,
+              phone: profile.phone,
+              username: u.username,
+              email: u.email,
+            });
+          } else {
+            parentsList.push({
+              id: `USER_ID:${u.id}`,
+              user_id: u.id,
+              phone: u.phone,
+              username: u.username,
+              email: u.email,
+              isVirtual: true,
+            });
+          }
+        }
+        setParents(parentsList);
         setStudents(
           studentsData.map((s) => {
             const user = usersData.find((u) => u.id === s.user_id);
@@ -156,24 +170,71 @@ export default function ParentStudentsPage() {
     setFormError(null);
     setSubmitting(true);
     try {
+      let finalParentId = formData.parent_id;
+
+      if (finalParentId.startsWith("USER_ID:")) {
+        const userId = finalParentId.substring(8);
+        const newProfile = await createParent(token, {
+          user_id: userId,
+          phone: null,
+          occupation: null,
+          address: null,
+        });
+        finalParentId = newProfile.id;
+      }
+
       if (editingItem) {
         await updateParentStudent(token, editingItem.id, {
-          parent_id: formData.parent_id,
+          parent_id: finalParentId,
           student_id: formData.student_id,
           relationship: formData.relationship,
         });
         setSuccess("Relationship updated successfully.");
       } else {
         await createParentStudent(token, {
-          parent_id: formData.parent_id,
+          parent_id: finalParentId,
           student_id: formData.student_id,
           relationship: formData.relationship,
         });
         setSuccess("Relationship created successfully.");
       }
       setIsFormOpen(false);
-      const data = await listParentStudents(token);
-      setItems(data);
+      
+      const [relsData, parentsData, studentsData, usersData, classesData] = await Promise.all([
+        listParentStudents(token),
+        listParents(token),
+        listStudents(token),
+        listUsers(token),
+        listClasses(token),
+      ]);
+      setItems(relsData);
+
+      const parentsList: any[] = [];
+      const parentUsers = usersData.filter(
+        (u) => u.role?.role_name === "PARENT" || u.role_id === "0003"
+      );
+      for (const u of parentUsers) {
+        const profile = parentsData.find((p) => p.user_id === u.id);
+        if (profile) {
+          parentsList.push({
+            id: profile.id,
+            user_id: profile.user_id,
+            phone: profile.phone,
+            username: u.username,
+            email: u.email,
+          });
+        } else {
+          parentsList.push({
+            id: `USER_ID:${u.id}`,
+            user_id: u.id,
+            phone: u.phone,
+            username: u.username,
+            email: u.email,
+            isVirtual: true,
+          });
+        }
+      }
+      setParents(parentsList);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Operation failed.";
       if (/already exists|duplicate/i.test(msg)) {

@@ -13,11 +13,12 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearAuth, getStoredUser } from "@/lib/auth";
+import { clearAuth, getStoredUser, getToken } from "@/lib/auth";
 import { getInitials } from "@/lib/utils/formatters";
 import CalendarPicker from "@/components/shared/Calendar";
 import { MENU_ITEMS } from "@/lib/constants";
 import { MODULES, QUICK_ACCESS } from "@/lib/modules";
+import { listNotifications, listMessages } from "@/lib/services/communicationService";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -58,6 +59,9 @@ export default function DashboardHeader({
   const calendarRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   const dashboardRole = pathname.match(/^\/dashboard\/([^/]+)/)?.[1];
   const actionPaths: Record<string, { messages?: string; notifications?: string }> = {
@@ -89,6 +93,38 @@ export default function DashboardHeader({
     if (!q) return [];
     return SEARCH_INDEX.filter((r) => r.title.toLowerCase().includes(q));
   }, [query]);
+
+  useEffect(() => {
+    const checkUnread = async () => {
+      const token = getToken();
+      if (!token) return;
+
+      try {
+        const user = getStoredUser();
+        const userId = user?.id;
+
+        // Fetch notifications
+        const notifs = await listNotifications(token).catch(() => []);
+        const unreadNotif = notifs.some((n: any) => !n.is_read);
+        setHasUnreadNotifications(unreadNotif);
+
+        // Fetch messages
+        const msgs = await listMessages(token).catch(() => []);
+        const unreadMsg = msgs.some((m: any) => !m.is_read && m.receiver_id === userId);
+        setHasUnreadMessages(unreadMsg);
+      } catch (err) {
+        console.error("Failed to check unread communications:", err);
+      }
+    };
+
+    void checkUnread();
+
+    const interval = setInterval(() => {
+      void checkUnread();
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [pathname]);
 
   useEffect(() => {
     setSelected(0);
@@ -248,6 +284,9 @@ export default function DashboardHeader({
               className="relative p-2 hover:bg-slate-100 rounded-lg transition"
             >
               <Bell className="w-5 h-5 text-slate-600" />
+              {hasUnreadNotifications && (
+                <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+              )}
             </button>
           )}
 
@@ -259,6 +298,9 @@ export default function DashboardHeader({
               className="relative p-2 hover:bg-slate-100 rounded-lg transition"
             >
               <MessageSquare className="w-5 h-5 text-slate-600" />
+              {hasUnreadMessages && (
+                <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+              )}
             </button>
           )}
 

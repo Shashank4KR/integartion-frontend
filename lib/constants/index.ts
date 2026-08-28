@@ -36,6 +36,8 @@ export const MENU_ITEMS: MenuItemType[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/admin" },
   { label: "User Modules", icon: LayoutGrid, href: "/dashboard/admin/modules" },
   { label: "Students", icon: Users, href: "/dashboard/admin/students" },
+  { label: "Parents", icon: Users, href: "/dashboard/admin/parents" },
+  { label: "Parent-Student Mapping", icon: Users, href: "/dashboard/admin/parent-students" },
   { label: "Employees", icon: Briefcase, href: "/dashboard/admin/teachers" },
     {
       label: "Academics",
@@ -155,7 +157,7 @@ export const SIDEBAR_WIDTH = "280px";
 export const COMPANY_INFO = {
   name: "EdTech",
   tagline: "Smart Campus ERP",
-  copyright: "© 2025 EdTech Smart Campus ERP. All rights reserved.",
+  copyright: "© 2026 EdTech Smart Campus ERP. All rights reserved.",
   version: "1.0.0",
 };
 

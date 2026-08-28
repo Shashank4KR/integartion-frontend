@@ -13,6 +13,7 @@ import CommunicationQuickFilters from "@/components/dashboard/communication/Comm
 import CommunicationTemplates from "@/components/dashboard/communication/CommunicationTemplates";
 import NewMessageDialog from "@/components/dashboard/communication/NewMessageDialog";
 import SendNotificationDialog from "@/components/dashboard/communication/SendNotificationDialog";
+import CreateAnnouncementDialog from "@/components/dashboard/communication/CreateAnnouncementDialog";
 import CommunicationActionDialog from "@/components/dashboard/communication/CommunicationActionDialog";
 import ConversationPreviewDialog from "@/components/dashboard/communication/ConversationPreviewDialog";
 import AnnouncementDetailsDialog from "@/components/dashboard/communication/AnnouncementDetailsDialog";
@@ -113,6 +114,7 @@ export default function CommunicationsAnnouncementsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const [sendNotificationOpen, setSendNotificationOpen] = useState(false);
+  const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
   const [actionDialog, setActionDialog] = useState<{
     open: boolean;
     title: string;
@@ -131,6 +133,78 @@ export default function CommunicationsAnnouncementsPage() {
   const [dateRange, setDateRange] = useState("This Month");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+
+  const loadCommunication = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoadError("Please log in to view communication records.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      const [messages, announcementRows, stats] = await Promise.all([
+        listMessages(token),
+        listAnnouncements(token),
+        getCommunicationStats(token),
+      ]);
+      setConversations(messages.map((item) => mapMessage(item as Record<string, unknown>)));
+      setAnnouncements(announcementRows.map((item) => mapAnnouncement(item as Record<string, unknown>)));
+      setSummaryCards([
+        {
+          title: "Total Messages Sent",
+          value: String(stats.total_messages ?? messages.length),
+          footer: "Loaded from communication API",
+          iconBg: "bg-purple-50",
+          iconColor: "text-[#7c3aed]",
+          sparkline: [],
+          sparkColor: "#7c3aed",
+        },
+        {
+          title: "Emails Sent",
+          value: "0",
+          footer: "No email channel records",
+          iconBg: "bg-emerald-50",
+          iconColor: "text-emerald-500",
+          sparkline: [],
+          sparkColor: "#10b981",
+        },
+        {
+          title: "SMS Sent",
+          value: "0",
+          footer: "No SMS channel records",
+          iconBg: "bg-blue-50",
+          iconColor: "text-blue-500",
+          sparkline: [],
+          sparkColor: "#3b82f6",
+        },
+        {
+          title: "Notifications Sent",
+          value: String(stats.total_notifications ?? 0),
+          footer: "Loaded from communication API",
+          iconBg: "bg-orange-50",
+          iconColor: "text-orange-500",
+          sparkline: [],
+          sparkColor: "#f97316",
+        },
+        {
+          title: "Delivery Rate",
+          value: `${Number(stats.delivery_rate ?? 0)}%`,
+          footer: "Loaded from communication API",
+          iconBg: "bg-emerald-50",
+          iconColor: "text-emerald-500",
+          sparkline: [],
+          sparkColor: "#10b981",
+        },
+      ]);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load communication records.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const showToast = (message: string) => {
     const toast = document.createElement("div");
@@ -156,6 +230,8 @@ export default function CommunicationsAnnouncementsPage() {
       setNewMessageOpen(true);
     } else if (actionId === "send-notification") {
       setSendNotificationOpen(true);
+    } else if (actionId === "create-announcement") {
+      setCreateAnnouncementOpen(true);
     } else {
       setActionDialog({
         open: true,
@@ -179,6 +255,11 @@ export default function CommunicationsAnnouncementsPage() {
 
   const handleNotificationSend = () => {
     showToast("Notification sent successfully");
+  };
+
+  const handleAnnouncementCreated = () => {
+    showToast("Announcement published successfully");
+    void loadCommunication();
   };
 
   const handleMoreOptions = () => {
@@ -234,78 +315,6 @@ export default function CommunicationsAnnouncementsPage() {
   };
 
   useEffect(() => {
-    const loadCommunication = async () => {
-      const token = getToken();
-      if (!token) {
-        setLoadError("Please log in to view communication records.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setLoadError(null);
-        const [messages, announcementRows, stats] = await Promise.all([
-          listMessages(token),
-          listAnnouncements(token),
-          getCommunicationStats(token),
-        ]);
-        setConversations(messages.map((item) => mapMessage(item as Record<string, unknown>)));
-        setAnnouncements(announcementRows.map((item) => mapAnnouncement(item as Record<string, unknown>)));
-        setSummaryCards([
-          {
-            title: "Total Messages Sent",
-            value: String(stats.total_messages ?? messages.length),
-            footer: "Loaded from communication API",
-            iconBg: "bg-purple-50",
-            iconColor: "text-[#7c3aed]",
-            sparkline: [],
-            sparkColor: "#7c3aed",
-          },
-          {
-            title: "Emails Sent",
-            value: "0",
-            footer: "No email channel records",
-            iconBg: "bg-emerald-50",
-            iconColor: "text-emerald-500",
-            sparkline: [],
-            sparkColor: "#10b981",
-          },
-          {
-            title: "SMS Sent",
-            value: "0",
-            footer: "No SMS channel records",
-            iconBg: "bg-blue-50",
-            iconColor: "text-blue-500",
-            sparkline: [],
-            sparkColor: "#3b82f6",
-          },
-          {
-            title: "Notifications Sent",
-            value: String(stats.total_notifications ?? 0),
-            footer: "Loaded from communication API",
-            iconBg: "bg-orange-50",
-            iconColor: "text-orange-500",
-            sparkline: [],
-            sparkColor: "#f97316",
-          },
-          {
-            title: "Delivery Rate",
-            value: `${Number(stats.delivery_rate ?? 0)}%`,
-            footer: "Loaded from communication API",
-            iconBg: "bg-emerald-50",
-            iconColor: "text-emerald-500",
-            sparkline: [],
-            sparkColor: "#10b981",
-          },
-        ]);
-      } catch (err) {
-        setLoadError(err instanceof Error ? err.message : "Failed to load communication records.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     void loadCommunication();
   }, []);
 
@@ -367,7 +376,7 @@ export default function CommunicationsAnnouncementsPage() {
           </div>
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
-            <span>© 2025 EdTech Smart Campus ERP. All rights reserved.</span>
+            <span>© 2026 EdTech Smart Campus ERP. All rights reserved.</span>
             <span>Version 1.0.0</span>
           </footer>
         </div>
@@ -376,6 +385,8 @@ export default function CommunicationsAnnouncementsPage() {
       <NewMessageDialog open={newMessageOpen} onClose={() => setNewMessageOpen(false)} onSend={handleMessageSend} />
 
       <SendNotificationDialog open={sendNotificationOpen} onClose={() => setSendNotificationOpen(false)} onSend={handleNotificationSend} />
+
+      <CreateAnnouncementDialog open={createAnnouncementOpen} onClose={() => setCreateAnnouncementOpen(false)} onCreated={handleAnnouncementCreated} />
 
       <CommunicationActionDialog
         open={actionDialog.open}

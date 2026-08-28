@@ -334,7 +334,7 @@ export default function SalaryManagementPage() {
           </div>
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
-            <span>© 2025 EdTech Smart Campus ERP. All rights reserved.</span>
+            <span>© 2026 EdTech Smart Campus ERP. All rights reserved.</span>
             <span>Version 1.0.0</span>
           </footer>
         </div>

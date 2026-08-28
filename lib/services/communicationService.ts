@@ -158,3 +158,23 @@ export async function getCommunicationStats(
 
   return unwrapData(await response.json(), {});
 }
+
+export async function sendNotification(
+  token: string,
+  payload: any,
+): Promise<any> {
+  const response = await fetch(`${BASE}/notifications`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to send notification.");
+  }
+
+  return unwrapData(await response.json(), {});
+}
