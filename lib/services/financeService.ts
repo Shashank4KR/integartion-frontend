@@ -141,6 +141,43 @@ export async function generateInvoice(
   return (await response.json()) as any;
 }
 
+export async function updateInvoice(
+  token: string,
+  id: string,
+  payload: any,
+): Promise<any> {
+  const response = await fetch(`${BASE}/invoices/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to update invoice.");
+  }
+
+  return (await response.json()) as any;
+}
+
+export async function deleteInvoice(
+  token: string,
+  id: string,
+): Promise<void> {
+  const response = await fetch(`${BASE}/invoices/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to delete invoice.");
+  }
+}
+
 export async function listExpenses(
   token: string,
 ): Promise<any[]> {
@@ -304,7 +341,7 @@ export async function listFeeInstallments(token: string): Promise<any[]> {
 }
 
 export async function createFeePayment(token: string, payload: any): Promise<any> {
-  const response = await fetch("/api/payments", {
+  const response = await fetch(`${BASE}/payments`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

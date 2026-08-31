@@ -13,8 +13,13 @@ import InvoiceDetailsCard from "@/components/dashboard/finance/invoices/InvoiceD
 import GenerateInvoiceDialog from "@/components/dashboard/finance/invoices/GenerateInvoiceDialog";
 import ImportInvoicesDialog from "@/components/dashboard/finance/invoices/ImportInvoicesDialog";
 import InvoiceActionDialog from "@/components/dashboard/finance/invoices/InvoiceActionDialog";
+import EditInvoiceDialog from "@/components/dashboard/finance/invoices/EditInvoiceDialog";
+import RecordInvoicePaymentDialog from "@/components/dashboard/finance/invoices/RecordInvoicePaymentDialog";
 import { getToken } from "@/lib/auth";
-import { listInvoices } from "@/lib/services/financeService";
+import { listInvoices, updateInvoice, deleteInvoice, createFeePayment } from "@/lib/services/financeService";
+import { listStudents } from "@/lib/services/studentService";
+import { listClasses } from "@/lib/services/classService";
+import { generateInvoicePdf } from "@/lib/utils/generateInvoicePdf";
 
 const ITEMS_PER_PAGE = 10;
 interface InvoiceRow {
@@ -57,13 +62,15 @@ function mapInvoice(item: Record<string, unknown>): InvoiceRow {
     return String(item.student ?? "-");
   })();
 
+  const rawClass = String(item.class_grade ?? item.className ?? item.class_name ?? "-");
+
   return {
     id: String(item.id ?? crypto.randomUUID()),
     invoiceNo: String(item.invoice_number ?? item.invoice_no ?? item.id ?? "-"),
     invoiceDate: String(item.invoice_date ?? item.created_at ?? "-"),
     studentName,
-    studentId: String(item.student_id ?? "-"),
-    classGrade: String(item.class_grade ?? item.className ?? "-"),
+    studentId: String(item.student_id ?? item.admission_no ?? "-"),
+    classGrade: rawClass !== "None" && rawClass !== "null" ? rawClass : "General",
     invoiceType: "Fee Invoice",
     dueDate: String(item.due_date ?? "-"),
     amount,
@@ -83,10 +90,15 @@ function EmptyPanel({ title }: { title: string }) {
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<InvoiceRow | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [payingInvoice, setPayingInvoice] = useState<InvoiceRow | null>(null);
+  const [recordPaymentDialogOpen, setRecordPaymentDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
   const [actionDialog, setActionDialog] = useState<{
     open: boolean;
@@ -120,8 +132,51 @@ export default function InvoicesPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const rows = await listInvoices(token);
-        const mapped = rows.map((item) => mapInvoice(item as Record<string, unknown>));
+        const [rows, studentsRes, classesRes] = await Promise.all([
+          listInvoices(token).catch(() => []),
+          listStudents(token).catch(() => []),
+          listClasses(token).catch(() => []),
+        ]);
+
+        const classMap = new Map<string, string>();
+        const classesList: string[] = ["All Classes"];
+        (Array.isArray(classesRes) ? classesRes : []).forEach((c: any) => {
+          const lbl = `${c.class_name || "Class"} ${c.section ? `- ${c.section}` : ""}`.trim();
+          classMap.set(String(c.id), lbl);
+          if (!classesList.includes(lbl)) classesList.push(lbl);
+        });
+        setAvailableClasses(classesList);
+
+        const studentMap = new Map<string, { name: string; admissionNo: string; classGrade: string }>();
+        (Array.isArray(studentsRes) ? studentsRes : []).forEach((s: any) => {
+          const cLabel = s.class_id ? classMap.get(String(s.class_id)) : null;
+          const sName = [s.first_name, s.last_name].filter(Boolean).join(" ") || s.admission_no || "Student";
+          const sAdm = s.admission_no || String(s.id).slice(0, 8);
+          const sClass = cLabel || s.class_name || s.grade || "General";
+          studentMap.set(String(s.id), { name: sName, admissionNo: sAdm, classGrade: sClass });
+          if (s.admission_no) {
+            studentMap.set(String(s.admission_no), { name: sName, admissionNo: sAdm, classGrade: sClass });
+          }
+        });
+
+        const mapped = (Array.isArray(rows) ? rows : []).map((item: any) => {
+          const base = mapInvoice(item as Record<string, unknown>);
+          const matchStudent = (item.student_id ? studentMap.get(String(item.student_id)) : null) ||
+                               (base.studentId ? studentMap.get(String(base.studentId)) : null);
+          if (matchStudent) {
+            if (!base.studentName || base.studentName === "-" || base.studentName === "Student") {
+              base.studentName = matchStudent.name;
+            }
+            if (!base.studentId || base.studentId === "-") {
+              base.studentId = matchStudent.admissionNo;
+            }
+            if (!base.classGrade || base.classGrade === "-" || base.classGrade === "General") {
+              base.classGrade = matchStudent.classGrade;
+            }
+          }
+          return base;
+        });
+
         setInvoices(mapped);
         setSelectedInvoice(mapped[0] ?? null);
       } catch (err) {
@@ -239,25 +294,107 @@ export default function InvoicesPage() {
   };
 
   const handleDownloadInvoice = (invoice: InvoiceRow) => {
-    showToast(`Invoice ${invoice.invoiceNo} downloaded`);
+    try {
+      generateInvoicePdf({
+        invoiceNumber: invoice.invoiceNo,
+        studentName: invoice.studentName,
+        className: invoice.classGrade,
+        admissionNo: invoice.studentId,
+        feeType: invoice.invoiceType,
+        amount: invoice.amount,
+        paid: invoice.paid,
+        balance: invoice.balance,
+        status: invoice.status,
+        invoiceDate: invoice.invoiceDate,
+        dueDate: invoice.dueDate,
+      });
+      showToast(`Invoice ${invoice.invoiceNo} PDF downloaded successfully`);
+    } catch (err: any) {
+      showToast(`Failed to generate PDF: ${err?.message || "Unknown error"}`);
+    }
+  };
+
+  const handleEditInvoice = (invoice: InvoiceRow) => {
+    setEditingInvoice(invoice);
+    setEditDialogOpen(true);
+  };
+
+  const handleRecordPayment = (invoice: InvoiceRow) => {
+    setPayingInvoice(invoice);
+    setRecordPaymentDialogOpen(true);
+  };
+
+  const handleSaveEditedInvoice = async (updated: InvoiceRow) => {
+    setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
+    if (selectedInvoice?.id === updated.id) {
+      setSelectedInvoice(updated);
+    }
+    showToast(`Invoice ${updated.invoiceNo} updated successfully! Later payment deadline set to ${updated.dueDate}.`);
+
+    const token = getToken();
+    if (token && updated.id) {
+      try {
+        await updateInvoice(token, updated.id, {
+          due_date: updated.dueDate,
+          amount: updated.amount,
+          status: updated.status.toUpperCase(),
+        });
+      } catch {
+        // Optimistic update retained
+      }
+    }
+  };
+
+  const handlePaymentRecorded = async (
+    updated: InvoiceRow,
+    paymentData?: {
+      amountPaid: number;
+      paymentType: string;
+      paymentDetails: string;
+      paymentDate: string;
+    }
+  ) => {
+    setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
+    if (selectedInvoice?.id === updated.id) {
+      setSelectedInvoice(updated);
+    }
+    showToast(`Payment recorded for ${updated.invoiceNo}. Remaining balance: ₹${updated.balance.toLocaleString("en-IN")}`);
+
+    const token = getToken();
+    if (token && updated.id) {
+      try {
+        await createFeePayment(token, {
+          invoice_id: updated.id,
+          amount_paid: paymentData?.amountPaid ?? (updated.paid || 0),
+          payment_method: paymentData?.paymentType ?? "ONLINE",
+          payment_date: paymentData?.paymentDate ?? new Date().toISOString().split("T")[0],
+          remarks: paymentData?.paymentDetails || "Fee Payment",
+        });
+      } catch (err) {
+        console.error("Failed to record fee payment on backend:", err);
+      }
+    }
   };
 
   const handleMoreActions = (invoice: InvoiceRow) => {
-    setActionDialog({
-      open: true,
-      title: "More Options",
-      message: `Actions for ${invoice.invoiceNo}: Edit Invoice, Print Invoice, Record Payment, Duplicate Invoice, Cancel Invoice, or Delete Invoice.`,
-      destructive: false,
-    });
+    handleEditInvoice(invoice);
   };
 
-  const handleDeleteInvoice = (invoice: InvoiceRow) => {
-    setActionDialog({
-      open: true,
-      title: "Delete Invoice",
-      message: `Are you sure you want to delete invoice ${invoice.invoiceNo}? This action cannot be undone.`,
-      destructive: true,
-    });
+  const handleDeleteInvoice = async (invoice: InvoiceRow) => {
+    setInvoices((prev) => prev.filter((inv) => inv.id !== invoice.id));
+    if (selectedInvoice?.id === invoice.id) {
+      setSelectedInvoice(null);
+    }
+    showToast(`Invoice ${invoice.invoiceNo} has been deleted`);
+
+    const token = getToken();
+    if (token && invoice.id) {
+      try {
+        await deleteInvoice(token, invoice.id);
+      } catch {
+        // Optimistic delete retained
+      }
+    }
   };
 
   const handleActionConfirm = () => {
@@ -318,6 +455,7 @@ export default function InvoicesPage() {
             onInvoiceTypeChange={setInvoiceType}
             classGrade={classGrade}
             onClassGradeChange={setClassGrade}
+            classOptions={availableClasses}
             status={status}
             onStatusChange={setStatus}
             dateRange={dateRange}
@@ -341,6 +479,9 @@ export default function InvoicesPage() {
                       rows={filteredInvoices.paginated}
                       onView={handleViewInvoice}
                       onDownload={handleDownloadInvoice}
+                      onEdit={handleEditInvoice}
+                      onRecordPayment={handleRecordPayment}
+                      onDelete={handleDeleteInvoice}
                       onMore={handleMoreActions}
                     />
                     <InvoicePagination
@@ -355,7 +496,11 @@ export default function InvoicesPage() {
               </div>
             </div>
             <div className="space-y-6">
-              <InvoiceDetailsCard invoice={selectedInvoice} />
+              <InvoiceDetailsCard
+                invoice={selectedInvoice}
+                onEdit={handleEditInvoice}
+                onRecordPayment={handleRecordPayment}
+              />
               <EmptyPanel title="No balance fee breakdown available." />
             </div>
           </div>
@@ -386,6 +531,26 @@ export default function InvoicesPage() {
         open={generateDialogOpen}
         onClose={() => setGenerateDialogOpen(false)}
         onSave={handleSaveInvoice}
+      />
+
+      <EditInvoiceDialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setEditingInvoice(null);
+        }}
+        invoice={editingInvoice}
+        onSave={handleSaveEditedInvoice}
+      />
+
+      <RecordInvoicePaymentDialog
+        open={recordPaymentDialogOpen}
+        onClose={() => {
+          setRecordPaymentDialogOpen(false);
+          setPayingInvoice(null);
+        }}
+        invoice={payingInvoice}
+        onPaymentRecorded={handlePaymentRecorded}
       />
 
       <ImportInvoicesDialog

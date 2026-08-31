@@ -172,17 +172,20 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
             {errors.amountPaid && <p className="text-xs text-red-500 mt-1">{errors.amountPaid}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Payment Mode</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Type of Payment</label>
             <select
               value={form.paymentMode}
               onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}
               className={`${inputClass} text-slate-800 bg-white`}
             >
-              <option className="text-slate-800 bg-white">Cash</option>
-              <option className="text-slate-800 bg-white">Online</option>
-              <option className="text-slate-800 bg-white">UPI</option>
-              <option className="text-slate-800 bg-white">Cheque</option>
-              <option className="text-slate-800 bg-white">Bank Transfer</option>
+              <option value="Online UPI">Online UPI / QR Code</option>
+              <option value="Cash">Cash</option>
+              <option value="Debit / Credit Card">Debit / Credit Card</option>
+              <option value="Net Banking">Net Banking / NEFT / RTGS</option>
+              <option value="Cheque">Cheque / Demand Draft</option>
+              <option value="Bank Transfer">Bank Deposit / Transfer</option>
+              <option value="Scholarship / Concession">Scholarship / Fee Concession</option>
+              <option value="Other">Other Payment Method</option>
             </select>
             {errors.paymentMode && <p className="text-xs text-red-500 mt-1">{errors.paymentMode}</p>}
           </div>
@@ -197,13 +200,13 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
             {errors.paymentDate && <p className="text-xs text-red-500 mt-1">{errors.paymentDate}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Receipt Number</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Receipt / Reference No.</label>
             <input
               type="text"
               value={form.receiptNumber}
               onChange={(e) => setForm({ ...form, receiptNumber: e.target.value })}
               className={inputClass}
-              placeholder="RCPT-XXXX"
+              placeholder="e.g. RCPT-100245 or UPI-Ref"
             />
             {errors.receiptNumber && <p className="text-xs text-red-500 mt-1">{errors.receiptNumber}</p>}
           </div>
@@ -218,13 +221,15 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
             {errors.status && <p className="text-xs text-red-500 mt-1">{errors.status}</p>}
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Notes</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+              Payment Details & Remarks (Text)
+            </label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               className={inputClass}
-              rows={3}
-              placeholder="Optional notes..."
+              rows={2}
+              placeholder="Enter transaction reference, bank details, payer remarks, or payment notes..."
             />
           </div>
         </div>

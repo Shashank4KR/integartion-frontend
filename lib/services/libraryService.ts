@@ -1,3 +1,13 @@
+import type {
+  BookCategoryCreate,
+  BookCategoryResponse,
+  BookCreate,
+  BookIssueCreate,
+  BookIssueResponse,
+  BookResponse,
+  BookUpdate,
+} from "@/types/entities/library";
+
 async function parseError(response: Response, fallback: string): Promise<Error> {
   try {
     const data = (await response.json()) as { detail?: string; message?: string };
@@ -15,18 +25,18 @@ function unwrapData<T>(payload: unknown, fallback: T): T {
   return (payload ?? fallback) as T;
 }
 
-function unwrapItems(payload: unknown): any[] {
+function unwrapItems<T = any>(payload: unknown): T[] {
   const data = unwrapData<unknown>(payload, []);
-  if (Array.isArray(data)) return data;
+  if (Array.isArray(data)) return data as T[];
   if (data && typeof data === "object") {
     const record = data as { items?: unknown; results?: unknown };
-    if (Array.isArray(record.items)) return record.items;
-    if (Array.isArray(record.results)) return record.results;
+    if (Array.isArray(record.items)) return record.items as T[];
+    if (Array.isArray(record.results)) return record.results as T[];
   }
   return [];
 }
 
-export async function listBookIssues(token: string): Promise<any[]> {
+export async function listBookIssues(token: string): Promise<BookIssueResponse[]> {
   const response = await fetch("/api/book-issues", {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -35,10 +45,10 @@ export async function listBookIssues(token: string): Promise<any[]> {
     throw await parseError(response, "Failed to fetch book issues.");
   }
 
-  return unwrapItems(await response.json());
+  return unwrapItems<BookIssueResponse>(await response.json());
 }
 
-export async function listOverdueBookIssues(token: string): Promise<any[]> {
+export async function listOverdueBookIssues(token: string): Promise<BookIssueResponse[]> {
   const response = await fetch("/api/book-issues/overdue", {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -47,7 +57,48 @@ export async function listOverdueBookIssues(token: string): Promise<any[]> {
     throw await parseError(response, "Failed to fetch overdue book issues.");
   }
 
-  return unwrapItems(await response.json());
+  return unwrapItems<BookIssueResponse>(await response.json());
+}
+
+export async function createBookIssue(
+  token: string,
+  payload: BookIssueCreate,
+): Promise<BookIssueResponse> {
+  const response = await fetch("/api/book-issues", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to issue book.");
+  }
+
+  return (await response.json()) as BookIssueResponse;
+}
+
+export async function returnBookIssue(
+  token: string,
+  issueId: string,
+  returnDate?: string,
+): Promise<BookIssueResponse> {
+  const response = await fetch(`/api/book-issues/${encodeURIComponent(issueId)}/return`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ return_date: returnDate ?? null }),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to process book return.");
+  }
+
+  return (await response.json()) as BookIssueResponse;
 }
 
 export async function listFinePayments(token: string): Promise<any[]> {
@@ -65,8 +116,8 @@ export async function listFinePayments(token: string): Promise<any[]> {
 export async function listStudentBookIssues(
   token: string,
   studentId: string,
-): Promise<any[]> {
-  const response = await fetch(`/api/students/${studentId}/book-issues`, {
+): Promise<BookIssueResponse[]> {
+  const response = await fetch(`/api/students/${encodeURIComponent(studentId)}/book-issues`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -74,7 +125,7 @@ export async function listStudentBookIssues(
     throw await parseError(response, "Failed to fetch issued books.");
   }
 
-  return unwrapItems(await response.json());
+  return unwrapItems<BookIssueResponse>(await response.json());
 }
 
 export async function getCurrentStudentLibrary(token: string): Promise<any> {
@@ -89,8 +140,17 @@ export async function getCurrentStudentLibrary(token: string): Promise<any> {
   return unwrapData(await response.json(), {});
 }
 
-export async function listBooks(token: string): Promise<any[]> {
-  const response = await fetch("/api/books", {
+export async function listBooks(
+  token: string,
+  params?: { search?: string; categoryId?: string; status?: boolean },
+): Promise<BookResponse[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.categoryId) query.set("category_id", params.categoryId);
+  if (params?.status !== undefined) query.set("status", String(params.status));
+
+  const url = `/api/books${query.toString() ? `?${query.toString()}` : ""}`;
+  const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -98,12 +158,94 @@ export async function listBooks(token: string): Promise<any[]> {
     throw await parseError(response, "Failed to fetch library books.");
   }
 
-  return unwrapItems(await response.json());
+  return unwrapItems<BookResponse>(await response.json());
 }
 
-export async function getLibraryDashboardAnalytics(
+export async function createBook(
   token: string,
-): Promise<any> {
+  payload: BookCreate,
+): Promise<BookResponse> {
+  const response = await fetch("/api/books", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to create book.");
+  }
+
+  return (await response.json()) as BookResponse;
+}
+
+export async function updateBook(
+  token: string,
+  bookId: string,
+  payload: BookUpdate,
+): Promise<BookResponse> {
+  const response = await fetch(`/api/books/${encodeURIComponent(bookId)}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to update book.");
+  }
+
+  return (await response.json()) as BookResponse;
+}
+
+export async function deleteBook(token: string, bookId: string): Promise<void> {
+  const response = await fetch(`/api/books/${encodeURIComponent(bookId)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to delete book.");
+  }
+}
+
+export async function listCategories(token: string): Promise<BookCategoryResponse[]> {
+  const response = await fetch("/api/book-categories", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to fetch book categories.");
+  }
+
+  return unwrapItems<BookCategoryResponse>(await response.json());
+}
+
+export async function createCategory(
+  token: string,
+  payload: BookCategoryCreate,
+): Promise<BookCategoryResponse> {
+  const response = await fetch("/api/book-categories", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to create book category.");
+  }
+
+  return (await response.json()) as BookCategoryResponse;
+}
+
+export async function getLibraryDashboardAnalytics(token: string): Promise<any> {
   const response = await fetch("/api/library/analytics/dashboard", {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -138,4 +280,3 @@ export async function getFineSummary(token: string): Promise<any> {
 
   return unwrapData(await response.json(), {});
 }
-

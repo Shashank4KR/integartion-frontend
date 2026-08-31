@@ -7,7 +7,7 @@ import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import Header from "@/components/shared/layout/Header";
 import { getToken } from "@/lib/auth";
-import { listMessages, listNotifications } from "@/lib/services/communicationService";
+import { listMessages, listNotifications, markAllNotificationsRead } from "@/lib/services/communicationService";
 
 type InboxKind = "messages" | "notifications";
 
@@ -57,6 +57,19 @@ export default function AdminInboxPage({ kind }: { kind: InboxKind }) {
     }
     setLoading(true);
     try {
+      if (kind === "notifications") {
+        try {
+          localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
+          window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
+          void markAllNotificationsRead(token).catch(() => {});
+        } catch {}
+      } else {
+        try {
+          localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
+          window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
+        } catch {}
+      }
+
       setItems(await config.load(token));
       setError(null);
     } catch (cause) {

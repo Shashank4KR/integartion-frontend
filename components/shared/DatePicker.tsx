@@ -37,6 +37,7 @@ const parseToDate = (s: string): Date => {
 export default function DatePicker({ value, onChange, open, onOpenChange }: DatePickerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [selected, setSelected] = useState<Date>(() => parseToDate(value));
+  const [openUpward, setOpenUpward] = useState(false);
   const isControlled = open !== undefined;
   const popoverOpen = isControlled ? open : internalOpen;
 
@@ -49,6 +50,19 @@ export default function DatePicker({ value, onChange, open, onOpenChange }: Date
   }, [isControlled, onOpenChange]);
 
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (popoverOpen && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      if (spaceBelow < 320 && spaceAbove > spaceBelow) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
+      }
+    }
+  }, [popoverOpen]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -86,7 +100,7 @@ export default function DatePicker({ value, onChange, open, onOpenChange }: Date
       </button>
 
       {popoverOpen && (
-        <div className="absolute right-0 z-[60] mt-2 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+        <div className={`absolute right-0 z-[60] w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl ${openUpward ? "bottom-full mb-2" : "top-full mt-2"}`}>
           <Calendar
             initialDate={selected}
             selectedDate={selected}

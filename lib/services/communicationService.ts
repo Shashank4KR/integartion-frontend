@@ -56,6 +56,37 @@ export async function listNotifications(
   return unwrapItems(await response.json());
 }
 
+export async function markAllNotificationsRead(
+  token: string,
+): Promise<any> {
+  const response = await fetch(`${BASE}/notifications/read-all`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    return { ok: false };
+  }
+
+  return unwrapData(await response.json(), { message: "Marked as read" });
+}
+
+export async function markNotificationRead(
+  token: string,
+  id: string,
+): Promise<any> {
+  const response = await fetch(`${BASE}/notifications/${id}/read`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    return { ok: false };
+  }
+
+  return unwrapData(await response.json(), {});
+}
+
 export async function createAnnouncement(
   token: string,
   payload: any,

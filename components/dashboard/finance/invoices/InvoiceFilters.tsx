@@ -24,6 +24,7 @@ interface InvoiceFiltersProps {
   onInvoiceTypeChange: (value: string) => void;
   classGrade: string;
   onClassGradeChange: (value: string) => void;
+  classOptions?: string[];
   status: string;
   onStatusChange: (value: string) => void;
   dateRange: string;
@@ -41,6 +42,7 @@ export default function InvoiceFilters({
   onInvoiceTypeChange,
   classGrade,
   onClassGradeChange,
+  classOptions,
   status,
   onStatusChange,
   dateRange,
@@ -56,6 +58,8 @@ export default function InvoiceFilters({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const dateContainerRef = useRef<HTMLDivElement>(null);
+
+  const availableClassOptions = classOptions && classOptions.length > 0 ? classOptions : CLASS_GRADE_OPTIONS;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -99,7 +103,7 @@ export default function InvoiceFilters({
         </div>
         <div className="flex-1 min-w-[140px]">
           <label className="block text-xs font-semibold text-slate-700 mb-2">Class / Grade</label>
-          <Dropdown value={classGrade} options={CLASS_GRADE_OPTIONS} onChange={onClassGradeChange} />
+          <Dropdown value={classGrade} options={availableClassOptions} onChange={onClassGradeChange} />
         </div>
         <div className="flex-1 min-w-[140px]">
           <label className="block text-xs font-semibold text-slate-700 mb-2">Status</label>

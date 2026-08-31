@@ -130,6 +130,7 @@ export type BookIssueResponse = {
   book_author?: string | null;
   student_name?: string | null;
   student_class?: string | null;
+  overdue_days?: number | null;
 };
 
 export type BookReturnRequest = {

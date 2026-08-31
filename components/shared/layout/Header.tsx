@@ -13,12 +13,12 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearAuth, getStoredUser, getToken } from "@/lib/auth";
+import { clearAuth, getStoredUser, getToken, getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
 import { getInitials } from "@/lib/utils/formatters";
 import CalendarPicker from "@/components/shared/Calendar";
 import { MENU_ITEMS } from "@/lib/constants";
 import { MODULES, QUICK_ACCESS } from "@/lib/modules";
-import { listNotifications, listMessages } from "@/lib/services/communicationService";
+import { listNotifications, listMessages, markAllNotificationsRead } from "@/lib/services/communicationService";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -81,11 +81,25 @@ export default function DashboardHeader({
   };
   const actions = dashboardRole ? actionPaths[dashboardRole] : undefined;
 
+  const [avatar, setAvatar] = useState<string | null>(null);
+
   useEffect(() => {
-    const user = getStoredUser();
-    if (!user) return;
-    setName(user.username);
-    setRole(user.role?.role_name ?? user.role_id);
+    const loadUserData = () => {
+      const user = getStoredUser();
+      if (!user) return;
+      setName(user.username);
+      setRole(user.role?.role_name ?? user.role_id);
+    };
+    loadUserData();
+    setAvatar(getStoredAvatar());
+    const unsubscribe = subscribeAvatarChange((newAvatar) => {
+      setAvatar(newAvatar);
+    });
+    window.addEventListener("focus", loadUserData);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("focus", loadUserData);
+    };
   }, []);
 
   const results = useMemo(() => {
@@ -95,6 +109,29 @@ export default function DashboardHeader({
   }, [query]);
 
   useEffect(() => {
+    const handleNotifsViewed = () => {
+      setHasUnreadNotifications(false);
+    };
+    const handleMsgsViewed = () => {
+      setHasUnreadMessages(false);
+    };
+
+    window.addEventListener("edtech_notifications_viewed", handleNotifsViewed);
+    window.addEventListener("edtech_messages_viewed", handleMsgsViewed);
+
+    if (pathname && (pathname.includes("/notifications") || pathname.includes("/notices"))) {
+      setHasUnreadNotifications(false);
+      try {
+        localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
+      } catch {}
+    }
+    if (pathname && pathname.includes("/messages")) {
+      setHasUnreadMessages(false);
+      try {
+        localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
+      } catch {}
+    }
+
     const checkUnread = async () => {
       const token = getToken();
       if (!token) return;
@@ -103,15 +140,40 @@ export default function DashboardHeader({
         const user = getStoredUser();
         const userId = user?.id;
 
-        // Fetch notifications
-        const notifs = await listNotifications(token).catch(() => []);
-        const unreadNotif = notifs.some((n: any) => !n.is_read);
-        setHasUnreadNotifications(unreadNotif);
+        // If currently viewing notifications page, suppress unread badge
+        if (pathname && (pathname.includes("/notifications") || pathname.includes("/notices"))) {
+          setHasUnreadNotifications(false);
+        } else {
+          const lastViewedStr = typeof window !== "undefined" ? localStorage.getItem("edtech_notifications_viewed_at") : null;
+          const lastViewedTime = lastViewedStr ? new Date(lastViewedStr).getTime() : 0;
 
-        // Fetch messages
-        const msgs = await listMessages(token).catch(() => []);
-        const unreadMsg = msgs.some((m: any) => !m.is_read && m.receiver_id === userId);
-        setHasUnreadMessages(unreadMsg);
+          // Fetch notifications
+          const notifs = await listNotifications(token).catch(() => []);
+          const unreadNotif = notifs.some((n: any) => {
+            if (n.is_read) return false;
+            const notifTime = new Date(n.created_at || n.sent_at || n.sent_on || 0).getTime();
+            if (lastViewedTime && notifTime && notifTime <= lastViewedTime) return false;
+            return true;
+          });
+          setHasUnreadNotifications(unreadNotif);
+        }
+
+        // Messages
+        if (pathname && pathname.includes("/messages")) {
+          setHasUnreadMessages(false);
+        } else {
+          const lastViewedMsgStr = typeof window !== "undefined" ? localStorage.getItem("edtech_messages_viewed_at") : null;
+          const lastViewedMsgTime = lastViewedMsgStr ? new Date(lastViewedMsgStr).getTime() : 0;
+
+          const msgs = await listMessages(token).catch(() => []);
+          const unreadMsg = msgs.some((m: any) => {
+            if (m.is_read || m.receiver_id !== userId) return false;
+            const msgTime = new Date(m.created_at || m.sent_at || 0).getTime();
+            if (lastViewedMsgTime && msgTime && msgTime <= lastViewedMsgTime) return false;
+            return true;
+          });
+          setHasUnreadMessages(unreadMsg);
+        }
       } catch (err) {
         console.error("Failed to check unread communications:", err);
       }
@@ -123,8 +185,38 @@ export default function DashboardHeader({
       void checkUnread();
     }, 20000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("edtech_notifications_viewed", handleNotifsViewed);
+      window.removeEventListener("edtech_messages_viewed", handleMsgsViewed);
+    };
   }, [pathname]);
+
+  const handleOpenNotifications = () => {
+    setHasUnreadNotifications(false);
+    try {
+      localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
+    } catch {}
+    window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
+    const token = getToken();
+    if (token) {
+      void markAllNotificationsRead(token).catch(() => {});
+    }
+    if (actions?.notifications) {
+      router.push(actions.notifications);
+    }
+  };
+
+  const handleOpenMessages = () => {
+    setHasUnreadMessages(false);
+    try {
+      localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
+    } catch {}
+    window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
+    if (actions?.messages) {
+      router.push(actions.messages);
+    }
+  };
 
   useEffect(() => {
     setSelected(0);
@@ -279,7 +371,7 @@ export default function DashboardHeader({
           {actions?.notifications && (
             <button
               type="button"
-              onClick={() => router.push(actions.notifications!)}
+              onClick={handleOpenNotifications}
               aria-label="Open notifications"
               className="relative p-2 hover:bg-slate-100 rounded-lg transition"
             >
@@ -293,7 +385,7 @@ export default function DashboardHeader({
           {actions?.messages && (
             <button
               type="button"
-              onClick={() => router.push(actions.messages!)}
+              onClick={handleOpenMessages}
               aria-label="Open messages"
               className="relative p-2 hover:bg-slate-100 rounded-lg transition"
             >
@@ -345,9 +437,17 @@ export default function DashboardHeader({
               aria-expanded={profileOpen}
               className="flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 transition hover:bg-slate-100"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                {getInitials(name)}
-              </div>
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt={name}
+                  className="w-8 h-8 rounded-full object-cover border border-purple-300 shadow-sm"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                  {getInitials(name)}
+                </div>
+              )}
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-semibold text-slate-900">{name}</p>
                 <p className="text-xs text-slate-500">{role}</p>

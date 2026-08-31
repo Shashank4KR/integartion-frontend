@@ -7,12 +7,19 @@ import Card from "@/components/shared/Card";
 import Badge from "@/components/shared/Badge";
 import Modal from "@/components/shared/Modal";
 import type { InvoiceRow } from "@/lib/fixtures/invoices-reference-fixture";
+import { generateInvoicePdf } from "@/lib/utils/generateInvoicePdf";
 
 interface InvoiceDetailsCardProps {
   invoice: InvoiceRow | null;
+  onEdit?: (invoice: InvoiceRow) => void;
+  onRecordPayment?: (invoice: InvoiceRow) => void;
 }
 
-export default function InvoiceDetailsCard({ invoice }: InvoiceDetailsCardProps) {
+export default function InvoiceDetailsCard({
+  invoice,
+  onEdit,
+  onRecordPayment,
+}: InvoiceDetailsCardProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   if (!invoice) {
@@ -23,6 +30,22 @@ export default function InvoiceDetailsCard({ invoice }: InvoiceDetailsCardProps)
       </Card>
     );
   }
+
+  const handleDownload = () => {
+    generateInvoicePdf({
+      invoiceNumber: invoice.invoiceNo,
+      studentName: invoice.studentName,
+      className: invoice.classGrade,
+      admissionNo: invoice.studentId,
+      feeType: invoice.invoiceType,
+      amount: invoice.amount,
+      paid: invoice.paid,
+      balance: invoice.balance,
+      status: invoice.status,
+      invoiceDate: invoice.invoiceDate,
+      dueDate: invoice.dueDate,
+    });
+  };
 
   const badgeVariant = invoice.status === "Paid" ? "success" : invoice.status === "Partial" ? "warning" : "error";
 
@@ -77,23 +100,47 @@ export default function InvoiceDetailsCard({ invoice }: InvoiceDetailsCardProps)
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-3 pt-2">
-        <Button
-          variant="outline"
-          className="flex-1 gap-1.5 h-10 text-slate-700 border-slate-200 hover:border-[#7c3aed] hover:text-[#7c3aed] transition"
-          onClick={() => setPreviewOpen(true)}
-        >
-          <Eye className="h-4 w-4" />
-          <span>View Invoice</span>
-        </Button>
-        <Button
-          variant="outline"
-          className="flex-1 gap-1.5 h-10 text-slate-700 border-slate-200 hover:border-[#7c3aed] hover:text-[#7c3aed] transition"
-          onClick={() => alert("Invoice downloaded")}
-        >
-          <Download className="h-4 w-4" />
-          <span>Download Invoice</span>
-        </Button>
+
+      {/* Quick Action Buttons */}
+      <div className="flex flex-col gap-2 pt-2">
+        {onRecordPayment && invoice.balance > 0 && (
+          <button
+            type="button"
+            onClick={() => onRecordPayment(invoice)}
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition"
+          >
+            💳 Record Payment (Collect ₹{invoice.balance.toLocaleString("en-IN")})
+          </button>
+        )}
+
+        {onEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit(invoice)}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-100 transition"
+          >
+            ✏️ Edit Invoice / Extend Due Date
+          </button>
+        )}
+
+        <div className="flex items-center gap-2 pt-1">
+          <Button
+            variant="outline"
+            className="flex-1 gap-1.5 h-9 text-xs text-slate-700 border-slate-200 hover:border-[#7c3aed] hover:text-[#7c3aed] transition"
+            onClick={() => setPreviewOpen(true)}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span>View</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1 gap-1.5 h-9 text-xs text-slate-700 border-slate-200 hover:border-[#7c3aed] hover:text-[#7c3aed] transition"
+            onClick={handleDownload}
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Download PDF</span>
+          </Button>
+        </div>
       </div>
       {previewOpen && (
         <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Invoice Preview" maxWidth="max-w-xl">

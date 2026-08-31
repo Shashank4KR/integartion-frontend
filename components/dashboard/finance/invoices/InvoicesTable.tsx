@@ -11,10 +11,21 @@ interface InvoiceRowActionsProps {
   invoice: InvoiceRow;
   onView: (invoice: InvoiceRow) => void;
   onDownload: (invoice: InvoiceRow) => void;
-  onMore: (invoice: InvoiceRow) => void;
+  onEdit?: (invoice: InvoiceRow) => void;
+  onRecordPayment?: (invoice: InvoiceRow) => void;
+  onDelete?: (invoice: InvoiceRow) => void;
+  onMore?: (invoice: InvoiceRow) => void;
 }
 
-export function InvoiceRowActions({ invoice, onView, onDownload, onMore }: InvoiceRowActionsProps) {
+export function InvoiceRowActions({
+  invoice,
+  onView,
+  onDownload,
+  onEdit,
+  onRecordPayment,
+  onDelete,
+  onMore,
+}: InvoiceRowActionsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -23,6 +34,7 @@ export function InvoiceRowActions({ invoice, onView, onDownload, onMore }: Invoi
         onClick={() => onView(invoice)}
         className="p-1.5 rounded-md bg-purple-50 text-[#7c3aed] hover:bg-purple-100 transition"
         aria-label="View invoice"
+        title="View Details"
       >
         <Eye className="h-4 w-4" />
       </button>
@@ -30,6 +42,7 @@ export function InvoiceRowActions({ invoice, onView, onDownload, onMore }: Invoi
         onClick={() => onDownload(invoice)}
         className="p-1.5 rounded-md bg-blue-50 text-blue-500 hover:bg-blue-100 transition"
         aria-label="Download invoice"
+        title="Download Invoice"
       >
         <Download className="h-4 w-4" />
       </button>
@@ -38,47 +51,42 @@ export function InvoiceRowActions({ invoice, onView, onDownload, onMore }: Invoi
           onClick={() => setMenuOpen((open) => !open)}
           className="p-1.5 rounded-md bg-slate-50 text-slate-600 hover:bg-slate-100 transition"
           aria-label="More options"
+          title="More options"
         >
           <MoreVertical className="h-4 w-4" />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-slate-200 bg-white shadow-lg">
+          <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+            {onEdit && (
+              <button
+                onClick={() => { onEdit(invoice); setMenuOpen(false); }}
+                className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-purple-50 hover:text-[#7c3aed]"
+              >
+                ✏️ Edit / Extend Due Date
+              </button>
+            )}
+            {onRecordPayment && (
+              <button
+                onClick={() => { onRecordPayment(invoice); setMenuOpen(false); }}
+                className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
+              >
+                💳 Record Payment
+              </button>
+            )}
             <button
-              onClick={() => { onMore(invoice); setMenuOpen(false); }}
+              onClick={() => { onDownload(invoice); setMenuOpen(false); }}
               className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
             >
-              Edit Invoice
+              📄 Print / Download
             </button>
-            <button
-              onClick={() => { onMore(invoice); setMenuOpen(false); }}
-              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            >
-              Print Invoice
-            </button>
-            <button
-              onClick={() => { onMore(invoice); setMenuOpen(false); }}
-              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            >
-              Record Payment
-            </button>
-            <button
-              onClick={() => { onMore(invoice); setMenuOpen(false); }}
-              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            >
-              Duplicate Invoice
-            </button>
-            <button
-              onClick={() => { onMore(invoice); setMenuOpen(false); }}
-              className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            >
-              Cancel Invoice
-            </button>
-            <button
-              onClick={() => { onMore(invoice); setMenuOpen(false); }}
-              className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-            >
-              Delete Invoice
-            </button>
+            {onDelete && (
+              <button
+                onClick={() => { onDelete(invoice); setMenuOpen(false); }}
+                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              >
+                🗑️ Cancel / Delete
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -90,10 +98,21 @@ interface InvoicesTableProps {
   rows: InvoiceRow[];
   onView: (invoice: InvoiceRow) => void;
   onDownload: (invoice: InvoiceRow) => void;
-  onMore: (invoice: InvoiceRow) => void;
+  onEdit?: (invoice: InvoiceRow) => void;
+  onRecordPayment?: (invoice: InvoiceRow) => void;
+  onDelete?: (invoice: InvoiceRow) => void;
+  onMore?: (invoice: InvoiceRow) => void;
 }
 
-export default function InvoicesTable({ rows, onView, onDownload, onMore }: InvoicesTableProps) {
+export default function InvoicesTable({
+  rows,
+  onView,
+  onDownload,
+  onEdit,
+  onRecordPayment,
+  onDelete,
+  onMore,
+}: InvoicesTableProps) {
   const statusVariantMap: Record<string, "success" | "warning" | "error" | "default"> = {
     Paid: "success",
     Partial: "warning",
@@ -144,7 +163,15 @@ export default function InvoicesTable({ rows, onView, onDownload, onMore }: Invo
                 <Badge variant={statusVariantMap[row.status] || "default"}>{row.status}</Badge>
               </td>
               <td className="py-3 px-4">
-                <InvoiceRowActions invoice={row} onView={onView} onDownload={onDownload} onMore={onMore} />
+                <InvoiceRowActions
+                  invoice={row}
+                  onView={onView}
+                  onDownload={onDownload}
+                  onEdit={onEdit}
+                  onRecordPayment={onRecordPayment}
+                  onDelete={onDelete}
+                  onMore={onMore}
+                />
               </td>
             </tr>
           ))}
