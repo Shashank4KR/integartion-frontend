@@ -15,6 +15,10 @@ import ImportInvoicesDialog from "@/components/dashboard/finance/invoices/Import
 import InvoiceActionDialog from "@/components/dashboard/finance/invoices/InvoiceActionDialog";
 import EditInvoiceDialog from "@/components/dashboard/finance/invoices/EditInvoiceDialog";
 import RecordInvoicePaymentDialog from "@/components/dashboard/finance/invoices/RecordInvoicePaymentDialog";
+import BalanceFeesOverview from "@/components/dashboard/finance/invoices/BalanceFeesOverview";
+import InvoiceTrendChart from "@/components/dashboard/finance/invoices/InvoiceTrendChart";
+import InvoicesByStatusChart from "@/components/dashboard/finance/invoices/InvoicesByStatusChart";
+import TopInvoiceTypes from "@/components/dashboard/finance/invoices/TopInvoiceTypes";
 import { getToken } from "@/lib/auth";
 import { listInvoices, updateInvoice, deleteInvoice, createFeePayment } from "@/lib/services/financeService";
 import { listStudents } from "@/lib/services/studentService";
@@ -501,22 +505,22 @@ export default function InvoicesPage() {
                 onEdit={handleEditInvoice}
                 onRecordPayment={handleRecordPayment}
               />
-              <EmptyPanel title="No balance fee breakdown available." />
+              <BalanceFeesOverview invoices={invoices} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <EmptyPanel title="No invoice trend data available." />
+              <InvoiceTrendChart invoices={invoices} />
             </div>
             <div>
-              <EmptyPanel title="No invoice status chart data available." />
+              <InvoicesByStatusChart invoices={invoices} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-3">
-              <EmptyPanel title="No invoice type data available." />
+              <TopInvoiceTypes invoices={invoices} />
             </div>
           </div>
 

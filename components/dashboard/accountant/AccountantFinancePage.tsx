@@ -100,29 +100,32 @@ function isOverdue(row: FinanceRow) {
 }
 
 function mapInvoice(item: Record<string, unknown>, paymentTotals: Record<string, number>): FinanceRow {
-  const amount = num(item.net_amount ?? item.amount);
-  const paid = num(item.paid_amount ?? item.amount_paid ?? paymentTotals[text(item.id, "")]);
+  const amount = num(item.amount ?? item.net_amount ?? item.total_amount);
+  const paid = num(item.paid ?? item.paid_amount ?? item.amount_paid ?? paymentTotals[text(item.id, "")]);
+  const balance = num(item.balance ?? item.balance_due ?? item.balance_amount ?? Math.max(amount - paid, 0));
   return {
     id: text(item.id, crypto.randomUUID()),
     primary: text(item.invoice_number ?? item.invoice_no ?? item.id),
     secondary: text(item.fee_type ?? item.fee_type_id, "Fee Invoice"),
-student: (() => {
-  const s = item.student as Record<string, unknown> | undefined;
-  if (s && typeof s === "object") {
-    const name = [s.first_name, s.last_name].filter(Boolean).join(" ").trim();
-    if (name) return name;
-  }
-  return text(item.student_name ?? item.student_id);
-})(),
+    student: (() => {
+      if (item.student_name) return String(item.student_name);
+      const s = item.student as Record<string, unknown> | undefined;
+      if (s && typeof s === "object") {
+        const name = [s.first_name, s.last_name].filter(Boolean).join(" ").trim();
+        if (name) return name;
+      }
+      return text(item.student_name ?? item.student_id, "Student");
+    })(),
     className: (() => {
-  const s = item.student as Record<string, unknown> | undefined;
-  const cls = s?.class_ as Record<string, unknown> | undefined;
-  if (cls?.class_name) return text(cls.class_name);
-  return text(item.class_name ?? item.class_grade ?? item.class);
-})(),
+      if (item.class_grade && item.class_grade !== "None" && item.class_grade !== "null") return String(item.class_grade);
+      const s = item.student as Record<string, unknown> | undefined;
+      const cls = s?.class_ as Record<string, unknown> | undefined;
+      if (cls?.class_name) return text(cls.class_name);
+      return text(item.class_name ?? item.class_grade ?? item.class, "General");
+    })(),
     amount,
     paid,
-    balance: num(item.balance_due ?? item.balance ?? Math.max(amount - paid, 0)),
+    balance,
     status: normalizeStatus(item.status),
     date: text(item.invoice_date ?? item.created_at),
     dueDate: text(item.due_date),

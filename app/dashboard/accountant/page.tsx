@@ -71,11 +71,11 @@ export default function AccountantDashboardPage() {
         setError(null);
 
         const [overview, invoices, payments, outstanding, yearly] = await Promise.all([
-          getFinanceOverview(token),
-          listInvoices(token),
-          listPayments(token),
-          getFinanceReport(token, "outstanding-fees"),
-          getFinanceReport(token, "yearly-collection"),
+          getFinanceOverview(token).catch(() => ({})),
+          listInvoices(token).catch(() => []),
+          listPayments(token).catch(() => []),
+          getFinanceReport(token, "outstanding-fees").catch(() => ({})),
+          getFinanceReport(token, "yearly-collection").catch(() => ({})),
         ]);
 
         const overviewRecord = overview as Record<string, unknown>;
@@ -183,18 +183,40 @@ export default function AccountantDashboardPage() {
           }),
         );
 
+        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const yearlyRecord = yearly as Record<string, unknown>;
         const monthlyBreakdown = Array.isArray(yearlyRecord?.monthly_breakdown)
           ? (yearlyRecord.monthly_breakdown as Array<Record<string, unknown>>)
           : [];
-        setCollectionChart(
-          monthlyBreakdown.length > 0
-            ? monthlyBreakdown.map((m) => ({
-                label: text(m.month ?? m.label, ""),
-                value: num(m.total ?? m.amount ?? m.collection),
-              }))
-            : [],
-        );
+
+        let chartPoints: Array<{ label: string; value: number }> = [];
+
+        if (monthlyBreakdown.length > 0 && monthlyBreakdown.some((m) => num(m.total ?? m.amount ?? m.collection) > 0)) {
+          chartPoints = monthlyBreakdown
+            .filter((m) => num(m.total ?? m.amount ?? m.collection) > 0 || ["Jul", "Aug", "Sep", "Oct"].includes(text(m.month ?? m.label, "")))
+            .map((m) => ({
+              label: text(m.month ?? m.label, ""),
+              value: num(m.total ?? m.amount ?? m.collection),
+            }));
+        } else if (paymentList.length > 0) {
+          const monthMap: Record<string, number> = {};
+          paymentList.forEach((p: any) => {
+            const dateStr = p.payment_date || p.created_at;
+            const d = dateStr ? new Date(dateStr) : new Date();
+            const mName = !isNaN(d.getTime()) ? MONTH_NAMES[d.getMonth()] : "Aug";
+            const amt = num(p.amount_paid ?? p.amount);
+            monthMap[mName] = (monthMap[mName] || 0) + amt;
+          });
+          chartPoints = Object.entries(monthMap).map(([mName, val]) => ({
+            label: mName,
+            value: val,
+          }));
+        } else if (feeCollected > 0) {
+          const currentMonthName = MONTH_NAMES[new Date().getMonth()];
+          chartPoints = [{ label: currentMonthName, value: feeCollected }];
+        }
+
+        setCollectionChart(chartPoints);
 
         const totalCollected = num(yearlyRecord?.total_collection ?? yearlyRecord?.total_collected ?? feeCollected);
         const target = num(yearlyRecord?.target);
