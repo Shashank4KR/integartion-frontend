@@ -140,14 +140,13 @@ export default function DashboardHeader({
         const user = getStoredUser();
         const userId = user?.id;
 
-        // If currently viewing notifications page, suppress unread badge
+        // Notifications
         if (pathname && (pathname.includes("/notifications") || pathname.includes("/notices"))) {
           setHasUnreadNotifications(false);
         } else {
           const lastViewedStr = typeof window !== "undefined" ? localStorage.getItem("edtech_notifications_viewed_at") : null;
           const lastViewedTime = lastViewedStr ? new Date(lastViewedStr).getTime() : 0;
 
-          // Fetch notifications
           const notifs = await listNotifications(token).catch(() => []);
           const unreadNotif = notifs.some((n: any) => {
             if (n.is_read) return false;
@@ -167,8 +166,9 @@ export default function DashboardHeader({
 
           const msgs = await listMessages(token).catch(() => []);
           const unreadMsg = msgs.some((m: any) => {
-            if (m.is_read || m.receiver_id !== userId) return false;
-            const msgTime = new Date(m.created_at || m.sent_at || 0).getTime();
+            if (m.is_read) return false;
+            if (m.receiver_id && userId && String(m.receiver_id).toLowerCase() !== String(userId).toLowerCase()) return false;
+            const msgTime = new Date(m.created_at || m.sent_at || m.sent_on || 0).getTime();
             if (lastViewedMsgTime && msgTime && msgTime <= lastViewedMsgTime) return false;
             return true;
           });
