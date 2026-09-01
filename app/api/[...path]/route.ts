@@ -43,13 +43,28 @@ async function handleProxy(
       body,
     });
 
-    const responseBody = await response.text();
+    const backendContentType = response.headers.get("content-type") || "application/octet-stream";
+
+    // Binary files (PDF, images, Office docs, etc.) must be streamed as raw bytes.
+    // Using response.text() on binary data corrupts it by mis-decoding bytes as UTF-8.
+    const isBinary =
+      backendContentType.startsWith("application/pdf") ||
+      backendContentType.startsWith("image/") ||
+      backendContentType.startsWith("video/") ||
+      backendContentType.startsWith("audio/") ||
+      backendContentType.includes("octet-stream") ||
+      backendContentType.includes("vnd.openxmlformats") ||  // .docx / .xlsx / .pptx
+      backendContentType.includes("msword") ||
+      backendContentType.includes("vnd.ms-");
+
+    const responseBody = isBinary
+      ? await response.arrayBuffer()   // keep raw bytes intact
+      : await response.text();         // safe for JSON / plain text
 
     return new NextResponse(responseBody || null, {
       status: response.status,
       headers: {
-        "Content-Type":
-          response.headers.get("content-type") || "application/json",
+        "Content-Type": backendContentType,
       },
     });
   } catch (err) {

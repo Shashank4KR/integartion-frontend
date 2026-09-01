@@ -87,6 +87,7 @@ export const ROLE_DASHBOARD_PATHS: Record<string, string> = {
   PARENT: "/dashboard/parent",
   ACCOUNTANT: "/dashboard/accountant",
   LIBRARIAN: "/dashboard/librarian",
+  WARDEN: "/dashboard/warden",
 };
 
 export function getDashboardPathForRole(roleName: string | undefined | null): string | null {

@@ -122,12 +122,19 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
       <RoleDropdown value={selectedRole} onChange={setSelectedRole} />
 
       {error ? (
-        <p
+        <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            error.toLowerCase().includes("maintenance")
+              ? "border-amber-300 bg-amber-50 text-amber-900"
+              : "border-red-200 bg-red-50 text-red-600"
+          }`}
         >
+          {error.toLowerCase().includes("maintenance") && (
+            <span className="font-bold block mb-0.5">🛠️ System Under Maintenance</span>
+          )}
           {error}
-        </p>
+        </div>
       ) : null}
 
       <label className="flex items-center gap-2 text-sm text-slate-600">
