@@ -29,7 +29,7 @@ export default function ParentDashboardPage() {
     async function load() {
       try {
         const token = getToken();
-        const childrenData = await getCurrentParentStudents();
+        const childrenData = await getCurrentParentStudents().catch(() => []);
         let annList: any[] = [];
         let fbList: StudentFeedback[] = [];
 
@@ -40,8 +40,8 @@ export default function ParentDashboardPage() {
 
         if (!mounted) return;
 
-        setChildren(childrenData);
-        setFeedbacks(fbList);
+        setChildren(childrenData || []);
+        setFeedbacks(fbList || []);
 
         setNotices(
           annList.slice(0, 5).map((ann: any) => ({

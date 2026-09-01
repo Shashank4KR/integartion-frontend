@@ -65,9 +65,14 @@ export default function TeacherDashboardPage() {
           throw new Error("Missing session");
         }
 
-        const teacherProfile = await getCurrentTeacherProfile();
-        const currentTeacher = await getCurrentTeacher(token);
-        const teacherId = teacherProfile.id || currentTeacher.id;
+        const teacherProfile = await getCurrentTeacherProfile().catch(() => null);
+        const currentTeacher = await getCurrentTeacher(token).catch(() => null);
+        const teacherId = teacherProfile?.id || currentTeacher?.id;
+
+        if (!teacherId) {
+          throw new Error("Teacher record not found for the current user.");
+        }
+
         const [
           resolvedSummary,
           assignedClassData,
@@ -77,20 +82,20 @@ export default function TeacherDashboardPage() {
           messages,
           events,
         ] = await Promise.all([
-          getTeacherDashboardSummary(teacherId),
-          getTeacherClasses(token, teacherId),
-          getTeacherTimetable(token, teacherId),
-          getTeacherPendingSubmissions(token, teacherId),
-          getTeacherPerformance(token, teacherId),
-          getTeacherMessages(token, teacherId),
-          getTeacherEvents(token, teacherId),
+          getTeacherDashboardSummary(teacherId).catch(() => null),
+          getTeacherClasses(token, teacherId).catch(() => []),
+          getTeacherTimetable(token, teacherId).catch(() => []),
+          getTeacherPendingSubmissions(token, teacherId).catch(() => []),
+          getTeacherPerformance(token, teacherId).catch(() => []),
+          getTeacherMessages(token, teacherId).catch(() => []),
+          getTeacherEvents(token, teacherId).catch(() => []),
         ]);
 
         if (!mounted) {
           return;
         }
 
-        setTeacher(teacherProfile);
+        setTeacher(teacherProfile || currentTeacher);
         setSummary(resolvedSummary);
         setClassRows(
           assignedClassData.map((item) => ({

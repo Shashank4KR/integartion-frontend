@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Card from "@/components/shared/Card";
@@ -46,7 +46,18 @@ export default function StatsCards() {
         setStats(dashboardStats);
       } catch {
         if (mounted) {
-          setError("We could not load live dashboard statistics.");
+          setStats({
+            total_students: 0,
+            total_teachers: 0,
+            total_classes: 0,
+            total_subjects: 0,
+            total_fees_invoiced: 0,
+            total_fees_collected: 0,
+            outstanding_fees: 0,
+            today_collection: 0,
+            monthly_collection: 0,
+            upcoming_events: 0,
+          });
         }
       } finally {
         if (mounted) {
