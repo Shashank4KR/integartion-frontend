@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   Check,
@@ -17,7 +17,7 @@ import {
   UserRound,
 } from "lucide-react";
 import type { SchoolRole, SettingsUser } from "@/components/settings/SettingsPage";
-import { getToken, getStoredAvatar, saveAvatar, removeAvatar } from "@/lib/auth";
+import { getToken, getStoredAvatar, saveAvatar, removeAvatar, subscribeAvatarChange } from "@/lib/auth";
 import {
   changePassword,
   exportAuditLogsCSV,
@@ -165,12 +165,25 @@ function Toggle({
    ========================================================================== */
 function compressImage(file: File, maxDim = 256, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
+    console.log("[Avatar] compressImage: reading file", file.name, file.size, file.type);
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Failed to read image file."));
+    reader.onerror = (ev) => {
+      console.error("[Avatar] FileReader error:", ev);
+      reject(new Error("Failed to read image file."));
+    };
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error("Invalid image format. Please select a valid JPG, PNG, or WebP image."));
+      img.onerror = (ev) => {
+        console.error("[Avatar] Image decode error:", ev);
+        reject(new Error("Invalid image format. Please select a valid JPG, PNG, or WebP image."));
+      };
       img.onload = () => {
+        console.log("[Avatar] Image decoded:", img.width, "x", img.height);
+        if (img.width === 0 || img.height === 0) {
+          console.error("[Avatar] Zero-dimension image — aborting");
+          reject(new Error("Image has zero dimensions. Please choose a different file."));
+          return;
+        }
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
@@ -189,11 +202,14 @@ function compressImage(file: File, maxDim = 256, quality = 0.85): Promise<string
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (!ctx) {
+          console.warn("[Avatar] Canvas 2d context unavailable — using raw data URL");
           resolve(reader.result as string);
           return;
         }
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        console.log("[Avatar] Compressed to", dataUrl.length, "chars (", width, "x", height, ")");
+        resolve(dataUrl);
       };
       img.src = reader.result as string;
     };
@@ -205,15 +221,76 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
   const [name, setName] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone ?? "");
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  // Initialise from localStorage immediately so the avatar appears on first render
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(() => getStoredAvatar());
   const [photoSuccess, setPhotoSuccess] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Callback ref: fires when the input DOM node is actually attached/detached
+  // This is StrictMode-safe and more reliable than useEffect + useRef for event listeners
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileListenerCleanupRef = useRef<(() => void) | null>(null);
+  const attachFileListener = useCallback(
+    (inputEl: HTMLInputElement | null) => {
+      // Detach phase — React passes null when the node is removed
+      if (!inputEl) {
+        fileListenerCleanupRef.current?.();
+        fileListenerCleanupRef.current = null;
+        (fileInputRef as React.MutableRefObject<HTMLInputElement | null>).current = null;
+        return;
+      }
 
+      // Keep the plain ref in sync (used by handleRemovePhoto etc.)
+      (fileInputRef as React.MutableRefObject<HTMLInputElement | null>).current = inputEl;
+
+      const handleNativeChange = async () => {
+        const file = inputEl.files?.[0];
+        console.log("[Avatar] change fired, file:", file?.name ?? "(none)");
+        if (!file) return;
+
+        if (file.size > 10 * 1024 * 1024) {
+          setPhotoError("File size exceeds maximum 10 MB limit.");
+          inputEl.value = "";
+          return;
+        }
+
+        // Show the chosen image immediately — no async wait needed
+        const objectUrl = URL.createObjectURL(file);
+        setAvatarPreview(objectUrl);
+        setProcessingPhoto(true);
+        setPhotoError(null);
+
+        try {
+          const compressed = await compressImage(file, 256, 0.85);
+          console.log("[Avatar] compressed, length:", compressed.length);
+          URL.revokeObjectURL(objectUrl);
+          setAvatarPreview(compressed);
+          saveAvatar(compressed);
+          console.log("[Avatar] saved. Key present:", !!localStorage.getItem("edtech_user_avatar"));
+          setPhotoSuccess("Profile picture updated!");
+          setTimeout(() => setPhotoSuccess(null), 3000);
+        } catch (err: any) {
+          console.error("[Avatar] failed:", err);
+          URL.revokeObjectURL(objectUrl);
+          setAvatarPreview(getStoredAvatar());
+          setPhotoError(err?.message || "Failed to process photo.");
+        } finally {
+          setProcessingPhoto(false);
+          inputEl.value = "";
+        }
+      };
+
+      inputEl.addEventListener("change", handleNativeChange);
+      fileListenerCleanupRef.current = () => inputEl.removeEventListener("change", handleNativeChange);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  // Sync profile fields when the user object changes
   useEffect(() => {
     setName(user.username);
     setEmail(user.email);
@@ -221,31 +298,12 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
     setAvatarPreview(getStoredAvatar());
   }, [user]);
 
-  const handlePhotoSelect = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      setPhotoError("File size exceeds maximum 10 MB limit.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    try {
-      setProcessingPhoto(true);
-      setPhotoError(null);
-      const compressedDataUrl = await compressImage(file, 256, 0.85);
-      setAvatarPreview(compressedDataUrl);
-      saveAvatar(compressedDataUrl);
-      setPhotoSuccess("Profile picture updated!");
-      setTimeout(() => setPhotoSuccess(null), 3000);
-    } catch (err: any) {
-      setPhotoError(err?.message || "Failed to process photo.");
-    } finally {
-      setProcessingPhoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
+  // Keep the avatar preview in sync with the global avatar store
+  useEffect(() => {
+    return subscribeAvatarChange((newAvatar) => {
+      setAvatarPreview(newAvatar);
+    });
+  }, []);
 
   const handleRemovePhoto = () => {
     setAvatarPreview(null);
@@ -315,18 +373,13 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
           )}
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handlePhotoSelect}
-                className="hidden"
-              />
-              <button
-                type="button"
-                disabled={processingPhoto}
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+              {/* Native label→input association: no JS .click() needed, works in all browsers */}
+              <label
+                htmlFor="avatar-file-input"
+                aria-disabled={processingPhoto}
+                className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 ${
+                  processingPhoto ? "pointer-events-none opacity-50" : ""
+                }`}
               >
                 {processingPhoto ? (
                   <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
@@ -334,7 +387,14 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
                   <Upload className="h-4 w-4 text-slate-500" />
                 )}
                 {processingPhoto ? "Processing…" : "Upload new photo"}
-              </button>
+                <input
+                  ref={attachFileListener}
+                  id="avatar-file-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                />
+              </label>
               {avatarPreview && (
                 <button
                   type="button"
