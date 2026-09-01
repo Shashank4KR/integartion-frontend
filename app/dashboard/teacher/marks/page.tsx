@@ -83,16 +83,20 @@ export default function TeacherMarksPage() {
 
         // Load existing exam results if available
         if (token) {
-          const teacher = await getCurrentTeacher(token);
-          const existing = await getTeacherExamResults(token, teacher.id);
-          existing.forEach((res: any) => {
-            if (res.student_id && initialMarks[res.student_id]) {
-              initialMarks[res.student_id] = {
-                resultId: res.id,
-                marks: String(res.marks_obtained),
-              };
-            }
-          });
+          try {
+            const teacher = await getCurrentTeacher(token);
+            const existing = await getTeacherExamResults(token, teacher.id);
+            existing.forEach((res: any) => {
+              if (res.student_id && initialMarks[res.student_id]) {
+                initialMarks[res.student_id] = {
+                  resultId: res.id,
+                  marks: String(res.marks_obtained),
+                };
+              }
+            });
+          } catch {
+            // Ignore if existing results cannot be retrieved
+          }
         }
 
         setMarksState(initialMarks);

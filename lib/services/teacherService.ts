@@ -1,4 +1,4 @@
-﻿import type { TeacherCreate, TeacherResponse } from "@/types/entities/teacher";
+import type { TeacherCreate, TeacherResponse } from "@/types/entities/teacher";
 import type { ClassResponse } from "@/types/entities/class";
 import type { SubjectResponse } from "@/types/entities/subject";
 
@@ -175,6 +175,7 @@ export async function getTeacherAssignments(
   due_date?: string | null;
   class_name?: string | null;
   subject_name?: string | null;
+  created_at?: string | null;
 }>> {
   const response = await fetch(`${BASE}/${teacherId}/assignments`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -192,6 +193,7 @@ export async function getTeacherAssignments(
     due_date?: string | null;
     class_name?: string | null;
     subject_name?: string | null;
+    created_at?: string | null;
   }>;
 }
 
