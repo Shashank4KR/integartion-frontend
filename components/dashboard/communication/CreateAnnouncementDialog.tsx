@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Megaphone } from "lucide-react";
 import Modal from "@/components/shared/Modal";
 import Dropdown from "@/components/shared/Dropdown";
 import { cn } from "@/lib/utils";
@@ -77,8 +76,8 @@ export default function CreateAnnouncementDialog({
   };
 
   const inputClass = cn(
-    "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm",
-    "focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
+    "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 placeholder:font-normal",
+    "focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed] transition-colors shadow-xs"
   );
 
   const audienceOptions = [
@@ -89,21 +88,15 @@ export default function CreateAnnouncementDialog({
   ];
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="max-w-2xl">
-      <div className="flex items-center justify-between p-6 border-b border-slate-100">
-        <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Megaphone className="h-5 w-5 text-purple-600" />
-          Create Announcement
-        </h2>
-      </div>
-      <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+    <Modal open={open} onClose={onClose} title="Create Announcement" maxWidth="max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
         {errors.general && (
-          <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600" role="alert">
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600" role="alert">
             {errors.general}
           </p>
         )}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">Title *</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Title *</label>
           <input
             type="text"
             value={form.title}
@@ -111,18 +104,18 @@ export default function CreateAnnouncementDialog({
             className={inputClass}
             placeholder="Announcement title"
           />
-          {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+          {errors.title && <p className="text-xs font-medium text-red-500 mt-1">{errors.title}</p>}
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">Audience</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Audience</label>
           <Dropdown
             value={form.audience}
             items={audienceOptions}
-            onChange={(val) => setForm({ ...form, audience: val })}
+            onChange={(v) => setForm({ ...form, audience: v })}
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">Message *</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Message / Content *</label>
           <textarea
             value={form.message}
             onChange={(e) => setForm({ ...form, message: e.target.value })}
@@ -130,23 +123,23 @@ export default function CreateAnnouncementDialog({
             placeholder="Type your announcement message..."
             rows={5}
           />
-          {errors.message && <p className="text-xs text-red-500 mt-1">{errors.message}</p>}
+          {errors.message && <p className="text-xs font-medium text-red-500 mt-1">{errors.message}</p>}
         </div>
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
           <button
             type="button"
             disabled={submitting}
             onClick={onClose}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
+            className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-[#7c3aed] px-4 py-2 text-sm font-semibold text-white hover:brightness-110 transition disabled:opacity-50"
+            className="rounded-xl bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#6d28d9] shadow-md shadow-purple-600/20 transition cursor-pointer disabled:opacity-50"
           >
-            {submitting ? "Publishing..." : "Publish"}
+            {submitting ? "Publishing..." : "Publish Announcement"}
           </button>
         </div>
       </form>
