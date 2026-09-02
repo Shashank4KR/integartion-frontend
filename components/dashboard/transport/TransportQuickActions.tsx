@@ -1,15 +1,34 @@
 "use client";
 
-import { Map, Truck, User, CalendarClock, Wallet, FileText } from "lucide-react";
+import {
+  Map,
+  Truck,
+  User,
+  CalendarClock,
+  Wallet,
+  FileText,
+  UserPlus,
+  UserCheck,
+  Bus,
+  Route,
+  Calendar,
+  IndianRupee,
+} from "lucide-react";
 import Card from "@/components/shared/Card";
 import type { QuickAction } from "@/lib/fixtures/transport-management-reference-fixture";
 
 const iconMap: Record<string, React.ReactNode> = {
   Map: <Map className="w-5 h-5" />,
   Truck: <Truck className="w-5 h-5" />,
+  Bus: <Bus className="w-5 h-5" />,
+  Route: <Route className="w-5 h-5" />,
   User: <User className="w-5 h-5" />,
+  UserPlus: <UserPlus className="w-5 h-5" />,
+  UserCheck: <UserCheck className="w-5 h-5" />,
   CalendarClock: <CalendarClock className="w-5 h-5" />,
+  Calendar: <Calendar className="w-5 h-5" />,
   Wallet: <Wallet className="w-5 h-5" />,
+  IndianRupee: <IndianRupee className="w-5 h-5" />,
   FileText: <FileText className="w-5 h-5" />,
 };
 

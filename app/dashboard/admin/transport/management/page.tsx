@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -12,15 +12,32 @@ import VehicleTripsPagination from "@/components/dashboard/transport/VehicleTrip
 import LiveVehicleTracking from "@/components/dashboard/transport/LiveVehicleTracking";
 import RouteListCard from "@/components/dashboard/transport/RouteListCard";
 import TransportQuickActions from "@/components/dashboard/transport/TransportQuickActions";
+import DriversListCard from "@/components/dashboard/transport/DriversListCard";
+import StudentTransportListCard from "@/components/dashboard/transport/StudentTransportListCard";
 import AddVehicleDialog from "@/components/dashboard/transport/AddVehicleDialog";
 import AddRouteDialog from "@/components/dashboard/transport/AddRouteDialog";
+import AddDriverDialog from "@/components/dashboard/transport/AddDriverDialog";
 import AssignDriverDialog from "@/components/dashboard/transport/AssignDriverDialog";
 import RouteScheduleDialog from "@/components/dashboard/transport/RouteScheduleDialog";
 import TransportFeeDialog from "@/components/dashboard/transport/TransportFeeDialog";
 import TransportReportDialog from "@/components/dashboard/transport/TransportReportDialog";
 import TripDetailsDialog from "@/components/dashboard/transport/TripDetailsDialog";
 import { getToken } from "@/lib/auth";
-import { listDrivers, listTransportRoutes, listVehicles } from "@/lib/services/transportService";
+import {
+  listDrivers,
+  listTransportRoutes,
+  listVehicles,
+  listStudentTransports,
+  createStudentTransport,
+  deleteStudentTransport,
+  createDriver,
+  updateDriver,
+  deleteDriver,
+  createVehicle,
+  createTransportRoute,
+  assignDriver,
+} from "@/lib/services/transportService";
+import { listStudents } from "@/lib/services/studentService";
 import type { RouteListItem } from "@/lib/fixtures/transport-management-reference-fixture";
 
 interface VehicleTrip {
@@ -57,13 +74,12 @@ interface QuickAction {
 const QUICK_ACTIONS: QuickAction[] = [
   { label: "Add Route", icon: "Route", color: "text-[#7c3aed]", bgColor: "bg-purple-50", borderColor: "border-purple-200" },
   { label: "Add Vehicle", icon: "Bus", color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-200" },
-  { label: "Assign Driver", icon: "UserPlus", color: "text-orange-500", bgColor: "bg-orange-50", borderColor: "border-orange-200" },
+  { label: "Add Driver", icon: "UserPlus", color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200" },
+  { label: "Assign Driver", icon: "UserCheck", color: "text-orange-500", bgColor: "bg-orange-50", borderColor: "border-orange-200" },
   { label: "Route Schedule", icon: "Calendar", color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200" },
   { label: "Transport Fee", icon: "IndianRupee", color: "text-pink-500", bgColor: "bg-pink-50", borderColor: "border-pink-200" },
   { label: "Transport Report", icon: "FileText", color: "text-[#7c3aed]", bgColor: "bg-purple-50", borderColor: "border-purple-200" },
 ];
-
-const STATUS_OPTIONS = ["All Status", "Running", "Completed", "Delayed", "Cancelled"];
 
 function readString(entry: Record<string, unknown>, keys: string[], fallback = "-") {
   for (const key of keys) {
@@ -86,42 +102,63 @@ function readNumber(entry: Record<string, unknown>, keys: string[]) {
   return 0;
 }
 
-function mapRouteList(routes: Array<Record<string, unknown>>, vehicles: Array<Record<string, unknown>>, drivers: Array<Record<string, unknown>>): RouteListItem[] {
+function mapRouteList(
+  routes: Array<Record<string, unknown>>,
+  vehicles: Array<Record<string, unknown>>,
+  drivers: Array<Record<string, unknown>>,
+  studentTransports: Array<Record<string, unknown>> = []
+): RouteListItem[] {
   return routes.map((route, index) => {
     const vehicle = vehicles[index] as Record<string, unknown> | undefined;
     const driver = drivers[index] as Record<string, unknown> | undefined;
+    const routeId = readString(route, ["route_id", "routeId", "id"], String(index + 1));
+    const routeName = readString(route, ["route_name", "routeName", "name"], `Route ${index + 1}`);
+    const studentCount = studentTransports.filter(
+      (st) => String(st.route_id) === String(routeId) || String(st.route_name) === String(routeName)
+    ).length;
+
     return {
-      routeId: readString(route, ["route_id", "routeId", "id"], String(index + 1)),
-      routeName: readString(route, ["route_name", "routeName", "name"], `Route ${index + 1}`),
+      routeId,
+      routeName,
       routeColor: readString(route, ["route_color", "routeColor", "color"], "#7c3aed"),
       stops: readNumber(route, ["stops_count", "stopsCount", "stops"]),
-      students: readNumber(route, ["student_count", "studentCount", "students_on_route"]),
-      vehicle: vehicle ? readString(vehicle, ["registration_number", "vehicle_no", "vehicleNo", "number", "id"]) : "-",
-      driver: driver ? readString(driver, ["name", "driver_name", "driverName", "full_name"]) : "-",
+      students: studentCount,
+      vehicle: vehicle ? readString(vehicle, ["bus_number", "registration_number", "vehicle_no", "vehicleNo", "number", "id"]) : "-",
+      driver: driver ? readString(driver, ["driver_name", "name", "driverName", "full_name"]) : "-",
       status: route.status === "inactive" || route.status === "Inactive" ? "Inactive" : "Active",
     };
   });
 }
 
-function buildSummaryCards(routes: Array<Record<string, unknown>>, vehicles: Array<Record<string, unknown>>, drivers: Array<Record<string, unknown>>) {
+function buildSummaryCards(
+  routes: Array<Record<string, unknown>>,
+  vehicles: Array<Record<string, unknown>>,
+  drivers: Array<Record<string, unknown>>,
+  studentTransports: Array<Record<string, unknown>> = []
+) {
   const activeRoutes = routes.filter((route) => route.status === "active" || route.status === "Active" || route.is_active === true).length;
   const activeVehicles = vehicles.filter((vehicle) => vehicle.status === "active" || vehicle.status === "Active" || vehicle.is_active === true).length;
-  const assignedDrivers = drivers.filter((driver) => driver.assigned === true || driver.is_assigned === true || readString(driver, ["vehicle_id", "assigned_vehicle"], "") !== "").length;
-  const students = routes.reduce((sum, route) => sum + readNumber(route, ["student_count", "studentCount", "students_on_route"]), 0);
+  const assignedDrivers = drivers.filter((driver) => driver.bus_id || driver.assigned === true || driver.is_assigned === true).length;
+  const students = studentTransports.length;
 
   return [
-    { title: "Total Vehicles", value: String(vehicles.length), footer: "Vehicles in database", icon: "Bus", iconBg: "bg-blue-50", iconColor: "text-blue-600", tint: "bg-blue-50/60" },
+    { title: "Total Vehicles", value: String(vehicles.length), footer: "Vehicles in fleet", icon: "Bus", iconBg: "bg-blue-50", iconColor: "text-blue-600", tint: "bg-blue-50/60" },
     { title: "Total Routes", value: String(routes.length), footer: `${activeRoutes} active routes`, icon: "Route", iconBg: "bg-emerald-50", iconColor: "text-emerald-600", tint: "bg-emerald-50/60" },
     { title: "Total Students", value: String(students), footer: "Using transport", icon: "Users", iconBg: "bg-orange-50", iconColor: "text-orange-500", tint: "bg-orange-50/60" },
-    { title: "Total Drivers", value: String(drivers.length), footer: `${assignedDrivers} assigned drivers`, icon: "Driver", iconBg: "bg-purple-50", iconColor: "text-purple-600", tint: "bg-purple-50/60" },
-    { title: "Today's Trips", value: "0", footer: "No trips endpoint connected", icon: "Calendar", iconBg: "bg-pink-50", iconColor: "text-pink-500", tint: "bg-pink-50/60" },
+    { title: "Total Drivers", value: String(drivers.length), footer: `${assignedDrivers} assigned to buses`, icon: "Driver", iconBg: "bg-purple-50", iconColor: "text-purple-600", tint: "bg-purple-50/60" },
+    { title: "Fleet Status", value: `${vehicles.length}`, footer: `${activeVehicles} active buses`, icon: "Calendar", iconBg: "bg-pink-50", iconColor: "text-pink-500", tint: "bg-pink-50/60" },
   ];
 }
 
 export default function TransportManagementPage() {
-  const [trips] = useState<VehicleTrip[]>([]);
+  const [trips, setTrips] = useState<VehicleTrip[]>([]);
   const [routes, setRoutes] = useState<ReturnType<typeof mapRouteList>>([]);
-  const [trackingVehicles] = useState<TrackingVehicle[]>([]);
+  const [rawRoutes, setRawRoutes] = useState<any[]>([]);
+  const [rawVehicles, setRawVehicles] = useState<any[]>([]);
+  const [rawDrivers, setRawDrivers] = useState<any[]>([]);
+  const [rawStudentTransports, setRawStudentTransports] = useState<any[]>([]);
+  const [rawStudents, setRawStudents] = useState<any[]>([]);
+  const [trackingVehicles, setTrackingVehicles] = useState<TrackingVehicle[]>([]);
   const [summaryCards, setSummaryCards] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -139,6 +176,7 @@ export default function TransportManagementPage() {
 
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
   const [addRouteOpen, setAddRouteOpen] = useState(false);
+  const [addDriverOpen, setAddDriverOpen] = useState(false);
   const [assignDriverOpen, setAssignDriverOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [feeOpen, setFeeOpen] = useState(false);
@@ -155,7 +193,7 @@ export default function TransportManagementPage() {
     message: "",
   });
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     const token = getToken();
     if (!token) {
       setLoadError("Please log in to view transport data.");
@@ -166,13 +204,67 @@ export default function TransportManagementPage() {
     setIsLoading(true);
     setLoadError(null);
 
-    Promise.all([listTransportRoutes(token), listVehicles(token), listDrivers(token)])
-      .then(([routeRows, vehicleRows, driverRows]) => {
+    Promise.all([
+      listTransportRoutes(token),
+      listVehicles(token),
+      listDrivers(token),
+      listStudentTransports(token).catch(() => []),
+      listStudents(token).catch(() => []),
+    ])
+      .then(([routeRows, vehicleRows, driverRows, studentTransportRows, studentRows]) => {
         const apiRoutes = Array.isArray(routeRows) ? (routeRows as Array<Record<string, unknown>>) : [];
         const apiVehicles = Array.isArray(vehicleRows) ? (vehicleRows as Array<Record<string, unknown>>) : [];
         const apiDrivers = Array.isArray(driverRows) ? (driverRows as Array<Record<string, unknown>>) : [];
-        setRoutes(mapRouteList(apiRoutes, apiVehicles, apiDrivers));
-        setSummaryCards(buildSummaryCards(apiRoutes, apiVehicles, apiDrivers));
+        const apiStudentTransports = Array.isArray(studentTransportRows) ? (studentTransportRows as Array<Record<string, unknown>>) : [];
+        const apiStudents = Array.isArray(studentRows) ? (studentRows as Array<Record<string, unknown>>) : [];
+
+        setRawRoutes(apiRoutes);
+        setRawVehicles(apiVehicles);
+        setRawDrivers(apiDrivers);
+        setRawStudentTransports(apiStudentTransports);
+        setRawStudents(apiStudents);
+        setRoutes(mapRouteList(apiRoutes, apiVehicles, apiDrivers, apiStudentTransports));
+        setSummaryCards(buildSummaryCards(apiRoutes, apiVehicles, apiDrivers, apiStudentTransports));
+
+        const dynamicTrips: VehicleTrip[] = apiRoutes.map((route, idx) => {
+          const vehicle = apiVehicles[idx] as Record<string, unknown> | undefined;
+          const driver = apiDrivers[idx] as Record<string, unknown> | undefined;
+          const routeId = readString(route, ["id", "route_id"], String(idx + 1));
+          const routeName = readString(route, ["route_name", "routeName", "name"], `Route ${idx + 1}`);
+          const routeStudents = apiStudentTransports.filter(
+            (st) => String(st.route_id) === String(routeId) || String(st.route_name) === String(routeName)
+          ).length;
+
+          return {
+            id: routeId,
+            routeId: `R-${idx + 1}`,
+            routeName,
+            routeColor: ["#7c3aed", "#10b981", "#3b82f6", "#f59e0b", "#ef4444"][idx % 5],
+            stops: `${readString(route, ["start_point", "startPoint"], "Campus")} ➔ ${readString(route, ["end_point", "endPoint"], "City")}`,
+            vehicleNo: vehicle ? readString(vehicle, ["bus_number", "registration_number", "number"], "Unassigned") : "Unassigned",
+            driverName: driver ? readString(driver, ["driver_name", "name"], "Unassigned") : "Unassigned",
+            pickupTime: "07:30 AM",
+            dropTime: "03:30 PM",
+            students: routeStudents,
+            status: "Running",
+          };
+        });
+
+        const dynamicTracking: TrackingVehicle[] = apiVehicles.map((vehicle, idx) => {
+          const route = apiRoutes[idx] as Record<string, unknown> | undefined;
+          const driver = apiDrivers[idx] as Record<string, unknown> | undefined;
+          return {
+            vehicleNo: readString(vehicle, ["bus_number", "registration_number", "number"], `Bus ${idx + 1}`),
+            routeId: route ? readString(route, ["id", "route_id"], `R-${idx + 1}`) : "-",
+            routeName: route ? readString(route, ["route_name", "name"], "Unassigned Route") : "Standby",
+            routeColor: ["#7c3aed", "#10b981", "#3b82f6", "#f59e0b", "#ef4444"][idx % 5],
+            driverName: driver ? readString(driver, ["driver_name", "name"], "Unassigned") : "Unassigned",
+            status: "Live",
+          };
+        });
+
+        setTrips(dynamicTrips);
+        setTrackingVehicles(dynamicTracking);
       })
       .catch((error) => {
         setLoadError(error instanceof Error ? error.message : "Failed to load transport data.");
@@ -182,13 +274,19 @@ export default function TransportManagementPage() {
       });
   }, []);
 
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const showToast = (message: string) => {
     const toast = document.createElement("div");
     toast.className = "fixed bottom-6 right-6 z-[200] rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-2xl";
     toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => {
-      document.body.removeChild(toast);
+      if (document.body.contains(toast)) {
+        document.body.removeChild(toast);
+      }
     }, 3000);
   };
 
@@ -219,20 +317,18 @@ export default function TransportManagementPage() {
   const showingEnd = Math.min(currentPage * rowsPerPage, filteredTrips.length);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
-  const handleRowsPerPageChange = (value: number) => {
-    setRowsPerPage(value);
+  const handleRowsPerPageChange = (rows: number) => {
+    setRowsPerPage(rows);
     setCurrentPage(1);
   };
 
   const handleAddClick = () => {
-    setActionDialog({
-      open: true,
-      title: "Add Vehicle / Route",
-      message: "Select an option to continue: Add Vehicle, Add Route, Assign Driver, or Create Schedule.",
-    });
+    setAddVehicleOpen(true);
   };
 
   const handleMoreOptions = () => {
@@ -251,6 +347,9 @@ export default function TransportManagementPage() {
       case "Add Vehicle":
         setAddVehicleOpen(true);
         break;
+      case "Add Driver":
+        setAddDriverOpen(true);
+        break;
       case "Assign Driver":
         setAssignDriverOpen(true);
         break;
@@ -267,7 +366,7 @@ export default function TransportManagementPage() {
         setActionDialog({
           open: true,
           title: action.label,
-          message: `The "${action.label}" workflow will be connected to the backend in the integration phase.`,
+          message: `The "${action.label}" workflow will be connected in a future update.`,
         });
     }
   };
@@ -282,11 +381,11 @@ export default function TransportManagementPage() {
     setTripDetailsOpen(true);
   };
 
-  const handleVehicleTrackingSelect = (vehicle: typeof trackingVehicles[0]) => {
+  const handleVehicleTrackingSelect = (vehicle: (typeof trackingVehicles)[0]) => {
     setHighlightedVehicle(vehicle.vehicleNo);
   };
 
-  const handleSaveVehicle = (data: {
+  const handleSaveVehicle = async (data: {
     vehicleNo: string;
     vehicleType: string;
     capacity: string;
@@ -297,10 +396,25 @@ export default function TransportManagementPage() {
     registrationExpiry: string;
     notes: string;
   }) => {
-    showToast(`Vehicle ${data.vehicleNo} added successfully`);
+    const token = getToken();
+    if (!token) {
+      showToast("Please log in first.");
+      return;
+    }
+    try {
+      await createVehicle(token, {
+        bus_number: data.vehicleNo,
+        model: data.vehicleType || "School Bus",
+        capacity: parseInt(data.capacity, 10) || 30,
+      });
+      showToast(`Vehicle ${data.vehicleNo} added successfully!`);
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to add vehicle.");
+    }
   };
 
-  const handleSaveRoute = (data: {
+  const handleSaveRoute = async (data: {
     routeName: string;
     routeColor: string;
     startingPoint: string;
@@ -312,11 +426,92 @@ export default function TransportManagementPage() {
     dropTime: string;
     status: string;
   }) => {
-    showToast(`Route "${data.routeName}" added successfully`);
+    const token = getToken();
+    if (!token) {
+      showToast("Please log in first.");
+      return;
+    }
+    try {
+      await createTransportRoute(token, {
+        route_name: data.routeName,
+        start_point: data.startingPoint,
+        end_point: data.destination,
+      });
+      showToast(`Route "${data.routeName}" created successfully!`);
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to create route.");
+    }
   };
 
-  const handleAssignDriver = (data: { vehicle: string; driver: string; route: string }) => {
-    showToast(`Driver assigned to ${data.vehicle} successfully`);
+  const handleSaveDriver = async (data: {
+    driver_name: string;
+    license_number: string;
+    phone?: string;
+    experience?: number;
+    bus_id?: string;
+    status: string;
+  }) => {
+    const token = getToken();
+    if (!token) {
+      showToast("Please log in first.");
+      return;
+    }
+    try {
+      await createDriver(token, data);
+      showToast(`Driver "${data.driver_name}" added successfully!`);
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to add driver.");
+      throw err;
+    }
+  };
+
+  const handleDeleteDriver = async (id: string) => {
+    const token = getToken();
+    if (!token) return;
+    if (!confirm("Are you sure you want to delete this driver?")) return;
+    try {
+      await deleteDriver(token, id);
+      showToast("Driver deleted successfully!");
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to delete driver.");
+    }
+  };
+
+  const handleAssignDriver = async (data: { vehicle: string; driver: string; route: string }) => {
+    const token = getToken();
+    if (!token) {
+      showToast("Please log in first.");
+      return;
+    }
+    try {
+      const matchedDriver = rawDrivers.find(
+        (d) => d.driver_name === data.driver || d.id === data.driver
+      );
+      const matchedVehicle = rawVehicles.find(
+        (v) => v.bus_number === data.vehicle || v.id === data.vehicle
+      );
+
+      if (matchedDriver && matchedVehicle) {
+        await updateDriver(token, matchedDriver.id, {
+          bus_id: matchedVehicle.id,
+        });
+        showToast(`Assigned ${matchedDriver.driver_name} to vehicle ${matchedVehicle.bus_number}!`);
+        loadData();
+      } else {
+        await assignDriver(token, {
+          driver_name: data.driver,
+          vehicle_number: data.vehicle,
+          route_name: data.route,
+        });
+        showToast(`Driver assigned to ${data.vehicle} successfully!`);
+        loadData();
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to assign driver.");
+    }
   };
 
   const handleSaveSchedule = (data: {
@@ -329,15 +524,82 @@ export default function TransportManagementPage() {
     showToast(`Schedule saved for ${data.route}`);
   };
 
-  const handleSaveFee = (data: {
+  const handleSaveFee = async (data: {
     student: string;
     route: string;
     vehicle: string;
     amount: string;
     dueDate: string;
     status: string;
+    stopPoint?: string;
   }) => {
-    showToast(`Transport fee saved for ${data.student}`);
+    const token = getToken();
+    if (!token) {
+      showToast("Please log in first.");
+      return;
+    }
+
+    try {
+      // Find matching student
+      const matchedStudent = rawStudents.find((s) => {
+        const fullName = `${s.first_name || ""} ${s.last_name || ""}`.trim().toLowerCase();
+        const target = data.student.toLowerCase();
+        return (
+          s.id === data.student ||
+          (s.admission_no && target.includes(s.admission_no.toLowerCase())) ||
+          target.includes(fullName) ||
+          fullName.includes(target)
+        );
+      }) || rawStudents[0];
+
+      if (!matchedStudent) {
+        throw new Error("No students found in the database. Please enroll students first.");
+      }
+
+      // Find matching route
+      const matchedRoute = rawRoutes.find(
+        (r) => r.id === data.route || r.route_name === data.route
+      ) || rawRoutes[0];
+
+      if (!matchedRoute) {
+        throw new Error("No routes found. Please add a route first.");
+      }
+
+      // Find matching vehicle
+      const matchedVehicle = rawVehicles.find(
+        (v) => v.id === data.vehicle || v.bus_number === data.vehicle
+      ) || rawVehicles[0];
+
+      if (!matchedVehicle) {
+        throw new Error("No vehicles found. Please add a vehicle first.");
+      }
+
+      await createStudentTransport(token, {
+        student_id: matchedStudent.id,
+        route_id: matchedRoute.id,
+        bus_id: matchedVehicle.id,
+        stop_point: data.stopPoint || matchedRoute.start_point || "Main Stop",
+      });
+
+      showToast(`Assigned ${matchedStudent.first_name || "student"} to ${matchedRoute.route_name || "transport"} successfully!`);
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to assign student to transport.");
+      throw err;
+    }
+  };
+
+  const handleRemoveStudentTransport = async (id: string) => {
+    const token = getToken();
+    if (!token) return;
+    if (!confirm("Are you sure you want to remove this student from transport?")) return;
+    try {
+      await deleteStudentTransport(token, id);
+      showToast("Student removed from transport.");
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to remove student.");
+    }
   };
 
   const handleFilter = () => {
@@ -361,6 +623,7 @@ export default function TransportManagementPage() {
         <div className="mx-auto max-w-[1400px]">
           <TransportManagementPageHeader
             onAddClick={handleAddClick}
+            onAddDriverClick={() => setAddDriverOpen(true)}
             onMoreOptions={handleMoreOptions}
           />
 
@@ -393,6 +656,9 @@ export default function TransportManagementPage() {
             onToDateChange={setToDate}
             onFilter={handleFilter}
             onReset={handleReset}
+            routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+            vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
+            driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
@@ -431,11 +697,36 @@ export default function TransportManagementPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2">
-              <RouteListCard routes={routes} onViewAll={() => setActionDialog({ open: true, title: "Route List", message: "A full route list view will be available here in a future update." })} />
+              <StudentTransportListCard
+                students={rawStudentTransports}
+                onAssignStudent={() => setFeeOpen(true)}
+                onRemoveStudent={handleRemoveStudentTransport}
+              />
             </div>
             <div className="xl:col-span-1">
               <TransportQuickActions actions={QUICK_ACTIONS} onAction={handleQuickAction} />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 mb-6">
+            <DriversListCard
+              drivers={rawDrivers}
+              onAddDriver={() => setAddDriverOpen(true)}
+              onDeleteDriver={handleDeleteDriver}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 mb-6">
+            <RouteListCard
+              routes={routes}
+              onViewAll={() =>
+                setActionDialog({
+                  open: true,
+                  title: "Route List",
+                  message: "A full route list view will be available here in a future update.",
+                })
+              }
+            />
           </div>
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
@@ -446,12 +737,58 @@ export default function TransportManagementPage() {
       </div>
 
       {/* Dialogs */}
-      <AddVehicleDialog open={addVehicleOpen} onClose={() => setAddVehicleOpen(false)} onSave={handleSaveVehicle} />
-      <AddRouteDialog open={addRouteOpen} onClose={() => setAddRouteOpen(false)} onSave={handleSaveRoute} />
-      <AssignDriverDialog open={assignDriverOpen} onClose={() => setAssignDriverOpen(false)} onSave={handleAssignDriver} />
-      <RouteScheduleDialog open={scheduleOpen} onClose={() => setScheduleOpen(false)} onSave={handleSaveSchedule} />
-      <TransportFeeDialog open={feeOpen} onClose={() => setFeeOpen(false)} onSave={handleSaveFee} />
-      <TransportReportDialog open={reportOpen} onClose={() => setReportOpen(false)} />
+      <AddVehicleDialog
+        open={addVehicleOpen}
+        onClose={() => setAddVehicleOpen(false)}
+        onSave={handleSaveVehicle}
+        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+      />
+      <AddRouteDialog
+        open={addRouteOpen}
+        onClose={() => setAddRouteOpen(false)}
+        onSave={handleSaveRoute}
+        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
+        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+      />
+      <AddDriverDialog
+        open={addDriverOpen}
+        onClose={() => setAddDriverOpen(false)}
+        onSave={handleSaveDriver}
+        vehicles={rawVehicles}
+      />
+      <AssignDriverDialog
+        open={assignDriverOpen}
+        onClose={() => setAssignDriverOpen(false)}
+        onSave={handleAssignDriver}
+        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.id).filter(Boolean)}
+        driverOptions={rawDrivers.map((d) => d.driver_name || d.id).filter(Boolean)}
+        routeOptions={rawRoutes.map((r) => r.route_name || r.id).filter(Boolean)}
+      />
+      <RouteScheduleDialog
+        open={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        onSave={handleSaveSchedule}
+        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+      />
+      <TransportFeeDialog
+        open={feeOpen}
+        onClose={() => setFeeOpen(false)}
+        onSave={handleSaveFee}
+        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
+        studentOptions={rawStudents.map((s) => ({
+          id: s.id,
+          name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || s.name || "Student",
+          admission_no: s.admission_no,
+        }))}
+      />
+      <TransportReportDialog
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+      />
       <TripDetailsDialog trip={selectedTrip} open={tripDetailsOpen} onClose={() => setTripDetailsOpen(false)} />
 
       {/* Generic action dialog */}

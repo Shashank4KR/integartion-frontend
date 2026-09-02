@@ -6,10 +6,6 @@ import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
-import {
-  ROUTE_OPTIONS,
-  VEHICLE_OPTIONS,
-} from "@/lib/fixtures/transport-management-reference-fixture";
 
 interface TransportFeeDialogProps {
   open: boolean;
@@ -21,27 +17,60 @@ interface TransportFeeDialogProps {
     amount: string;
     dueDate: string;
     status: string;
-  }) => void;
+    stopPoint?: string;
+  }) => Promise<void> | void;
+  routeOptions?: string[];
+  vehicleOptions?: string[];
+  studentOptions?: Array<{ id: string; name: string; admission_no?: string }>;
 }
 
-export default function TransportFeeDialog({ open, onClose, onSave }: TransportFeeDialogProps) {
+export default function TransportFeeDialog({
+  open,
+  onClose,
+  onSave,
+  routeOptions = [],
+  vehicleOptions = [],
+  studentOptions = [],
+}: TransportFeeDialogProps) {
   const [student, setStudent] = useState("");
   const [route, setRoute] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("Pending");
+  const [stopPoint, setStopPoint] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    if (!student || !route || !amount || !status) return;
-    onSave({ student, route, vehicle, amount, dueDate, status });
-    setStudent("");
-    setRoute("");
-    setVehicle("");
-    setAmount("");
-    setDueDate("");
-    setStatus("");
-    onClose();
+  const availableRoutes = routeOptions.length > 0 ? routeOptions : ["No routes registered"];
+  const availableVehicles = vehicleOptions.length > 0 ? vehicleOptions : ["No vehicles registered"];
+  const studentChoices = studentOptions.map(
+    (s) => s.admission_no ? `${s.name} (${s.admission_no})` : s.name
+  );
+
+  const handleSave = async () => {
+    if (!student || !route) return;
+    setSaving(true);
+    try {
+      await onSave({
+        student,
+        route,
+        vehicle,
+        amount: amount || "0",
+        dueDate: dueDate || new Date().toISOString().split("T")[0],
+        status,
+        stopPoint: stopPoint || "Main Stop",
+      });
+      setStudent("");
+      setRoute("");
+      setVehicle("");
+      setAmount("");
+      setDueDate("");
+      setStatus("Pending");
+      setStopPoint("");
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleClose = () => {
@@ -50,27 +79,37 @@ export default function TransportFeeDialog({ open, onClose, onSave }: TransportF
     setVehicle("");
     setAmount("");
     setDueDate("");
-    setStatus("");
+    setStatus("Pending");
+    setStopPoint("");
     onClose();
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Transport Fee" maxWidth="max-w-lg">
+    <Modal open={open} onClose={handleClose} title="Assign Student & Transport Fee" maxWidth="max-w-lg">
       <div className="space-y-4">
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Student</label>
-          <Input
-            value={student}
-            onChange={(e) => setStudent(e.target.value)}
-            placeholder="Student name or ID"
-          />
+          {studentChoices.length > 0 ? (
+            <Dropdown
+              value={student}
+              options={studentChoices}
+              onChange={setStudent}
+              placeholder="Select student"
+            />
+          ) : (
+            <Input
+              value={student}
+              onChange={(e) => setStudent(e.target.value)}
+              placeholder="Student Name, ID, or Admission No."
+            />
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Route</label>
             <Dropdown
               value={route}
-              options={ROUTE_OPTIONS.filter((r) => r !== "All Routes")}
+              options={availableRoutes}
               onChange={setRoute}
               placeholder="Select route"
             />
@@ -79,7 +118,7 @@ export default function TransportFeeDialog({ open, onClose, onSave }: TransportF
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Vehicle</label>
             <Dropdown
               value={vehicle}
-              options={VEHICLE_OPTIONS.filter((v) => v !== "All Vehicles")}
+              options={availableVehicles}
               onChange={setVehicle}
               placeholder="Select vehicle"
             />
@@ -113,6 +152,14 @@ export default function TransportFeeDialog({ open, onClose, onSave }: TransportF
             placeholder="Select status"
           />
         </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">Stop Point / Pickup Location</label>
+          <Input
+            value={stopPoint}
+            onChange={(e) => setStopPoint(e.target.value)}
+            placeholder="e.g. KGF Circle, Main Gate"
+          />
+        </div>
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
@@ -123,9 +170,10 @@ export default function TransportFeeDialog({ open, onClose, onSave }: TransportF
           </button>
           <Button
             onClick={handleSave}
-            className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-4 py-2 text-sm font-semibold"
+            disabled={saving || !student || !route}
+            className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
           >
-            Save Fee
+            {saving ? "Saving..." : "Save & Allocate"}
           </Button>
         </div>
       </div>

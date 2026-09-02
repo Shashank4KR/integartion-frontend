@@ -20,15 +20,17 @@ const ACTIVITY_ROWS: ActivityRow[] = [
 ];
 
 interface TransportActivityCardProps {
-  rows: ActivityRow[];
+  rows?: ActivityRow[];
+  activities?: ActivityRow[];
 }
 
-export default function TransportActivityCard({ rows }: TransportActivityCardProps) {
+export default function TransportActivityCard({ rows, activities }: TransportActivityCardProps) {
   const [period, setPeriod] = useState("Today");
   const [isOpen, setIsOpen] = useState(false);
+  const items = rows ?? activities ?? [];
 
   return (
-    <Card className="p-5">
+    <Card className="p-5 h-full flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-slate-900">Transport Activity</h2>
         <div className="relative">
@@ -63,7 +65,7 @@ export default function TransportActivityCard({ rows }: TransportActivityCardPro
       </div>
 
       <div className="space-y-4">
-        {rows.map((row) => (
+        {items.map((row) => (
           <div key={row.label} className="flex items-center gap-3">
             <div className={`${row.iconBg} p-2 rounded-lg flex-shrink-0`}>
               <span className={row.iconColor}>{iconMap[row.icon]}</span>

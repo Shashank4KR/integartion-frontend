@@ -1,15 +1,17 @@
 "use client";
 
-import { Plus, MoreVertical, ChevronRight } from "lucide-react";
+import { Plus, MoreVertical, ChevronRight, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TransportManagementPageHeaderProps {
   onAddClick: () => void;
+  onAddDriverClick?: () => void;
   onMoreOptions: () => void;
 }
 
 export default function TransportManagementPageHeader({
   onAddClick,
+  onAddDriverClick,
   onMoreOptions,
 }: TransportManagementPageHeaderProps) {
   return (
@@ -26,6 +28,16 @@ export default function TransportManagementPageHeader({
       </div>
 
       <div className="flex items-center gap-3">
+        {onAddDriverClick && (
+          <Button
+            onClick={onAddDriverClick}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-9 px-4 text-sm font-semibold shadow-sm"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add Driver
+          </Button>
+        )}
+
         <Button
           onClick={onAddClick}
           className="inline-flex items-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg h-9 px-4 text-sm font-semibold shadow-sm"

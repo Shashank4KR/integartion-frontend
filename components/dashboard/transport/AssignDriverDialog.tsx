@@ -6,30 +6,52 @@ import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
-import {
-  VEHICLE_OPTIONS,
-  DRIVER_OPTIONS,
-  ROUTE_OPTIONS,
-} from "@/lib/fixtures/transport-management-reference-fixture";
-
 interface AssignDriverDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: { vehicle: string; driver: string; route: string }) => void;
+  onSave: (data: { vehicle: string; driver: string; route: string }) => Promise<void> | void;
+  vehicleOptions?: string[];
+  driverOptions?: string[];
+  routeOptions?: string[];
 }
 
-export default function AssignDriverDialog({ open, onClose, onSave }: AssignDriverDialogProps) {
+export default function AssignDriverDialog({
+  open,
+  onClose,
+  onSave,
+  vehicleOptions,
+  driverOptions,
+  routeOptions,
+}: AssignDriverDialogProps) {
   const [vehicle, setVehicle] = useState("");
   const [driver, setDriver] = useState("");
   const [route, setRoute] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
+  const availableVehicles = vehicleOptions && vehicleOptions.length > 0
+    ? vehicleOptions
+    : ["No vehicles registered"];
+
+  const availableDrivers = driverOptions && driverOptions.length > 0
+    ? driverOptions
+    : ["No drivers registered"];
+
+  const availableRoutes = routeOptions && routeOptions.length > 0
+    ? routeOptions
+    : ["No routes registered"];
+
+  const handleSave = async () => {
     if (!vehicle || !driver || !route) return;
-    onSave({ vehicle, driver, route });
-    setVehicle("");
-    setDriver("");
-    setRoute("");
-    onClose();
+    try {
+      setLoading(true);
+      await onSave({ vehicle, driver, route });
+      setVehicle("");
+      setDriver("");
+      setRoute("");
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -46,7 +68,7 @@ export default function AssignDriverDialog({ open, onClose, onSave }: AssignDriv
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Vehicle</label>
           <Dropdown
             value={vehicle}
-            options={VEHICLE_OPTIONS.filter((v) => v !== "All Vehicles")}
+            options={availableVehicles}
             onChange={setVehicle}
             placeholder="Select vehicle"
           />
@@ -55,7 +77,7 @@ export default function AssignDriverDialog({ open, onClose, onSave }: AssignDriv
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Driver</label>
           <Dropdown
             value={driver}
-            options={DRIVER_OPTIONS.filter((d) => d !== "All Drivers")}
+            options={availableDrivers}
             onChange={setDriver}
             placeholder="Select driver"
           />
@@ -64,7 +86,7 @@ export default function AssignDriverDialog({ open, onClose, onSave }: AssignDriv
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Route</label>
           <Dropdown
             value={route}
-            options={ROUTE_OPTIONS.filter((r) => r !== "All Routes")}
+            options={availableRoutes}
             onChange={setRoute}
             placeholder="Select route"
           />

@@ -6,10 +6,6 @@ import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
-import {
-  ROUTE_OPTIONS,
-  DRIVER_OPTIONS,
-} from "@/lib/fixtures/transport-management-reference-fixture";
 
 interface RouteScheduleDialogProps {
   open: boolean;
@@ -21,14 +17,25 @@ interface RouteScheduleDialogProps {
     dropTime: string;
     date: string;
   }) => void;
+  routeOptions?: string[];
+  driverOptions?: string[];
 }
 
-export default function RouteScheduleDialog({ open, onClose, onSave }: RouteScheduleDialogProps) {
+export default function RouteScheduleDialog({
+  open,
+  onClose,
+  onSave,
+  routeOptions = [],
+  driverOptions = [],
+}: RouteScheduleDialogProps) {
   const [route, setRoute] = useState("");
   const [driver, setDriver] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropTime, setDropTime] = useState("");
   const [date, setDate] = useState("");
+
+  const availableRoutes = routeOptions.length > 0 ? routeOptions : ["No routes registered"];
+  const availableDrivers = driverOptions.length > 0 ? driverOptions : ["No drivers registered"];
 
   const handleSave = () => {
     if (!route || !driver || !pickupTime || !dropTime || !date) return;
@@ -57,7 +64,7 @@ export default function RouteScheduleDialog({ open, onClose, onSave }: RouteSche
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Route</label>
           <Dropdown
             value={route}
-            options={ROUTE_OPTIONS.filter((r) => r !== "All Routes")}
+            options={availableRoutes}
             onChange={setRoute}
             placeholder="Select route"
           />
@@ -66,7 +73,7 @@ export default function RouteScheduleDialog({ open, onClose, onSave }: RouteSche
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Driver</label>
           <Dropdown
             value={driver}
-            options={DRIVER_OPTIONS.filter((d) => d !== "All Drivers")}
+            options={availableDrivers}
             onChange={setDriver}
             placeholder="Select driver"
           />

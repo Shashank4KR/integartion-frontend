@@ -6,11 +6,6 @@ import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
-import {
-  ROUTE_OPTIONS,
-  VEHICLE_OPTIONS,
-  DRIVER_OPTIONS,
-} from "@/lib/fixtures/transport-management-reference-fixture";
 
 const ROUTE_COLORS = [
   { label: "Green", value: "#10b981" },
@@ -37,9 +32,17 @@ interface AddRouteDialogProps {
     dropTime: string;
     status: string;
   }) => void;
+  vehicleOptions?: string[];
+  driverOptions?: string[];
 }
 
-export default function AddRouteDialog({ open, onClose, onSave }: AddRouteDialogProps) {
+export default function AddRouteDialog({
+  open,
+  onClose,
+  onSave,
+  vehicleOptions = [],
+  driverOptions = [],
+}: AddRouteDialogProps) {
   const [routeName, setRouteName] = useState("");
   const [routeColor, setRouteColor] = useState("");
   const [startingPoint, setStartingPoint] = useState("");
@@ -140,7 +143,7 @@ export default function AddRouteDialog({ open, onClose, onSave }: AddRouteDialog
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Assigned Vehicle</label>
             <Dropdown
               value={assignedVehicle}
-              options={VEHICLE_OPTIONS.filter((v) => v !== "All Vehicles")}
+              options={vehicleOptions.length > 0 ? vehicleOptions : ["No vehicles registered"]}
               onChange={setAssignedVehicle}
               placeholder="Select vehicle"
             />
@@ -149,7 +152,7 @@ export default function AddRouteDialog({ open, onClose, onSave }: AddRouteDialog
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Assigned Driver</label>
             <Dropdown
               value={assignedDriver}
-              options={DRIVER_OPTIONS.filter((d) => d !== "All Drivers")}
+              options={driverOptions.length > 0 ? driverOptions : ["No drivers registered"]}
               onChange={setAssignedDriver}
               placeholder="Select driver"
             />

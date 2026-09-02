@@ -35,37 +35,45 @@ export default function RouteListCard({ routes, onViewAll }: RouteListCardProps)
             </tr>
           </thead>
           <tbody>
-            {routes.map((route) => (
-              <tr key={route.routeId} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-sm font-medium text-[#7c3aed]">{route.routeId}</span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: route.routeColor }}
-                    />
-                    <span className="text-sm text-slate-700">{route.routeName}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.stops}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.students}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.vehicle}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.driver}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      route.status === "Active"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {route.status}
-                  </span>
+            {routes.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">
+                  No transport routes registered yet. Click &quot;Add Route&quot; to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              routes.map((route) => (
+                <tr key={route.routeId} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-sm font-medium text-[#7c3aed]">{route.routeId}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: route.routeColor }}
+                      />
+                      <span className="text-sm text-slate-700">{route.routeName}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.stops}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.students}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.vehicle}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{route.driver}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        route.status === "Active"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {route.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

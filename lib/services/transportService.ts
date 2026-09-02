@@ -233,3 +233,149 @@ export async function assignDriver(
 
   return (await response.json()) as any;
 }
+
+export async function createDriver(
+  token: string,
+  payload: {
+    driver_name: string;
+    license_number: string;
+    phone?: string | null;
+    experience?: number | null;
+    bus_id?: string | null;
+    status?: string;
+  },
+): Promise<any> {
+  const response = await fetch(`${BASE}/drivers`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to create driver.");
+  }
+
+  return (await response.json()) as any;
+}
+
+export async function updateDriver(
+  token: string,
+  id: string,
+  payload: Partial<{
+    driver_name: string;
+    license_number: string;
+    phone?: string | null;
+    experience?: number | null;
+    bus_id?: string | null;
+    status?: string;
+  }>,
+): Promise<any> {
+  const response = await fetch(`${BASE}/drivers/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to update driver.");
+  }
+
+  return (await response.json()) as any;
+}
+
+export async function deleteDriver(
+  token: string,
+  id: string,
+): Promise<void> {
+  const response = await fetch(`${BASE}/drivers/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to delete driver.");
+  }
+}
+
+export async function listStudentTransports(token: string): Promise<any[]> {
+  const response = await fetch(`${BASE}/student-transport`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to fetch student transport allocations.");
+  }
+
+  return unwrapItems(await response.json());
+}
+
+export async function createStudentTransport(
+  token: string,
+  payload: {
+    student_id: string;
+    bus_id: string;
+    route_id: string;
+    stop_point: string;
+  },
+): Promise<any> {
+  const response = await fetch(`${BASE}/student-transport`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to assign student to transport.");
+  }
+
+  return (await response.json()) as any;
+}
+
+export async function deleteStudentTransport(
+  token: string,
+  id: string,
+): Promise<void> {
+  const response = await fetch(`${BASE}/student-transport/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to remove student from transport.");
+  }
+}
+
+export async function getTransportSummary(token: string): Promise<any> {
+  const response = await fetch(`${BASE}/summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to fetch transport summary.");
+  }
+
+  const json = await response.json();
+  return json?.data ?? json;
+}
+
+export async function getTransportTrips(token: string): Promise<any[]> {
+  const response = await fetch(`${BASE}/trips`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to fetch transport trips.");
+  }
+
+  return unwrapItems(await response.json());
+}
+

@@ -5,22 +5,25 @@ import { X, Download, Printer } from "lucide-react";
 import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import Dropdown from "@/components/shared/Dropdown";
-import {
-  ROUTE_OPTIONS,
-  STATUS_OPTIONS,
-} from "@/lib/fixtures/transport-management-reference-fixture";
-
 interface TransportReportDialogProps {
   open: boolean;
   onClose: () => void;
+  routeOptions?: string[];
 }
 
-export default function TransportReportDialog({ open, onClose }: TransportReportDialogProps) {
+export default function TransportReportDialog({
+  open,
+  onClose,
+  routeOptions = [],
+}: TransportReportDialogProps) {
   const [reportType, setReportType] = useState("");
   const [route, setRoute] = useState("");
   const [status, setStatus] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+
+  const availableRoutes = ["All Routes", ...routeOptions];
+  const availableStatuses = ["All Status", "Active", "Inactive", "Running", "Completed"];
 
   const handleGenerate = () => {
     if (!reportType) return;
@@ -51,7 +54,7 @@ export default function TransportReportDialog({ open, onClose }: TransportReport
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Route</label>
           <Dropdown
             value={route}
-            options={ROUTE_OPTIONS}
+            options={availableRoutes}
             onChange={setRoute}
             placeholder="Select route"
           />
@@ -60,7 +63,7 @@ export default function TransportReportDialog({ open, onClose }: TransportReport
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
           <Dropdown
             value={status}
-            options={STATUS_OPTIONS}
+            options={availableStatuses}
             onChange={setStatus}
             placeholder="Select status"
           />

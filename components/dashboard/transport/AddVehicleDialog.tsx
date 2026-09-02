@@ -9,8 +9,6 @@ import { Input } from "@/components/ui/input";
 
 const VEHICLE_TYPE_OPTIONS = ["Bus", "Van", "Mini Bus", "Car"];
 const VEHICLE_STATUS_OPTIONS = ["Active", "Maintenance", "Inactive"];
-const DRIVER_OPTIONS = ["All Drivers", "Ramesh Kumar", "Suresh Yadav", "Mahesh Singh", "Prakash Patel", "Anil Verma"];
-const ROUTE_OPTIONS = ["All Routes", "Route 1 (Green)", "Route 2 (Blue)", "Route 3 (Yellow)", "Route 4 (Red)", "Route 5 (Orange)"];
 
 interface AddVehicleDialogProps {
   open: boolean;
@@ -26,9 +24,17 @@ interface AddVehicleDialogProps {
     registrationExpiry: string;
     notes: string;
   }) => void;
+  driverOptions?: string[];
+  routeOptions?: string[];
 }
 
-export default function AddVehicleDialog({ open, onClose, onSave }: AddVehicleDialogProps) {
+export default function AddVehicleDialog({
+  open,
+  onClose,
+  onSave,
+  driverOptions = [],
+  routeOptions = [],
+}: AddVehicleDialogProps) {
   const [vehicleNo, setVehicleNo] = useState("");
   const [vehicleType, setVehicleType] = useState("");
   const [capacity, setCapacity] = useState("");
@@ -107,7 +113,7 @@ export default function AddVehicleDialog({ open, onClose, onSave }: AddVehicleDi
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Route</label>
             <Dropdown
               value={route}
-              options={ROUTE_OPTIONS.filter((r) => r !== "All Routes")}
+              options={routeOptions.length > 0 ? routeOptions : ["No routes registered"]}
               onChange={setRoute}
               placeholder="Select route"
             />
@@ -116,7 +122,7 @@ export default function AddVehicleDialog({ open, onClose, onSave }: AddVehicleDi
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Driver</label>
             <Dropdown
               value={driver}
-              options={DRIVER_OPTIONS.filter((d) => d !== "All Drivers")}
+              options={driverOptions.length > 0 ? driverOptions : ["No drivers registered"]}
               onChange={setDriver}
               placeholder="Select driver"
             />
