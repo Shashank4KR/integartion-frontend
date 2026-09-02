@@ -5,10 +5,9 @@ import Card from "@/components/shared/Card";
 import DonutChart from "@/components/shared/charts/DonutChart";
 import Dropdown from "@/components/shared/Dropdown";
 
-const FEE_COLLECTION_SEGMENTS_DEFAULT = [
-  { label: "Collected", value: 79.1, color: "#10b981" },
-  { label: "Outstanding", value: 20.9, color: "#f97316" },
-  { label: "Overdue", value: 3.8, color: "#ef4444" },
+const ZERO_SEGMENTS = [
+  { label: "Collected", value: 0, color: "#10b981" },
+  { label: "Outstanding", value: 0, color: "#f97316" },
 ];
 
 const FEE_COLLECTION_PERIOD_OPTIONS = ["This Month", "This Quarter", "This Year"];
@@ -20,18 +19,14 @@ interface FeesCollectionSummaryChartProps {
 
 export default function FeesCollectionSummaryChart({ segments, values }: FeesCollectionSummaryChartProps) {
   const [period, setPeriod] = useState("This Year");
-  const activeSegments = segments || FEE_COLLECTION_SEGMENTS_DEFAULT;
-
-  const defaultValues: Record<string, string> = {
-    Collected: "₹ 98,75,000",
-    Outstanding: "₹ 26,05,000",
-    Overdue: "₹ 4,75,000",
-  };
+  const activeSegments = segments && segments.length > 0 ? segments : ZERO_SEGMENTS;
 
   const getAmountLabel = (label: string) => {
     if (values && values[label] !== undefined) return values[label];
-    return defaultValues[label] ?? "₹ 0";
+    return "₹ 0";
   };
+
+  const totalValue = activeSegments.reduce((acc, s) => acc + s.value, 0);
 
   return (
     <Card className="p-5 flex flex-col">
@@ -47,7 +42,7 @@ export default function FeesCollectionSummaryChart({ segments, values }: FeesCol
 
       <div className="flex items-center justify-center mb-4">
         <DonutChart
-          segments={activeSegments}
+          segments={totalValue > 0 ? activeSegments : [{ label: "No Data", value: 100, color: "#e2e8f0" }]}
           size={180}
           strokeWidth={14}
         />
@@ -58,13 +53,11 @@ export default function FeesCollectionSummaryChart({ segments, values }: FeesCol
           <div key={item.label} className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-              <span className="text-xs text-slate-600">{item.label}</span>
+              <span className="text-xs font-medium text-slate-700">{item.label}</span>
             </div>
-            <div className="text-right">
-              <span className="text-xs font-semibold text-slate-900">
-                {getAmountLabel(item.label)}
-              </span>
-              <span className="text-xs text-slate-500 ml-1">({item.value}%)</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-900">{getAmountLabel(item.label)}</span>
+              <span className="text-xs text-slate-500 w-12 text-right">{item.value}%</span>
             </div>
           </div>
         ))}

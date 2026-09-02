@@ -4,11 +4,7 @@ import { useState } from "react";
 import Card from "@/components/shared/Card";
 import Dropdown from "@/components/shared/Dropdown";
 
-const COLLECTION_TREND_MONTHLY_DEFAULT = {
-  expected: [20, 25, 30, 45, 55, 60, 75, 80, 85, 100, 105, 110],
-  collected: [5, 10, 15, 25, 35, 45, 55, 60, 65, 80, 90, 98],
-};
-
+const ZERO_TREND = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 const TREND_PERIOD_OPTIONS = ["Monthly", "Quarterly", "Yearly"];
 
 interface CollectionTrendChartProps {
@@ -21,8 +17,8 @@ export default function CollectionTrendChart({ expected, collected }: Collection
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const data = {
-    expected: expected || COLLECTION_TREND_MONTHLY_DEFAULT.expected,
-    collected: collected || COLLECTION_TREND_MONTHLY_DEFAULT.collected,
+    expected: expected && expected.length > 0 ? expected : ZERO_TREND,
+    collected: collected && collected.length > 0 ? collected : ZERO_TREND,
   };
   const labels = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
   const width = 400;
@@ -32,15 +28,15 @@ export default function CollectionTrendChart({ expected, collected }: Collection
   const chartHeight = height - padding.top - padding.bottom;
 
   const allValues = [...data.expected, ...data.collected];
-  const maxValue = Math.max(...allValues, 120);
+  const maxValue = Math.max(...allValues, 10);
   const minValue = 0;
 
-  const xStep = chartWidth / (data.expected.length - 1);
+  const xStep = chartWidth / (data.expected.length - 1 || 1);
 
   const getX = (i: number) => padding.left + i * xStep;
   const getY = (v: number) => padding.top + chartHeight - ((v - minValue) / (maxValue - minValue)) * chartHeight;
 
-  const yTicks = [0, 20, 40, 60, 80, 100, 120];
+  const yTicks = [0, Math.round(maxValue / 2), maxValue];
 
   const expectedPoints = data.expected.map((v, i) => ({ x: getX(i), y: getY(v) }));
   const collectedPoints = data.collected.map((v, i) => ({ x: getX(i), y: getY(v) }));
@@ -49,6 +45,8 @@ export default function CollectionTrendChart({ expected, collected }: Collection
   const collectedLine = collectedPoints.map((p) => `${p.x},${p.y}`).join(" ");
 
   const collectedArea = `0,${padding.top + chartHeight} ${collectedPoints.map((p) => `${p.x},${p.y}`).join(" ")} ${getX(data.collected.length - 1)},${padding.top + chartHeight}`;
+
+  const hasData = allValues.some((v) => v > 0);
 
   return (
     <Card className="p-5 flex flex-col">
@@ -62,84 +60,98 @@ export default function CollectionTrendChart({ expected, collected }: Collection
         />
       </div>
 
-      <div className="flex items-center gap-4 mb-3">
-        <div className="flex items-center gap-1.5">
-          <svg width="20" height="3" className="text-[#7c3aed]">
-            <line x1="0" y1="1.5" x2="20" y2="1.5" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" />
-          </svg>
-          <span className="text-xs text-slate-600">Expected</span>
+      {!hasData ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-10 text-xs text-slate-400">
+          <span>No collection trend data recorded yet.</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <svg width="20" height="3" className="text-emerald-500">
-            <line x1="0" y1="1.5" x2="20" y2="1.5" stroke="currentColor" strokeWidth="2" />
-          </svg>
-          <span className="text-xs text-slate-600">Collected</span>
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-[200px]">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-          {/* Grid lines */}
-          {yTicks.map((tick) => {
-            const y = getY(tick);
-            return (
+      ) : (
+        <div className="relative">
+          <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+            {/* Grid lines */}
+            {yTicks.map((tick) => (
               <g key={tick}>
-                <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#e2e8f0" strokeWidth="1" />
-                <text x={padding.left - 8} y={y + 4} fontSize="10" fill="#94a3b8" textAnchor="end">
-                  {tick === 120 ? "120L" : tick === 100 ? "100L" : tick === 80 ? "80L" : tick === 60 ? "60L" : tick === 40 ? "40L" : tick === 20 ? "20L" : "0"}
+                <line
+                  x1={padding.left}
+                  y1={getY(tick)}
+                  x2={width - padding.right}
+                  y2={getY(tick)}
+                  stroke="#f1f5f9"
+                  strokeWidth="1"
+                />
+                <text
+                  x={padding.left - 8}
+                  y={getY(tick) + 4}
+                  textAnchor="end"
+                  fontSize="10"
+                  fill="#94a3b8"
+                >
+                  {tick}
                 </text>
               </g>
-            );
-          })}
+            ))}
 
-          {/* Area fill */}
-          <polygon points={collectedArea} fill="#10b981" fillOpacity="0.08" />
+            {/* Area fill */}
+            <polygon points={collectedArea} fill="#10b981" fillOpacity="0.08" />
 
-          {/* Expected line */}
-          <polyline points={expectedLine} fill="none" stroke="#7c3aed" strokeWidth="2" strokeDasharray="6 4" strokeLinecap="round" strokeLinejoin="round" />
-
-          {/* Collected line */}
-          <polyline points={collectedLine} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-
-          {/* Collected points */}
-          {collectedPoints.map((p, i) => (
-            <circle
-              key={i}
-              cx={p.x}
-              cy={p.y}
-              r={hoverIndex === i ? 6 : 4}
-              fill={hoverIndex === i ? "#10b981" : "white"}
-              stroke="#10b981"
+            {/* Expected line (dashed) */}
+            <polyline
+              points={expectedLine}
+              fill="none"
+              stroke="#cbd5e1"
               strokeWidth="2"
-              className="transition-all"
-              onMouseEnter={() => setHoverIndex(i)}
-              onMouseLeave={() => setHoverIndex(null)}
+              strokeDasharray="4 4"
             />
-          ))}
 
-          {/* X-axis labels */}
-          {labels.map((label, i) => (
-            <text key={label} x={getX(i)} y={height - 8} fontSize="10" fill="#64748b" textAnchor="middle">
-              {label}
-            </text>
-          ))}
+            {/* Collected line */}
+            <polyline
+              points={collectedLine}
+              fill="none"
+              stroke="#10b981"
+              strokeWidth="2.5"
+            />
 
-          {/* Tooltip */}
-          {hoverIndex !== null && (
-            <g>
-              <rect x={collectedPoints[hoverIndex].x - 30} y={collectedPoints[hoverIndex].y - 50} width="60" height="40" fill="#1e293b" rx="4" />
-              <text x={collectedPoints[hoverIndex].x} y={collectedPoints[hoverIndex].y - 35} fontSize="10" fill="white" textAnchor="middle" fontWeight="bold">
-                {labels[hoverIndex]}
+            {/* Data points */}
+            {collectedPoints.map((p, i) => (
+              <circle
+                key={i}
+                cx={p.x}
+                cy={p.y}
+                r={hoverIndex === i ? 5 : 3}
+                fill="#10b981"
+                stroke="#ffffff"
+                strokeWidth="2"
+                onMouseEnter={() => setHoverIndex(i)}
+                onMouseLeave={() => setHoverIndex(null)}
+                className="cursor-pointer transition-all"
+              />
+            ))}
+
+            {/* X-axis labels */}
+            {labels.map((label, i) => (
+              <text
+                key={label}
+                x={getX(i)}
+                y={height - 8}
+                textAnchor="middle"
+                fontSize="10"
+                fill="#94a3b8"
+              >
+                {label}
               </text>
-              <text x={collectedPoints[hoverIndex].x} y={collectedPoints[hoverIndex].y - 20} fontSize="9" fill="#10b981" textAnchor="middle">
-                ₹ {data.collected[hoverIndex]}L
-              </text>
-              <text x={collectedPoints[hoverIndex].x} y={collectedPoints[hoverIndex].y - 8} fontSize="9" fill="#7c3aed" textAnchor="middle">
-                ₹ {data.expected[hoverIndex]}L
-              </text>
-            </g>
-          )}
-        </svg>
+            ))}
+          </svg>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center gap-6 mt-3 pt-3 border-t border-slate-100">
+        <div className="flex items-center gap-2">
+          <span className="h-0.5 w-4 bg-slate-300 border-dashed inline-block" />
+          <span className="text-xs text-slate-500">Expected</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+          <span className="text-xs text-slate-500">Collected</span>
+        </div>
       </div>
     </Card>
   );

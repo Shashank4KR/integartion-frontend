@@ -4,51 +4,51 @@ import { Calendar, CheckCircle, FileText, AlertCircle, Tag, Gift } from "lucide-
 import Card from "@/components/shared/Card";
 import type { FooterCard } from "@/lib/fixtures/fees-management-reference-fixture";
 
-const FOOTER_CARDS = [
+const DEFAULT_ZERO_FOOTER_CARDS: FooterCard[] = [
   {
-    title: "Total Installments",
-    value: "1,386",
-    footer: "All Students",
+    title: "Total Invoices",
+    value: "0",
+    footer: "All Records",
     iconBg: "bg-purple-50",
     iconColor: "text-[#7c3aed]",
     icon: "calendar",
   },
   {
-    title: "Paid Installments",
-    value: "1,095",
-    footer: "79.1%",
+    title: "Paid Invoices",
+    value: "0",
+    footer: "0%",
     iconBg: "bg-emerald-50",
     iconColor: "text-emerald-500",
     icon: "calendar-check",
   },
   {
-    title: "Pending Installments",
-    value: "291",
-    footer: "20.9%",
+    title: "Pending Invoices",
+    value: "0",
+    footer: "0%",
     iconBg: "bg-orange-50",
     iconColor: "text-orange-500",
     icon: "pending",
   },
   {
-    title: "Overdue Installments",
-    value: "128",
-    footer: "9.2%",
+    title: "Overdue Invoices",
+    value: "0",
+    footer: "0%",
     iconBg: "bg-pink-50",
     iconColor: "text-pink-500",
     icon: "overdue-calendar",
   },
   {
-    title: "Discount Given",
-    value: "₹ 6,75,000",
-    footer: "This Year",
+    title: "Total Collections",
+    value: "₹ 0",
+    footer: "Live from API",
     iconBg: "bg-purple-50",
     iconColor: "text-[#7c3aed]",
     icon: "tag",
   },
   {
-    title: "Concessions Given",
-    value: "₹ 3,15,000",
-    footer: "This Year",
+    title: "Total Outstanding",
+    value: "₹ 0",
+    footer: "Current Balance",
     iconBg: "bg-blue-50",
     iconColor: "text-blue-500",
     icon: "gift",
@@ -69,7 +69,7 @@ interface FeesFooterCardsProps {
 }
 
 export default function FeesFooterCards({ cards }: FeesFooterCardsProps = {}) {
-  const displayCards = cards && cards.length > 0 ? cards : FOOTER_CARDS;
+  const displayCards = cards && cards.length > 0 ? cards : DEFAULT_ZERO_FOOTER_CARDS;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {displayCards.map((card) => (

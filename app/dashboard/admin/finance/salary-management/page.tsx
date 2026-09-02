@@ -322,20 +322,20 @@ export default function SalaryManagementPage() {
               )}
             </div>
             <div className="space-y-6">
-              <PayrollSummaryChart />
-              <SalaryComponentsCard />
+              <PayrollSummaryChart salaries={salaries} />
+              <SalaryComponentsCard salaries={salaries} />
               <SalaryQuickActions onAction={handleQuickAction} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <PayrollTrendChart />
-            <TopDepartmentsByPayroll />
+            <PayrollTrendChart salaries={salaries} />
+            <TopDepartmentsByPayroll salaries={salaries} />
           </div>
 
           <div className="space-y-6 mb-6">
             <RecentSalaryActivities items={recentSalaryActivities} />
-            <MonthlySalarySummaryCards />
+            <MonthlySalarySummaryCards salaries={salaries} />
           </div>
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">

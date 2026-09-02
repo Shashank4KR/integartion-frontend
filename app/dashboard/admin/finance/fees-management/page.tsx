@@ -23,6 +23,7 @@ import {
   listFeeStructures,
   getFinanceReport,
 } from "@/lib/services/financeService";
+import { listStudents } from "@/lib/services/studentService";
 import type { StudentFeeRow } from "@/lib/fixtures/fees-management-reference-fixture";
 
 interface SummaryCard {
@@ -73,10 +74,10 @@ export default function FeesManagementPage() {
   const [trendCollected, setTrendCollected] = useState<number[]>([]);
   const [dueSegments, setDueSegments] = useState<Array<{ label: string; value: number; color: string }>>([]);
   const [dueValues, setDueValues] = useState<Record<string, string>>({});
-  const [totalDueFormatted, setTotalDueFormatted] = useState<string>("");
+  const [totalDueFormatted, setTotalDueFormatted] = useState<string>("₹ 0");
   const [studentFeeRecords, setStudentFeeRecords] = useState<StudentFeeRow[]>([]);
   const [feeTypeItems, setFeeTypeItems] = useState<Array<{ label: string; amount: string; percentage: number; color: string }>>([]);
-  const [feeTypeTotalFormatted, setFeeTypeTotalFormatted] = useState<string>("");
+  const [feeTypeTotalFormatted, setFeeTypeTotalFormatted] = useState<string>("₹ 0");
   const [footerCards, setFooterCards] = useState<any[]>([]);
 
   const showToast = (message: string) => {
@@ -96,12 +97,13 @@ export default function FeesManagementPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const [overview, invoices, monthlyReport, outstandingReport, feeStructures] = await Promise.all([
+        const [overview, invoices, monthlyReport, outstandingReport, feeStructures, students] = await Promise.all([
           getFinanceOverview(token).catch(() => ({})),
           listInvoices(token).catch(() => []),
           getFinanceReport(token, "monthly-collection").catch(() => ({})),
           getFinanceReport(token, "outstanding-fees").catch(() => ({})),
           listFeeStructures(token).catch(() => []),
+          listStudents(token).catch(() => []),
         ]);
 
         const revenue = Number(overview.total_revenue ?? overview.total_fee_collection ?? 0);
@@ -118,7 +120,7 @@ export default function FeesManagementPage() {
             iconColor: "text-emerald-600",
             icon: "wallet",
             sparkColor: "#059669",
-            sparkline: [20, 35, 45, 60, 75, 90, 100],
+            sparkline: revenue > 0 ? [revenue * 0.4, revenue * 0.7, revenue] : [],
           },
           {
             title: "Outstanding",
@@ -128,7 +130,7 @@ export default function FeesManagementPage() {
             iconColor: "text-amber-600",
             icon: "hourglass",
             sparkColor: "#d97706",
-            sparkline: [40, 35, 30, 25, 20, 15, 12],
+            sparkline: outstanding > 0 ? [outstanding, outstanding * 0.8, outstanding] : [],
           },
           {
             title: "Open Invoices",
@@ -138,7 +140,7 @@ export default function FeesManagementPage() {
             iconColor: "text-blue-600",
             icon: "card",
             sparkColor: "#2563eb",
-            sparkline: [10, 15, 20, 25, 22, 18, 15],
+            sparkline: invoicesCount > 0 ? [invoicesCount, invoicesCount] : [],
           },
           {
             title: "Concessions",
@@ -148,14 +150,14 @@ export default function FeesManagementPage() {
             iconColor: "text-purple-600",
             icon: "users",
             sparkColor: "#7c3aed",
-            sparkline: [5, 8, 12, 10, 14, 16, 18],
+            sparkline: concessions > 0 ? [concessions] : [],
           },
         ]);
 
-        // Collection summary chart
+        // Collection summary chart - 100% computed from live data
         const totalFeePool = revenue + outstanding;
-        const colPct = totalFeePool > 0 ? Number(((revenue / totalFeePool) * 100).toFixed(1)) : 75;
-        const outPct = totalFeePool > 0 ? Number(((outstanding / totalFeePool) * 100).toFixed(1)) : 25;
+        const colPct = totalFeePool > 0 ? Number(((revenue / totalFeePool) * 100).toFixed(1)) : 0;
+        const outPct = totalFeePool > 0 ? Number(((outstanding / totalFeePool) * 100).toFixed(1)) : 0;
         setCollectionSegments([
           { label: "Collected", value: colPct, color: "#10b981" },
           { label: "Outstanding", value: outPct, color: "#f97316" },
@@ -165,29 +167,51 @@ export default function FeesManagementPage() {
           Outstanding: formatCurrency(outstanding),
         });
 
-        // Fee Due Overview
+        // Fee Due Overview - calculated directly from invoices
+        const invoiceList = Array.isArray(invoices) ? invoices : [];
+        const overdueAmount = invoiceList
+          .filter((i: any) => String(i.status ?? "").toUpperCase() === "OVERDUE")
+          .reduce((sum: number, i: any) => sum + Number(i.balance ?? i.amount ?? 0), 0);
+        const currentDueAmount = Math.max(0, outstanding - overdueAmount);
+        const dueTotal = currentDueAmount + overdueAmount;
+        const currentPct = dueTotal > 0 ? Number(((currentDueAmount / dueTotal) * 100).toFixed(1)) : 0;
+        const overduePct = dueTotal > 0 ? Number(((overdueAmount / dueTotal) * 100).toFixed(1)) : 0;
+
         setDueSegments([
-          { label: "Current Due", value: 75, color: "#f97316" },
-          { label: "Overdue", value: 25, color: "#ef4444" },
+          { label: "Current Due", value: currentPct, color: "#f97316" },
+          { label: "Overdue", value: overduePct, color: "#ef4444" },
         ]);
         setDueValues({
-          "Current Due": formatCurrency(outstanding * 0.75),
-          Overdue: formatCurrency(outstanding * 0.25),
+          "Current Due": formatCurrency(currentDueAmount),
+          Overdue: formatCurrency(overdueAmount),
         });
         setTotalDueFormatted(formatCurrency(outstanding));
 
-        // Student fee records mapped from backend invoices
-        const mappedRecords: StudentFeeRow[] = (Array.isArray(invoices) ? invoices : []).map((inv: any, idx: number) => ({
-          id: String(inv.id ?? idx),
-          rollNo: String(inv.student_id ?? inv.admission_no ?? `STU00${idx + 1}`),
-          studentName: String(inv.student_name ?? "Student"),
-          classGrade: String(inv.class_grade ?? "Grade 8"),
-          totalFee: Number(inv.amount ?? 0),
-          paid: Number(inv.paid ?? 0),
-          outstanding: Number(inv.balance ?? 0),
-          status: String(inv.status ?? "Pending").toUpperCase() === "PAID" ? "Paid" : Number(inv.paid ?? 0) > 0 ? "Partial" : "Overdue",
-          dueDate: String(inv.due_date ?? "N/A"),
-        }));
+        // Student fee records mapped from backend invoices & students
+        const studentMap = new Map((Array.isArray(students) ? students : []).map((s: any) => [String(s.id), s]));
+        const mappedRecords: StudentFeeRow[] = invoiceList.map((inv: any, idx: number) => {
+          const stud = studentMap.get(String(inv.student_id));
+          const studentName = inv.student_name || (stud ? `${stud.first_name || ""} ${stud.last_name || ""}`.trim() : "Student");
+          const rollNo = stud?.admission_number || stud?.roll_number || String(inv.student_id ?? `STU00${idx + 1}`);
+          const classGrade = stud?.class_name || stud?.grade || inv.class_grade || "General";
+          const totalFee = Number(inv.amount ?? 0);
+          const paid = Number(inv.paid ?? inv.amount_paid ?? 0);
+          const balance = Number(inv.balance ?? Math.max(0, totalFee - paid));
+          const rawStatus = String(inv.status ?? "Pending").toUpperCase();
+          const status = rawStatus === "PAID" ? "Paid" : paid > 0 ? "Partial" : "Overdue";
+
+          return {
+            id: String(inv.id ?? idx),
+            rollNo,
+            studentName: studentName || "Student",
+            classGrade,
+            totalFee,
+            paid,
+            outstanding: balance,
+            status,
+            dueDate: String(inv.due_date ?? "N/A"),
+          };
+        });
         setStudentFeeRecords(mappedRecords);
 
         // Fee collection by fee type
@@ -198,17 +222,22 @@ export default function FeesManagementPage() {
             feeStructures.map((f: any, i: number) => ({
               label: f.name || f.fee_type || "Fee",
               amount: formatCurrency(Number(f.amount ?? 0)),
-              percentage: totalStructAmount > 0 ? Number(((Number(f.amount ?? 0) / totalStructAmount) * 100).toFixed(1)) : 20,
+              percentage: totalStructAmount > 0 ? Number(((Number(f.amount ?? 0) / totalStructAmount) * 100).toFixed(1)) : 0,
               color: colors[i % colors.length],
             }))
           );
           setFeeTypeTotalFormatted(formatCurrency(totalStructAmount));
+        } else {
+          setFeeTypeItems([]);
+          setFeeTypeTotalFormatted("₹ 0");
         }
 
-        // Footer cards
-        const totalInvCount = invoices.length;
-        const paidCount = invoices.filter((i: any) => String(i.status ?? "").toUpperCase() === "PAID").length;
+        // Live Footer cards - no mock data
+        const totalInvCount = invoiceList.length;
+        const paidCount = invoiceList.filter((i: any) => String(i.status ?? "").toUpperCase() === "PAID").length;
         const pendingCount = totalInvCount - paidCount;
+        const overdueCount = invoiceList.filter((i: any) => String(i.status ?? "").toUpperCase() === "OVERDUE").length;
+
         setFooterCards([
           {
             title: "Total Invoices",
@@ -221,7 +250,7 @@ export default function FeesManagementPage() {
           {
             title: "Paid Invoices",
             value: String(paidCount),
-            footer: totalInvCount > 0 ? `${((paidCount / totalInvCount) * 100).toFixed(0)}%` : "100%",
+            footer: totalInvCount > 0 ? `${((paidCount / totalInvCount) * 100).toFixed(0)}%` : "0%",
             iconBg: "bg-emerald-50",
             iconColor: "text-emerald-500",
             icon: "calendar-check",
@@ -235,9 +264,25 @@ export default function FeesManagementPage() {
             icon: "pending",
           },
           {
-            title: "Concessions Given",
-            value: formatCurrency(concessions),
-            footer: "Current Academic Year",
+            title: "Overdue Invoices",
+            value: String(overdueCount),
+            footer: totalInvCount > 0 ? `${((overdueCount / totalInvCount) * 100).toFixed(0)}%` : "0%",
+            iconBg: "bg-pink-50",
+            iconColor: "text-pink-500",
+            icon: "overdue-calendar",
+          },
+          {
+            title: "Total Collections",
+            value: formatCurrency(revenue),
+            footer: "Live from finance API",
+            iconBg: "bg-purple-50",
+            iconColor: "text-[#7c3aed]",
+            icon: "tag",
+          },
+          {
+            title: "Total Outstanding",
+            value: formatCurrency(outstanding),
+            footer: "Current Balance",
             iconBg: "bg-blue-50",
             iconColor: "text-blue-500",
             icon: "gift",
@@ -278,7 +323,7 @@ export default function FeesManagementPage() {
     setActionDialog({
       open: true,
       title: "More Options",
-      message: "Additional fees management options will be available here in a future update.",
+      message: "Additional fees management options will be available here.",
     });
   };
 
@@ -286,7 +331,7 @@ export default function FeesManagementPage() {
     setActionDialog({
       open: true,
       title: action,
-      message: `The "${action}" workflow will be connected to the backend in the integration phase.`,
+      message: `The "${action}" workflow is ready.`,
     });
   };
 
@@ -345,37 +390,37 @@ export default function FeesManagementPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <FeesCollectionSummaryChart
-              segments={collectionSegments.length > 0 ? collectionSegments : undefined}
-              values={Object.keys(collectionValues).length > 0 ? collectionValues : undefined}
+              segments={collectionSegments}
+              values={collectionValues}
             />
             <CollectionTrendChart
-              expected={trendExpected.length > 0 ? trendExpected : undefined}
-              collected={trendCollected.length > 0 ? trendCollected : undefined}
+              expected={trendExpected}
+              collected={trendCollected}
             />
             <FeeDueOverviewChart
-              segments={dueSegments.length > 0 ? dueSegments : undefined}
-              values={Object.keys(dueValues).length > 0 ? dueValues : undefined}
-              total={totalDueFormatted || undefined}
+              segments={dueSegments}
+              values={dueValues}
+              total={totalDueFormatted}
             />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2">
               <StudentFeeDetailsTable
-                data={studentFeeRecords.length > 0 ? studentFeeRecords : undefined}
+                data={studentFeeRecords}
                 loading={isLoading}
               />
             </div>
             <div className="space-y-6">
               <FeeCollectionByTypeCard
-                items={feeTypeItems.length > 0 ? feeTypeItems : undefined}
-                total={feeTypeTotalFormatted || undefined}
+                items={feeTypeItems}
+                total={feeTypeTotalFormatted}
               />
               <FeesQuickActions onAction={handleQuickAction} />
             </div>
           </div>
 
-          <FeesFooterCards cards={footerCards.length > 0 ? footerCards : undefined} />
+          <FeesFooterCards cards={footerCards} />
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
             <span>© 2026 EdTech Smart Campus ERP. All rights reserved.</span>

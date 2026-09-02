@@ -1,39 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Users, Lock } from "lucide-react";
 import Card from "@/components/shared/Card";
 import DonutChart from "@/components/shared/charts/DonutChart";
-import { Users, Lock } from "lucide-react";
-
-const PAYROLL_SUMMARY_DATA = {
-  totalPayroll: "₹ 28,75,000",
-  paidAmount: "₹ 24,60,000",
-  paidPercentage: "85.7%",
-  pendingAmount: "₹ 4,15,000",
-  pendingPercentage: "14.3%",
-  totalDeductions: "₹ 2,85,000",
-  deductionsPercentage: "9.9%",
-  netPayout: "₹ 25,90,000",
-  netPayoutPercentage: "90.1%",
-  employeesPaid: "109 / 128",
-  pendingPayments: "19 / 128",
-};
+import type { SalaryRow } from "@/lib/fixtures/salary-management-reference-fixture";
 
 const PAYROLL_PERIOD_OPTIONS = ["This Month", "Last Month", "This Quarter", "This Year"];
 
-export default function PayrollSummaryChart() {
+const formatCurrency = (value: number) =>
+  `₹ ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+interface PayrollSummaryChartProps {
+  salaries?: SalaryRow[];
+}
+
+export default function PayrollSummaryChart({ salaries = [] }: PayrollSummaryChartProps) {
   const [period, setPeriod] = useState("This Month");
 
-  const segments = [
-    { label: "Paid Amount", value: 85.7, color: "#10b981" },
-    { label: "Pending Amount", value: 14.3, color: "#f97316" },
+  const totalPayroll = salaries.reduce((sum, s) => sum + (Number(s.basicSalary) || 0), 0);
+  const paidSalaries = salaries.filter((s) => s.status === "Paid");
+  const paidAmount = paidSalaries.reduce((sum, s) => sum + (Number(s.netSalary) || 0), 0);
+  const pendingSalaries = salaries.filter((s) => s.status !== "Paid");
+  const pendingAmount = pendingSalaries.reduce((sum, s) => sum + (Number(s.basicSalary) || 0), 0);
+
+  const paidPct = totalPayroll > 0 ? Number(((paidAmount / totalPayroll) * 100).toFixed(1)) : 0;
+  const pendingPct = totalPayroll > 0 ? Number(((pendingAmount / totalPayroll) * 100).toFixed(1)) : 0;
+
+  const segments = totalPayroll > 0 ? [
+    { label: "Paid Amount", value: paidPct, color: "#10b981" },
+    { label: "Pending Amount", value: pendingPct, color: "#f97316" },
+  ] : [
+    { label: "No Records", value: 100, color: "#e2e8f0" }
   ];
 
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-900">Payroll Summary (May 2025)</h3>
+        <h3 className="text-sm font-semibold text-slate-900">Payroll Summary</h3>
         <div className="relative">
           <select
             value={period}
@@ -54,7 +58,7 @@ export default function PayrollSummaryChart() {
           size={160}
           strokeWidth={14}
           label="Total Payroll"
-          value={PAYROLL_SUMMARY_DATA.totalPayroll}
+          value={formatCurrency(totalPayroll)}
         />
       </div>
 
@@ -64,45 +68,27 @@ export default function PayrollSummaryChart() {
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
             <span className="text-xs text-slate-600">Paid Amount</span>
           </div>
-          <span className="text-xs font-semibold text-slate-900">₹ 24,60,000 (85.7%)</span>
+          <span className="text-xs font-semibold text-slate-900">{formatCurrency(paidAmount)} ({paidPct}%)</span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
             <span className="text-xs text-slate-600">Pending Amount</span>
           </div>
-          <span className="text-xs font-semibold text-slate-900">₹ 4,15,000 (14.3%)</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-pink-500" />
-            <span className="text-xs text-slate-600">Total Deductions</span>
-          </div>
-          <span className="text-xs font-semibold text-slate-900">₹ 2,85,000 (9.9%)</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-            <span className="text-xs text-slate-600">Net Payout</span>
-          </div>
-          <span className="text-xs font-semibold text-slate-900">₹ 25,90,000 (90.1%)</span>
+          <span className="text-xs font-semibold text-slate-900">{formatCurrency(pendingAmount)} ({pendingPct}%)</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex items-center gap-3 rounded-lg bg-blue-50 p-3">
-          <Users className="h-5 w-5 text-emerald-600" />
-          <div>
-            <p className="text-xs text-slate-500">Employees Paid</p>
-            <p className="text-sm font-semibold text-slate-900">109 / 128</p>
-          </div>
+      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5 text-slate-400" />
+          <span>Employees Paid:</span>
+          <span className="font-semibold text-slate-700">{paidSalaries.length} / {salaries.length}</span>
         </div>
-        <div className="flex items-center gap-3 rounded-lg bg-orange-50 p-3">
-          <Lock className="h-5 w-5 text-orange-600" />
-          <div>
-            <p className="text-xs text-slate-500">Pending Payments</p>
-            <p className="text-sm font-semibold text-slate-900">19 / 128</p>
-          </div>
+        <div className="flex items-center gap-1.5">
+          <Lock className="h-3.5 w-3.5 text-slate-400" />
+          <span>Pending:</span>
+          <span className="font-semibold text-amber-600">{pendingSalaries.length}</span>
         </div>
       </div>
     </Card>

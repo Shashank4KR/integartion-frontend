@@ -38,7 +38,7 @@ export default function FeeInvoiceDialog({ student, onClose }: FeeInvoiceDialogP
             </div>
             <div className="text-right">
               <p className="text-xs font-semibold text-slate-500">Date</p>
-              <p className="text-sm font-medium text-slate-800">18 May 2025</p>
+              <p className="text-sm font-medium text-slate-800">{student.dueDate && student.dueDate !== "N/A" ? student.dueDate : new Date().toLocaleDateString("en-IN")}</p>
             </div>
           </div>
           <div className="space-y-2 text-sm">

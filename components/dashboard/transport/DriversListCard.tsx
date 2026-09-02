@@ -86,7 +86,7 @@ export default function DriversListCard({
                         <span className="text-sm font-semibold text-slate-900">
                           {driver.driver_name}
                         </span>
-                        <Badge variant={statusVariant} size="sm">
+                        <Badge variant={statusVariant}>
                           {driver.status}
                         </Badge>
                       </div>

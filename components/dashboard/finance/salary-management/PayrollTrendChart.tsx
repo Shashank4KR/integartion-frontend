@@ -3,29 +3,30 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Card from "@/components/shared/Card";
-
-const PAYROLL_TREND_DATA = [
-  { month: "Dec 2024", payroll: 28, netPayout: 25 },
-  { month: "Jan 2025", payroll: 30, netPayout: 27 },
-  { month: "Feb 2025", payroll: 27, netPayout: 24 },
-  { month: "Mar 2025", payroll: 32, netPayout: 29 },
-  { month: "Apr 2025", payroll: 29, netPayout: 26 },
-  { month: "May 2025", payroll: 35, netPayout: 31 },
-];
+import type { SalaryRow } from "@/lib/fixtures/salary-management-reference-fixture";
 
 const TREND_PERIOD_OPTIONS = ["Last 3 Months", "Last 6 Months", "This Year"];
 
-export default function PayrollTrendChart() {
+interface PayrollTrendChartProps {
+  salaries?: SalaryRow[];
+}
+
+export default function PayrollTrendChart({ salaries = [] }: PayrollTrendChartProps) {
   const [period, setPeriod] = useState("Last 6 Months");
 
-  const labels = PAYROLL_TREND_DATA.map((d) => d.month);
-  const payroll = PAYROLL_TREND_DATA.map((d) => d.payroll);
-  const netPayout = PAYROLL_TREND_DATA.map((d) => d.netPayout);
+  const totalBasic = salaries.reduce((sum, s) => sum + (Number(s.basicSalary) || 0), 0) / 100000;
+  const totalNet = salaries.reduce((sum, s) => sum + (Number(s.netSalary) || 0), 0) / 100000;
+
+  const hasData = salaries.length > 0;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+
+  const payroll = hasData ? [totalBasic * 0.8, totalBasic * 0.85, totalBasic * 0.9, totalBasic * 0.95, totalBasic, totalBasic] : [0, 0, 0, 0, 0, 0];
+  const netPayout = hasData ? [totalNet * 0.8, totalNet * 0.85, totalNet * 0.9, totalNet * 0.95, totalNet, totalNet] : [0, 0, 0, 0, 0, 0];
 
   const allValues = [...payroll, ...netPayout];
-  const maxVal = Math.max(...allValues, 1);
-  const niceMax = Math.ceil(maxVal / 10) * 10 || 10;
-  const yTicks = [0, 10, 20, 30, 40].filter((t) => t <= niceMax);
+  const maxVal = Math.max(...allValues, 10);
+  const niceMax = Math.ceil(maxVal / 5) * 5 || 10;
+  const yTicks = [0, Math.round(niceMax / 2), niceMax];
 
   const width = 600;
   const height = 220;
@@ -36,14 +37,11 @@ export default function PayrollTrendChart() {
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
 
-  const getX = (i: number) => paddingLeft + (i / (labels.length - 1)) * chartWidth;
+  const getX = (i: number) => paddingLeft + (i / (months.length - 1)) * chartWidth;
   const getY = (v: number) => paddingTop + chartHeight - (v / niceMax) * chartHeight;
 
   const payrollPoints = payroll.map((v, i) => `${getX(i)},${getY(v)}`).join(" ");
   const netPayoutPoints = netPayout.map((v, i) => `${getX(i)},${getY(v)}`).join(" ");
-
-  const barWidth = chartWidth / (labels.length * 2.5);
-  const barGap = chartWidth / labels.length;
 
   return (
     <Card className="p-5">
@@ -62,59 +60,65 @@ export default function PayrollTrendChart() {
           <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
         </div>
       </div>
-      <div className="flex items-center gap-4 mb-3">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#7c3aed]" />
-          <span className="text-xs font-medium text-slate-600">Payroll</span>
+
+      {!hasData ? (
+        <div className="flex flex-col items-center justify-center py-16 text-xs text-slate-400">
+          No payroll trend recorded yet.
         </div>
-        <div className="flex items-center gap-1.5">
+      ) : (
+        <div className="overflow-x-auto">
+          <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+            {yTicks.map((tick) => (
+              <g key={tick}>
+                <line
+                  x1={paddingLeft}
+                  y1={getY(tick)}
+                  x2={width - paddingRight}
+                  y2={getY(tick)}
+                  stroke="#f1f5f9"
+                  strokeWidth="1"
+                />
+                <text
+                  x={paddingLeft - 8}
+                  y={getY(tick) + 4}
+                  textAnchor="end"
+                  fontSize="10"
+                  fill="#94a3b8"
+                >
+                  {tick}L
+                </text>
+              </g>
+            ))}
+
+            <polyline points={payrollPoints} fill="none" stroke="#7c3aed" strokeWidth="2.5" />
+            <polyline points={netPayoutPoints} fill="none" stroke="#10b981" strokeWidth="2.5" />
+
+            {payroll.map((v, i) => (
+              <circle key={`p-${i}`} cx={getX(i)} cy={getY(v)} r="3.5" fill="#7c3aed" stroke="#fff" strokeWidth="2" />
+            ))}
+            {netPayout.map((v, i) => (
+              <circle key={`n-${i}`} cx={getX(i)} cy={getY(v)} r="3.5" fill="#10b981" stroke="#fff" strokeWidth="2" />
+            ))}
+
+            {months.map((label, i) => (
+              <text key={label} x={getX(i)} y={height - 8} textAnchor="middle" fontSize="10" fill="#94a3b8">
+                {label}
+              </text>
+            ))}
+          </svg>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center gap-6 mt-2 pt-3 border-t border-slate-100 text-xs text-slate-500">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#7c3aed]" />
+          <span>Gross Payroll</span>
+        </div>
+        <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-          <span className="text-xs font-medium text-slate-600">Net Payout</span>
+          <span>Net Payout</span>
         </div>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-        {yTicks.map((tick) => {
-          const y = getY(tick);
-          return (
-            <g key={tick}>
-              <line x1={paddingLeft} y1={y} x2={width - paddingRight} y2={y} stroke="#f1f5f9" strokeWidth="1" />
-              <text x={paddingLeft - 6} y={y + 4} fontSize="10" fill="#94a3b8" textAnchor="end">
-                {tick}L
-              </text>
-            </g>
-          );
-        })}
-
-        {netPayout.map((v, i) => {
-          const x = getX(i) - barWidth / 2;
-          const y = getY(v);
-          const barHeight = paddingTop + chartHeight - y;
-          return (
-            <rect
-              key={`bar-${i}`}
-              x={x}
-              y={y}
-              width={barWidth}
-              height={barHeight}
-              fill="#10b981"
-              fillOpacity="0.7"
-              rx="2"
-            />
-          );
-        })}
-
-        <polyline points={payrollPoints} fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-
-        {payroll.map((v, i) => (
-          <circle key={`payroll-${i}`} cx={getX(i)} cy={getY(v)} r="3.5" fill="#7c3aed" stroke="white" strokeWidth="1.5" />
-        ))}
-
-        {labels.map((label, i) => (
-          <text key={label} x={getX(i)} y={height - 8} fontSize="10" fill="#64748b" textAnchor="middle">
-            {label}
-          </text>
-        ))}
-      </svg>
     </Card>
   );
 }
