@@ -155,28 +155,29 @@ export default function TimetablePreviewModal({
     return subjectOptions.filter((s) => validIds.has(s.id));
   }, [editingItem, rawClassSubjectIds, subjectOptions]);
 
-  const subjectOptionsForRender = editingItem ? subjectOptions : localSubjects;
+  const subjectOptionsForRender = editingItem ? subjectOptions : (localSubjects.length > 0 ? localSubjects : subjectOptions);
 
   // Auto-select the first valid Subject once it has loaded.
   useEffect(() => {
     if (editingItem || subjectsLoading) return;
-    if (localSubjects.length > 0) {
-      setSubjectId((prev) => (localSubjects.some((s) => s.id === prev) ? prev : localSubjects[0].id));
+    if (subjectOptionsForRender.length > 0) {
+      setSubjectId((prev) => (subjectOptionsForRender.some((s) => s.id === prev) ? prev : subjectOptionsForRender[0].id));
     } else {
       setSubjectId("");
     }
-  }, [editingItem, subjectsLoading, localSubjects]);
+  }, [editingItem, subjectsLoading, subjectOptionsForRender]);
 
   // Teacher options valid for the exact Class + Subject relationship.
   const validTeacherOptions = useMemo(() => {
     if (editingItem) return teacherOptions;
-    if (!classId || !subjectId) return [];
+    if (!classId || !subjectId) return teacherOptions;
     const validTeacherIds = new Set(
       allTeacherSubjects
         .filter((ts) => ts.class_id === classId && ts.subject_id === subjectId)
         .map((ts) => ts.teacher_id),
     );
-    return teacherOptions.filter((t) => validTeacherIds.has(t.id));
+    const matched = teacherOptions.filter((t) => validTeacherIds.has(t.id));
+    return matched.length > 0 ? matched : teacherOptions;
   }, [editingItem, classId, subjectId, allTeacherSubjects, teacherOptions]);
 
   // Auto-select the first valid Teacher once the relationship has resolved.
@@ -294,36 +295,26 @@ export default function TimetablePreviewModal({
           <select className={fieldClass} value={subjectId} disabled={subjectsLoading} onChange={(e) => handleSubjectChange(e.target.value)}>
             {subjectsLoading && <option value="">Loading subjects...</option>}
             {!subjectsLoading && subjectOptionsForRender.length === 0 && (
-              <option value="">No Subjects are assigned to this Class</option>
+              <option value="">No subjects available</option>
             )}
             {!subjectsLoading &&
               subjectOptionsForRender.map((s) => (
                 <option key={s.id} value={s.id}>{s.label}</option>
               ))}
           </select>
-          {!subjectsLoading && subjectOptionsForRender.length === 0 && classId && (
-            <p className="mt-1 text-[11px] text-slate-400">
-              Assign subjects from the <button type="button" onClick={onClose} className="text-[#7c3aed] underline">Subjects page</button>.
-            </p>
-          )}
         </div>
         <div>
           <label className={labelClass}>Teacher</label>
           <select className={fieldClass} value={teacherId} disabled={teachersLoading} onChange={(e) => setTeacherId(e.target.value)}>
             {teachersLoading && <option value="">Loading teachers...</option>}
             {!teachersLoading && validTeacherOptions.length === 0 && (
-              <option value="">No Teacher is assigned to this Subject for the selected Class</option>
+              <option value="">No teachers available</option>
             )}
             {!teachersLoading &&
               validTeacherOptions.map((t) => (
                 <option key={t.id} value={t.id}>{t.label}</option>
               ))}
           </select>
-          {!teachersLoading && validTeacherOptions.length === 0 && classId && subjectId && (
-            <p className="mt-1 text-[11px] text-slate-400">
-              Assign teachers from the <button type="button" onClick={onClose} className="text-[#7c3aed] underline">Subjects page</button>.
-            </p>
-          )}
         </div>
         <div>
           <label className={labelClass}>Day</label>

@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import Card from "@/components/shared/Card";
 import SectionHeader from "@/components/shared/SectionHeader";
 import Modal from "@/components/shared/Modal";
+import Sidebar from "@/components/shared/layout/Sidebar";
+import DashboardHeader from "@/components/shared/layout/Header";
+import MainLayout from "@/components/shared/layout/MainLayout";
 import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { listParents, createParent, updateParent, deleteParent } from "@/lib/services/parentService";
 import { listUsers, createUser } from "@/lib/services/userService";
@@ -220,8 +223,9 @@ export default function ParentsPage() {
   });
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto">
+    <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
         <SectionHeader
           title="Parents"
           subtitle="Manage parent/guardian profiles"
@@ -642,6 +646,7 @@ export default function ParentsPage() {
         </Modal>
       </div>
     </div>
+    </MainLayout>
   );
 
   function ProfileFields() {

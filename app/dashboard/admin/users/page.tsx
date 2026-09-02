@@ -5,6 +5,9 @@ import Card from "@/components/shared/Card";
 import SectionHeader from "@/components/shared/SectionHeader";
 import Modal from "@/components/shared/Modal";
 import Badge from "@/components/shared/Badge";
+import Sidebar from "@/components/shared/layout/Sidebar";
+import DashboardHeader from "@/components/shared/layout/Header";
+import MainLayout from "@/components/shared/layout/MainLayout";
 import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { listUsers, createUser, updateUser, deleteUser } from "@/lib/services/userService";
 import type { UserResponse } from "@/types/entities/user";
@@ -145,8 +148,9 @@ export default function UsersPage() {
   });
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto">
+    <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
         <SectionHeader
           title="Users"
           subtitle="Manage system user accounts"
@@ -434,5 +438,6 @@ export default function UsersPage() {
         </Modal>
       </div>
     </div>
+    </MainLayout>
   );
 }

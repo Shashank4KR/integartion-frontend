@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import Card from "@/components/shared/Card";
 import SectionHeader from "@/components/shared/SectionHeader";
 import Modal from "@/components/shared/Modal";
+import Sidebar from "@/components/shared/layout/Sidebar";
+import DashboardHeader from "@/components/shared/layout/Header";
+import MainLayout from "@/components/shared/layout/MainLayout";
 import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { listParentStudents, createParentStudent, updateParentStudent, deleteParentStudent } from "@/lib/services/parentStudentService";
 import { listParents, createParent } from "@/lib/services/parentService";
@@ -277,8 +280,9 @@ export default function ParentStudentsPage() {
   });
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto">
+    <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
         <SectionHeader
           title="Parent-Student Relationships"
           subtitle="Link parents to students"
@@ -552,5 +556,6 @@ export default function ParentStudentsPage() {
         </Modal>
       </div>
     </div>
+    </MainLayout>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { GraduationCap, ChevronRight, ChevronDown, Headset } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { MENU_ITEMS, COMPANY_INFO } from "@/lib/constants";
+import { MENU_ITEMS, COMPANY_INFO, type MenuItemType } from "@/lib/constants";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -34,95 +34,15 @@ export default function Sidebar() {
 
       {/* Menu Items */}
       <div className="flex-1 overflow-y-auto py-6 px-4">
-        {MENU_ITEMS.map((item) => {
-          const hasChildren = item.children && item.children.length > 0;
-          const parentActive = item.href ? isActive(item.href) : false;
-          const anyChildActive = hasChildren
-            ? item.children!.some((child) => isActive(child.href ?? ""))
-            : false;
-          const active = parentActive || anyChildActive;
-          const [expanded, setExpanded] = useState(anyChildActive);
-          const Icon = item.icon;
-
-          return (
-            <div key={item.label} className="mb-2">
-              {hasChildren ? (
-                <button
-                  onClick={() => {
-                    const isComm = item.label === "Communication";
-                    const isTransport = item.label === "Transport";
-                    const isHostel = item.label === "Hostel";
-                    setExpanded((e) => !e);
-                    if (isComm && pathname !== "/dashboard/admin/communication") {
-                      router.push("/dashboard/admin/communication");
-                    }
-                    if (isTransport && pathname !== "/dashboard/admin/transport") {
-                      router.push("/dashboard/admin/transport");
-                    }
-                    if (isHostel && pathname !== "/dashboard/admin/hostel") {
-                      router.push("/dashboard/admin/hostel");
-                    }
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    active
-                      ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
-                      : "text-purple-200 hover:bg-purple-700/30"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis text-left">
-                    {item.label}
-                  </span>
-                  {expanded ? (
-                    <ChevronDown className="w-4 h-4 flex-shrink-0" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 flex-shrink-0" />
-                  )}
-                </button>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={item.href ?? "#"}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    active
-                      ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
-                      : "text-purple-200 hover:bg-purple-700/30"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                    {item.label}
-                  </span>
-                  <ChevronRight className="w-4 h-4 flex-shrink-0" />
-                </Link>
-              )}
-              {hasChildren && expanded && (
-                <div className="ml-4 mt-1 space-y-1">
-                  {item.children!.map((child) => {
-                    const childActive = isActive(child.href ?? "");
-                    const ChildIcon = child.icon;
-                    return (
-                      <Link
-                        key={child.label}
-                        href={child.href ?? "#"}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
-                          childActive
-                            ? "bg-purple-500/40 text-white"
-                            : "text-purple-200 hover:bg-purple-700/30"
-                        }`}
-                      >
-                        {ChildIcon && <ChildIcon className="w-4 h-4 flex-shrink-0" />}
-                        <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                          {child.label}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {MENU_ITEMS.map((item) => (
+          <SidebarMenuItem
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            isActive={isActive}
+            router={router}
+          />
+        ))}
       </div>
 
       {/* Support Card */}
@@ -140,6 +60,106 @@ export default function Sidebar() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SidebarMenuItem({
+  item,
+  pathname,
+  isActive,
+  router,
+}: {
+  item: MenuItemType;
+  pathname: string;
+  isActive: (href: string) => boolean;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const hasChildren = item.children && item.children.length > 0;
+  const parentActive = item.href ? isActive(item.href) : false;
+  const anyChildActive = hasChildren
+    ? item.children!.some((child) => isActive(child.href ?? ""))
+    : false;
+  const active = parentActive || anyChildActive;
+  const [expanded, setExpanded] = useState(anyChildActive);
+  const Icon = item.icon;
+
+  return (
+    <div className="mb-2">
+      {hasChildren ? (
+        <button
+          type="button"
+          onClick={() => {
+            const isComm = item.label === "Communication";
+            const isTransport = item.label === "Transport";
+            const isHostel = item.label === "Hostel";
+            setExpanded((e) => !e);
+            if (isComm && pathname !== "/dashboard/admin/communication") {
+              router.push("/dashboard/admin/communication");
+            }
+            if (isTransport && pathname !== "/dashboard/admin/transport") {
+              router.push("/dashboard/admin/transport");
+            }
+            if (isHostel && pathname !== "/dashboard/admin/hostel") {
+              router.push("/dashboard/admin/hostel");
+            }
+          }}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            active
+              ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
+              : "text-purple-200 hover:bg-purple-700/30"
+          }`}
+        >
+          <Icon className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis text-left">
+            {item.label}
+          </span>
+          {expanded ? (
+            <ChevronDown className="w-4 h-4 flex-shrink-0" />
+          ) : (
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
+          )}
+        </button>
+      ) : (
+        <Link
+          href={item.href ?? "#"}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            active
+              ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
+              : "text-purple-200 hover:bg-purple-700/30"
+          }`}
+        >
+          <Icon className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+            {item.label}
+          </span>
+          <ChevronRight className="w-4 h-4 flex-shrink-0" />
+        </Link>
+      )}
+      {hasChildren && expanded && (
+        <div className="ml-4 mt-1 space-y-1">
+          {item.children!.map((child) => {
+            const childActive = isActive(child.href ?? "");
+            const ChildIcon = child.icon;
+            return (
+              <Link
+                key={child.label}
+                href={child.href ?? "#"}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
+                  childActive
+                    ? "bg-purple-500/40 text-white"
+                    : "text-purple-200 hover:bg-purple-700/30"
+                }`}
+              >
+                {ChildIcon && <ChildIcon className="w-4 h-4 flex-shrink-0" />}
+                <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                  {child.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
