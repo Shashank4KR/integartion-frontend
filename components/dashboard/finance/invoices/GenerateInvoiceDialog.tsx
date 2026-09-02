@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import Modal from "@/components/shared/Modal";
 import { getToken } from "@/lib/auth";
-import { generateInvoice, listFeeStructures, createFeePayment } from "@/lib/services/financeService";
+import { generateInvoice, listFeeStructures, createFeePayment, createSalaryRecord, addExpense } from "@/lib/services/financeService";
 import { listStudents } from "@/lib/services/studentService";
 import { listClasses } from "@/lib/services/classService";
 import type { InvoiceRow } from "@/lib/fixtures/invoices-reference-fixture";
@@ -12,6 +12,25 @@ import type { InvoiceRow } from "@/lib/fixtures/invoices-reference-fixture";
 const INVOICE_TYPE_OPTIONS = ["Fee Invoice", "Salary Invoice", "Expense Invoice", "Other Invoice"];
 const STATUS_OPTIONS = ["Pending", "Partial", "Paid", "Overdue"];
 const PAYMENT_MODE_OPTIONS = ["Online", "Cash", "UPI", "Net Banking", "Bank Transfer", "Cheque"];
+const EXPENSE_CATEGORIES = [
+  "Maintenance",
+  "Utilities & Electricity",
+  "Office & Supplies",
+  "Lab & Equipment",
+  "Software & IT",
+  "Transport & Fuel",
+  "Hospitality & Events",
+  "Other Operational",
+];
+const DEPARTMENTS = [
+  "Teaching Staff",
+  "Administration",
+  "IT & Laboratory",
+  "Library Staff",
+  "Maintenance & Facilities",
+  "Accounts & Finance",
+  "Security & Support",
+];
 
 interface StudentItem {
   id: string;
@@ -49,6 +68,8 @@ export default function GenerateInvoiceDialog({
   const [selectedClassId, setSelectedClassId] = useState<string>("ALL");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [customPartyName, setCustomPartyName] = useState<string>("");
+  const [customExpenseCategory, setCustomExpenseCategory] = useState<string>("Maintenance");
+  const [departmentName, setDepartmentName] = useState<string>("Teaching Staff");
   const [selectedFeeStructureId, setSelectedFeeStructureId] = useState<string>("");
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [dueDate, setDueDate] = useState(() => {
@@ -234,7 +255,7 @@ export default function GenerateInvoiceDialog({
       const token = getToken();
       let generatedId = `FINV-${Date.now().toString().slice(-6)}`;
 
-      if (token && selectedStudentId && selectedFeeStructureId) {
+      if (token && isFeeInvoice && selectedStudentId && selectedFeeStructureId) {
         try {
           const res = await generateInvoice(token, {
             student_id: selectedStudentId,
@@ -265,11 +286,47 @@ export default function GenerateInvoiceDialog({
         } catch {
           // Optimistic local creation
         }
+      } else if (token && invoiceType === "Salary Invoice") {
+        try {
+          const res = await createSalaryRecord(token, {
+            employee_name: customPartyName.trim() || "Staff Member",
+            amount: numAmount,
+            month: new Date(invoiceDate).getMonth() + 1,
+            year: new Date(invoiceDate).getFullYear(),
+            payment_method: paymentMode.toUpperCase().replace(/\s+/g, "_"),
+            status: computedStatus === "Paid" ? "PAID" : "PENDING",
+            payment_date: invoiceDate,
+          });
+          generatedId = res?.data?.voucher_no || res?.voucher_no || `SAL-${Date.now().toString().slice(-6)}`;
+        } catch {
+          generatedId = `SAL-${Date.now().toString().slice(-6)}`;
+        }
+      } else if (token && (invoiceType === "Expense Invoice" || invoiceType === "Other Invoice")) {
+        try {
+          const res = await addExpense(token, {
+            category: customExpenseCategory || "Maintenance",
+            amount: numAmount,
+            expense_date: invoiceDate,
+            description: notes || `${invoiceType} for ${customPartyName || "Vendor"}`,
+            payment_method: paymentMode.toUpperCase().replace(/\s+/g, "_"),
+            status: computedStatus === "Paid" ? "PAID" : "PENDING",
+            reference_no: `EXP-${Date.now().toString().slice(-6)}`,
+          });
+          generatedId = res?.data?.reference_no || res?.reference_no || `EXP-${Date.now().toString().slice(-6)}`;
+        } catch {
+          generatedId = `EXP-${Date.now().toString().slice(-6)}`;
+        }
       }
 
-      const finalStudentName = selectedStudentObj?.name || customPartyName || "Student";
-      const finalStudentId = selectedStudentObj?.admissionNo || "ADM-001";
-      const finalClassGrade = selectedStudentObj?.classGrade || (selectedClassId !== "ALL" ? classes.find(c => c.id === selectedClassId)?.label : "-") || "-";
+      const finalStudentName = isFeeInvoice
+        ? (selectedStudentObj?.name || customPartyName || "Student")
+        : customPartyName || (invoiceType === "Salary Invoice" ? "Staff Member" : "Vendor");
+      const finalStudentId = isFeeInvoice
+        ? (selectedStudentObj?.admissionNo || "ADM-001")
+        : (invoiceType === "Salary Invoice" ? "STAFF" : "EXPENSE");
+      const finalClassGrade = isFeeInvoice
+        ? (selectedStudentObj?.classGrade || (selectedClassId !== "ALL" ? classes.find(c => c.id === selectedClassId)?.label : "-") || "-")
+        : (invoiceType === "Salary Invoice" ? departmentName : customExpenseCategory);
 
       const newInvoice: InvoiceRow = {
         id: String(selectedStudentId ? generatedId : crypto.randomUUID()),
@@ -307,7 +364,7 @@ export default function GenerateInvoiceDialog({
           </div>
         )}
 
-        {loadingOptions && (
+        {loadingOptions && invoiceType === "Fee Invoice" && (
           <div className="flex items-center gap-2 rounded-lg bg-purple-50 p-2.5 text-xs text-purple-700">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading classes, students, and fee structures from database…
@@ -333,49 +390,89 @@ export default function GenerateInvoiceDialog({
             </select>
           </div>
 
-          {/* Fee Category / Structure */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Fee Category / Type
-            </label>
-            <select
-              value={selectedFeeStructureId}
-              onChange={(e) => handleFeeStructureChange(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Select Fee Structure</option>
-              {feeStructures.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {invoiceType === "Fee Invoice" && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Fee Category / Type
+              </label>
+              <select
+                value={selectedFeeStructureId}
+                onChange={(e) => handleFeeStructureChange(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Select Fee Structure</option>
+                {feeStructures.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* Class / Grade Filter */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Class / Grade (Backend Classes)
-            </label>
-            <select
-              value={selectedClassId}
-              onChange={(e) => handleClassChange(e.target.value)}
-              className={selectClass}
-            >
-              <option value="ALL">All Classes & Grades</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-[11px] text-slate-500 mt-1">Select class to filter the student list.</p>
-          </div>
+          {invoiceType === "Salary Invoice" && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Department
+              </label>
+              <select
+                value={departmentName}
+                onChange={(e) => setDepartmentName(e.target.value)}
+                className={selectClass}
+              >
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* Student Selector */}
+          {(invoiceType === "Expense Invoice" || invoiceType === "Other Invoice") && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Expense Category
+              </label>
+              <select
+                value={customExpenseCategory}
+                onChange={(e) => setCustomExpenseCategory(e.target.value)}
+                className={selectClass}
+              >
+                {EXPENSE_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {invoiceType === "Fee Invoice" && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Class / Grade (Backend Classes)
+              </label>
+              <select
+                value={selectedClassId}
+                onChange={(e) => handleClassChange(e.target.value)}
+                className={selectClass}
+              >
+                <option value="ALL">All Classes & Grades</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1">Select class to filter the student list.</p>
+            </div>
+          )}
+
+          {/* Student or Recipient Selector */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-              Student / Recipient
+              {invoiceType === "Fee Invoice" ? "Student / Recipient" : invoiceType === "Salary Invoice" ? "Employee / Staff Name" : "Vendor / Payee Name"}
             </label>
             {invoiceType === "Fee Invoice" ? (
               availableStudents.length > 0 ? (
@@ -402,7 +499,7 @@ export default function GenerateInvoiceDialog({
                 type="text"
                 value={customPartyName}
                 onChange={(e) => setCustomPartyName(e.target.value)}
-                placeholder="Enter party / payee name"
+                placeholder={invoiceType === "Salary Invoice" ? "e.g. Dr. Rajesh Sharma" : "e.g. Apex Power / Office Supplies Ltd."}
                 className={selectClass}
                 required
               />

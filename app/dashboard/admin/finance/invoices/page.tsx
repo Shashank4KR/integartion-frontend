@@ -20,7 +20,7 @@ import InvoiceTrendChart from "@/components/dashboard/finance/invoices/InvoiceTr
 import InvoicesByStatusChart from "@/components/dashboard/finance/invoices/InvoicesByStatusChart";
 import TopInvoiceTypes from "@/components/dashboard/finance/invoices/TopInvoiceTypes";
 import { getToken } from "@/lib/auth";
-import { listInvoices, updateInvoice, deleteInvoice, createFeePayment } from "@/lib/services/financeService";
+import { listInvoices, updateInvoice, deleteInvoice, createFeePayment, listSalaryRecords, listExpenses } from "@/lib/services/financeService";
 import { listStudents } from "@/lib/services/studentService";
 import { listClasses } from "@/lib/services/classService";
 import { generateInvoicePdf } from "@/lib/utils/generateInvoicePdf";
@@ -84,6 +84,54 @@ function mapInvoice(item: Record<string, unknown>): InvoiceRow {
   };
 }
 
+function mapSalaryToInvoice(item: Record<string, unknown>): InvoiceRow {
+  const amount = Number(item.amount ?? item.net_salary ?? 0);
+  const rawStatus = String(item.status ?? "Pending").toUpperCase();
+  const isPaid = rawStatus === "PAID";
+  const paid = isPaid ? amount : 0;
+  const balance = Math.max(0, amount - paid);
+  const id = String(item.id ?? crypto.randomUUID());
+
+  return {
+    id,
+    invoiceNo: String(item.voucher_no ?? (id ? `SAL-${id.slice(0, 8).toUpperCase()}` : `SAL-${Date.now().toString().slice(-6)}`)),
+    invoiceDate: String(item.payment_date ?? item.created_at ?? "-"),
+    studentName: String(item.employee_name ?? item.name ?? "Staff Member"),
+    studentId: String(item.employee_id ?? "STAFF"),
+    classGrade: String(item.department ?? "Payroll / Staff"),
+    invoiceType: "Salary Invoice",
+    dueDate: String(item.payment_date ?? item.created_at ?? "-"),
+    amount,
+    paid,
+    balance,
+    status: isPaid ? "Paid" : "Pending",
+  };
+}
+
+function mapExpenseToInvoice(item: Record<string, unknown>): InvoiceRow {
+  const amount = Number(item.amount ?? 0);
+  const rawStatus = String(item.status ?? item.approval_status ?? "Pending").toUpperCase();
+  const isPaid = rawStatus === "PAID" || rawStatus === "APPROVED";
+  const paid = isPaid ? amount : 0;
+  const balance = Math.max(0, amount - paid);
+  const id = String(item.id ?? crypto.randomUUID());
+
+  return {
+    id,
+    invoiceNo: String(item.reference_no ?? item.voucher_number ?? (id ? `EXP-${id.slice(0, 8).toUpperCase()}` : "-")),
+    invoiceDate: String(item.expense_date ?? item.created_at ?? "-"),
+    studentName: String(item.vendor ?? item.title ?? item.description ?? "Vendor"),
+    studentId: String(item.category ?? "EXPENSE"),
+    classGrade: String(item.department ?? item.category ?? "Operational"),
+    invoiceType: "Expense Invoice",
+    dueDate: String(item.expense_date ?? item.created_at ?? "-"),
+    amount,
+    paid,
+    balance,
+    status: isPaid ? "Paid" : "Pending",
+  };
+}
+
 function EmptyPanel({ title }: { title: string }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
@@ -136,8 +184,10 @@ export default function InvoicesPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const [rows, studentsRes, classesRes] = await Promise.all([
+        const [rows, salaryRows, expenseRows, studentsRes, classesRes] = await Promise.all([
           listInvoices(token).catch(() => []),
+          listSalaryRecords(token).catch(() => []),
+          listExpenses(token).catch(() => []),
           listStudents(token).catch(() => []),
           listClasses(token).catch(() => []),
         ]);
@@ -163,7 +213,7 @@ export default function InvoicesPage() {
           }
         });
 
-        const mapped = (Array.isArray(rows) ? rows : []).map((item: any) => {
+        const mappedFees = (Array.isArray(rows) ? rows : []).map((item: any) => {
           const base = mapInvoice(item as Record<string, unknown>);
           const matchStudent = (item.student_id ? studentMap.get(String(item.student_id)) : null) ||
                                (base.studentId ? studentMap.get(String(base.studentId)) : null);
@@ -181,8 +231,18 @@ export default function InvoicesPage() {
           return base;
         });
 
-        setInvoices(mapped);
-        setSelectedInvoice(mapped[0] ?? null);
+        const mappedSalaries = (Array.isArray(salaryRows) ? salaryRows : []).map((item: any) =>
+          mapSalaryToInvoice(item as Record<string, unknown>)
+        );
+
+        const mappedExpenses = (Array.isArray(expenseRows) ? expenseRows : []).map((item: any) =>
+          mapExpenseToInvoice(item as Record<string, unknown>)
+        );
+
+        const combinedInvoices = [...mappedFees, ...mappedSalaries, ...mappedExpenses];
+
+        setInvoices(combinedInvoices);
+        setSelectedInvoice(combinedInvoices[0] ?? null);
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : "Failed to load invoices.");
       } finally {

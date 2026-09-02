@@ -12,6 +12,8 @@ import {
   listInvoices,
   listPayments,
   listTransactions,
+  listSalaryRecords,
+  listExpenses,
 } from "@/lib/services/financeService";
 import GenerateInvoiceDialog from "@/components/dashboard/accountant/GenerateInvoiceDialog";
 import { generateInvoicePdf } from "@/lib/utils/generateInvoicePdf";
@@ -133,21 +135,100 @@ function mapInvoice(item: Record<string, unknown>, paymentTotals: Record<string,
   };
 }
 
-function mapPayment(item: Record<string, unknown>): FinanceRow {
-  const amount = num(item.amount ?? item.amount_paid);
+function mapSalaryToFinanceRow(item: Record<string, unknown>): FinanceRow {
+  const amount = num(item.amount ?? item.net_salary);
+  const isPaid = String(item.status ?? "").toUpperCase() === "PAID";
+  const paid = isPaid ? amount : 0;
+  const balance = Math.max(0, amount - paid);
+  const id = text(item.id, crypto.randomUUID());
+  return {
+    id,
+    primary: text(item.voucher_no, `SAL-${id.slice(0, 8).toUpperCase()}`),
+    secondary: "Salary Invoice",
+    student: text(item.employee_name ?? item.name, "Staff Member"),
+    className: text(item.department, "Staff / Payroll"),
+    amount,
+    paid,
+    balance,
+    status: isPaid ? "Paid" : "Pending",
+    date: text(item.payment_date ?? item.created_at),
+    dueDate: text(item.payment_date ?? item.created_at),
+    method: text(item.payment_method, "Bank Transfer"),
+  };
+}
+
+function mapExpenseToFinanceRow(item: Record<string, unknown>): FinanceRow {
+  const amount = num(item.amount);
+  const isPaid = ["PAID", "APPROVED"].includes(String(item.status ?? item.approval_status ?? "").toUpperCase());
+  const paid = isPaid ? amount : 0;
+  const balance = Math.max(0, amount - paid);
+  const id = text(item.id, crypto.randomUUID());
+  return {
+    id,
+    primary: text(item.reference_no ?? item.voucher_number, `EXP-${id.slice(0, 8).toUpperCase()}`),
+    secondary: text(item.category, "Expense Invoice"),
+    student: text(item.vendor ?? item.title ?? item.description, "Vendor"),
+    className: text(item.department ?? item.category, "Operational"),
+    amount,
+    paid,
+    balance,
+    status: isPaid ? "Paid" : "Pending",
+    date: text(item.expense_date ?? item.created_at),
+    dueDate: text(item.expense_date ?? item.created_at),
+    method: text(item.payment_method, "Cash"),
+  };
+}
+
+function mapPayment(item: Record<string, unknown>, invoice?: Record<string, unknown>): FinanceRow {
+  const paymentAmount = num(item.amount ?? item.amount_paid);
+  const totalAmount = invoice ? num(invoice.amount ?? invoice.net_amount ?? paymentAmount) : paymentAmount;
+  const totalPaid = invoice ? num(invoice.paid ?? paymentAmount) : paymentAmount;
+  const balance = invoice ? num(invoice.balance ?? Math.max(0, totalAmount - totalPaid)) : 0;
+
+  const studentName = (() => {
+    if (item.student_name) return String(item.student_name);
+    if (invoice?.student_name) return String(invoice.student_name);
+    const s = (item.student ?? invoice?.student) as Record<string, unknown> | undefined;
+    if (s && typeof s === "object") {
+      const name = [s.first_name, s.last_name].filter(Boolean).join(" ").trim();
+      if (name) return name;
+    }
+    return text(item.student ?? invoice?.student_id ?? item.invoice_id, "Student");
+  })();
+
+  const className = (() => {
+    if (item.class_grade && item.class_grade !== "None" && item.class_grade !== "null") return String(item.class_grade);
+    if (invoice?.class_grade && invoice.class_grade !== "None" && invoice.class_grade !== "null") return String(invoice.class_grade);
+    const s = (item.student ?? invoice?.student) as Record<string, unknown> | undefined;
+    const cls = s?.class_ as Record<string, unknown> | undefined;
+    if (cls?.class_name) return text(cls.class_name);
+    if (invoice?.class_name) return String(invoice.class_name);
+    return text(item.class_name ?? item.class, "-");
+  })();
+
+  const receiptRef = text(
+    item.receipt_number ?? item.receipt_no ?? item.receipt_ref_no ?? item.transaction_no,
+    item.id ? `REC-${String(item.id).slice(0, 8).toUpperCase()}` : "-"
+  );
+
+  const feeCategory = text(
+    item.fee_type ?? item.category ?? invoice?.fee_type,
+    "Fee Payment"
+  );
+
   return {
     id: text(item.id, crypto.randomUUID()),
-    primary: text(item.receipt_ref_no ?? item.receipt_number ?? item.receipt_no ?? item.transaction_no ?? item.id),
-    secondary: text(item.fee_type ?? item.category ?? item.invoice_id, "Fee Payment"),
-    student: text(item.student_name ?? item.student ?? item.invoice_id),
-    className: text(item.class_grade ?? item.class_name ?? item.class),
-    amount,
-    paid: amount,
-    balance: 0,
-    status: normalizeStatus(item.status ?? item.payment_status ?? "Completed"),
+    primary: receiptRef,
+    secondary: feeCategory,
+    student: studentName,
+    className,
+    amount: totalAmount,
+    paid: totalPaid,
+    balance,
+    status: normalizeStatus(balance === 0 ? (item.status ?? "Paid") : "Partial"),
     date: text(item.date ?? item.payment_date ?? item.created_at),
-    dueDate: "-",
-    method: text(item.payment_mode ?? item.payment_method),
+    dueDate: text(invoice?.due_date ?? item.due_date),
+    method: text(item.payment_mode ?? item.payment_method, "Online"),
   };
 }
 
@@ -454,11 +535,21 @@ export default function AccountantFinancePage({ kind }: { kind: PageKind }) {
       }
 
       if (kind === "payments") {
-        const [payments, transactions] = await Promise.all([listPayments(token), listTransactions(token)]);
+        const [payments, transactions, invoices] = await Promise.all([
+          listPayments(token),
+          listTransactions(token),
+          listInvoices(token).catch(() => []),
+        ]);
         const transactionById = new Map(transactions.map((item) => [text((item as Record<string, unknown>).id), item as Record<string, unknown>]));
+        const invoiceById = new Map(invoices.map((item) => [text((item as Record<string, unknown>).id), item as Record<string, unknown>]));
         const mapped = payments.map((item) => {
           const payment = item as Record<string, unknown>;
-          return mapPayment({ ...payment, ...(transactionById.get(text(payment.id)) ?? {}) });
+          const invoiceId = text(payment.invoice_id, "");
+          const linkedInvoice = invoiceId ? invoiceById.get(invoiceId) : undefined;
+          return mapPayment(
+            { ...payment, ...(transactionById.get(text(payment.id)) ?? {}) },
+            linkedInvoice
+          );
         });
         setRows(mapped);
         setSelectedRow(mapped[0] ?? null);
@@ -475,14 +566,22 @@ export default function AccountantFinancePage({ kind }: { kind: PageKind }) {
         return;
       }
 
-      const [invoices, payments] = await Promise.all([listInvoices(token), listPayments(token)]);
+      const [invoices, payments, salaries, expenses] = await Promise.all([
+        listInvoices(token).catch(() => []),
+        listPayments(token).catch(() => []),
+        listSalaryRecords(token).catch(() => []),
+        listExpenses(token).catch(() => []),
+      ]);
       const paymentTotals = payments.reduce<Record<string, number>>((acc, item) => {
         const payment = item as Record<string, unknown>;
         const invoiceId = text(payment.invoice_id, "");
         acc[invoiceId] = (acc[invoiceId] ?? 0) + num(payment.amount_paid);
         return acc;
       }, {});
-      const mapped = invoices.map((item) => mapInvoice(item as Record<string, unknown>, paymentTotals));
+      const feeInvoices = invoices.map((item) => mapInvoice(item as Record<string, unknown>, paymentTotals));
+      const salaryInvoices = salaries.map((item) => mapSalaryToFinanceRow(item as Record<string, unknown>));
+      const expenseInvoices = expenses.map((item) => mapExpenseToFinanceRow(item as Record<string, unknown>));
+      const mapped = [...feeInvoices, ...salaryInvoices, ...expenseInvoices];
       setRows(mapped);
       setSelectedRow(mapped[0] ?? null);
     } catch (err) {

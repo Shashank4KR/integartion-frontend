@@ -301,7 +301,7 @@ export async function processSalary(
   token: string,
   payload: any,
 ): Promise<any> {
-  const response = await fetch(`${BASE}/salary/process`, {
+  const response = await fetch(`${BASE}/salary`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -317,6 +317,8 @@ export async function processSalary(
 
   return (await response.json()) as any;
 }
+
+export const createSalaryRecord = processSalary;
 
 export async function getFeesSummary(token: string): Promise<any> {
   const response = await fetch("/api/fees/summary", {

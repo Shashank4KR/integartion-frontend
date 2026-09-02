@@ -14,6 +14,11 @@ import AddSalaryDialog from "@/components/dashboard/finance/salary-management/Ad
 import ImportSalariesDialog from "@/components/dashboard/finance/salary-management/ImportSalariesDialog";
 import SalaryDetailsDialog from "@/components/dashboard/finance/salary-management/SalaryDetailsDialog";
 import SalaryActionDialog from "@/components/dashboard/finance/salary-management/SalaryActionDialog";
+import PayrollSummaryChart from "@/components/dashboard/finance/salary-management/PayrollSummaryChart";
+import SalaryComponentsCard from "@/components/dashboard/finance/salary-management/SalaryComponentsCard";
+import PayrollTrendChart from "@/components/dashboard/finance/salary-management/PayrollTrendChart";
+import TopDepartmentsByPayroll from "@/components/dashboard/finance/salary-management/TopDepartmentsByPayroll";
+import MonthlySalarySummaryCards from "@/components/dashboard/finance/salary-management/MonthlySalarySummaryCards";
 import { getToken } from "@/lib/auth";
 import { listSalaryRecords } from "@/lib/services/financeService";
 
@@ -317,20 +322,20 @@ export default function SalaryManagementPage() {
               )}
             </div>
             <div className="space-y-6">
-              <EmptyPanel title="No payroll summary chart data available." />
-              <EmptyPanel title="No salary component data available." />
+              <PayrollSummaryChart />
+              <SalaryComponentsCard />
               <SalaryQuickActions onAction={handleQuickAction} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <EmptyPanel title="No payroll trend data available." />
-            <EmptyPanel title="No department payroll data available." />
+            <PayrollTrendChart />
+            <TopDepartmentsByPayroll />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="space-y-6 mb-6">
             <RecentSalaryActivities items={recentSalaryActivities} />
-            <EmptyPanel title="No monthly salary summary data available." />
+            <MonthlySalarySummaryCards />
           </div>
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">

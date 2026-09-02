@@ -4,13 +4,32 @@ import { useState, useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import Modal from "@/components/shared/Modal";
 import { getToken } from "@/lib/auth";
-import { generateInvoice, listFeeStructures, createFeePayment } from "@/lib/services/financeService";
+import { generateInvoice, listFeeStructures, createFeePayment, createSalaryRecord, addExpense } from "@/lib/services/financeService";
 import { listStudents } from "@/lib/services/studentService";
 import { listClasses } from "@/lib/services/classService";
 
 const INVOICE_TYPE_OPTIONS = ["Fee Invoice", "Salary Invoice", "Expense Invoice", "Other Invoice"];
 const STATUS_OPTIONS = ["Pending", "Partial", "Paid", "Overdue"];
 const PAYMENT_MODE_OPTIONS = ["Online", "Cash", "UPI", "Card", "Net Banking", "Bank Transfer", "Cheque", "Scholarship", "Other"];
+const EXPENSE_CATEGORIES = [
+  "Maintenance",
+  "Utilities & Electricity",
+  "Office & Supplies",
+  "Lab & Equipment",
+  "Software & IT",
+  "Transport & Fuel",
+  "Hospitality & Events",
+  "Other Operational",
+];
+const DEPARTMENTS = [
+  "Teaching Staff",
+  "Administration",
+  "IT & Laboratory",
+  "Library Staff",
+  "Maintenance & Facilities",
+  "Accounts & Finance",
+  "Security & Support",
+];
 
 interface StudentItem {
   id: string;
@@ -50,6 +69,8 @@ export default function GenerateInvoiceDialog({
   const [selectedClassId, setSelectedClassId] = useState<string>("ALL");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [customPartyName, setCustomPartyName] = useState<string>("");
+  const [customExpenseCategory, setCustomExpenseCategory] = useState<string>("Maintenance");
+  const [departmentName, setDepartmentName] = useState<string>("Teaching Staff");
   const [selectedFeeStructureId, setSelectedFeeStructureId] = useState<string>("");
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [dueDate, setDueDate] = useState(() => {
@@ -237,7 +258,7 @@ export default function GenerateInvoiceDialog({
       const token = getToken();
       let generatedId = `FINV-${Date.now().toString().slice(-6)}`;
 
-      if (token && selectedStudentId && selectedFeeStructureId) {
+      if (token && isFeeInvoice && selectedStudentId && selectedFeeStructureId) {
         try {
           const res = await generateInvoice(token, {
             student_id: selectedStudentId,
@@ -266,15 +287,55 @@ export default function GenerateInvoiceDialog({
         } catch (apiErr: any) {
           console.warn("Backend generate invoice call had issue:", apiErr);
         }
+      } else if (token && invoiceType === "Salary Invoice") {
+        try {
+          const res = await createSalaryRecord(token, {
+            employee_name: customPartyName.trim() || "Staff Member",
+            amount: numAmount,
+            month: new Date(invoiceDate).getMonth() + 1,
+            year: new Date(invoiceDate).getFullYear(),
+            payment_method: paymentMode.toUpperCase().replace(/\s+/g, "_"),
+            status: computedStatus === "Paid" ? "PAID" : "PENDING",
+            payment_date: invoiceDate,
+          });
+          generatedId = res?.data?.voucher_no || res?.voucher_no || `SAL-${Date.now().toString().slice(-6)}`;
+        } catch {
+          generatedId = `SAL-${Date.now().toString().slice(-6)}`;
+        }
+      } else if (token && (invoiceType === "Expense Invoice" || invoiceType === "Other Invoice")) {
+        try {
+          const res = await addExpense(token, {
+            category: customExpenseCategory || "Maintenance",
+            amount: numAmount,
+            expense_date: invoiceDate,
+            description: paymentRemarks || `${invoiceType} for ${customPartyName || "Vendor"}`,
+            payment_method: paymentMode.toUpperCase().replace(/\s+/g, "_"),
+            status: computedStatus === "Paid" ? "PAID" : "PENDING",
+            reference_no: `EXP-${Date.now().toString().slice(-6)}`,
+          });
+          generatedId = res?.data?.reference_no || res?.reference_no || `EXP-${Date.now().toString().slice(-6)}`;
+        } catch {
+          generatedId = `EXP-${Date.now().toString().slice(-6)}`;
+        }
       }
+
+      const finalStudentName = isFeeInvoice
+        ? (selectedStudentObj?.name || "Student")
+        : customPartyName || (invoiceType === "Salary Invoice" ? "Staff Member" : "Vendor");
+      const finalStudentId = isFeeInvoice
+        ? (selectedStudentObj?.admissionNo || "ADM-001")
+        : (invoiceType === "Salary Invoice" ? "STAFF" : "EXPENSE");
+      const finalClassGrade = isFeeInvoice
+        ? (selectedStudentObj?.classGrade || "General")
+        : (invoiceType === "Salary Invoice" ? departmentName : customExpenseCategory);
 
       const newInvoice = {
         id: generatedId,
         invoiceNo: generatedId,
         invoiceDate,
-        studentName: isFeeInvoice ? (selectedStudentObj?.name || "Student") : customPartyName,
-        studentId: isFeeInvoice ? (selectedStudentObj?.admissionNo || "ADM-001") : "EXT-001",
-        classGrade: isFeeInvoice ? (selectedStudentObj?.classGrade || "General") : "N/A",
+        studentName: finalStudentName,
+        studentId: finalStudentId,
+        classGrade: finalClassGrade,
         invoiceType,
         dueDate,
         amount: numAmount,
@@ -324,6 +385,45 @@ export default function GenerateInvoiceDialog({
             ))}
           </select>
         </div>
+
+        {/* Dynamic Category or Department */}
+        {invoiceType === "Salary Invoice" && (
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Department <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={departmentName}
+              onChange={(e) => setDepartmentName(e.target.value)}
+              className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            >
+              {DEPARTMENTS.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {(invoiceType === "Expense Invoice" || invoiceType === "Other Invoice") && (
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Expense Category <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={customExpenseCategory}
+              onChange={(e) => setCustomExpenseCategory(e.target.value)}
+              className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            >
+              {EXPENSE_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Class and Student Selection */}
         {invoiceType === "Fee Invoice" ? (
@@ -392,13 +492,13 @@ export default function GenerateInvoiceDialog({
         ) : (
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Recipient / Party Name <span className="text-red-500">*</span>
+              {invoiceType === "Salary Invoice" ? "Employee / Staff Name" : "Recipient / Vendor Name"} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={customPartyName}
               onChange={(e) => setCustomPartyName(e.target.value)}
-              placeholder="e.g., John Doe / Vendor Name"
+              placeholder={invoiceType === "Salary Invoice" ? "e.g., Dr. Rajesh Sharma" : "e.g., John Doe / Vendor Name"}
               className={`w-full h-10 px-3 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
                 errors.student ? "border-red-500" : "border-slate-300"
               }`}

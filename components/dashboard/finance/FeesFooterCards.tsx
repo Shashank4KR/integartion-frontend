@@ -64,10 +64,15 @@ const iconMap: Record<string, React.ReactNode> = {
   gift: <Gift className="h-5 w-5" />,
 };
 
-export default function FeesFooterCards() {
+interface FeesFooterCardsProps {
+  cards?: FooterCard[];
+}
+
+export default function FeesFooterCards({ cards }: FeesFooterCardsProps = {}) {
+  const displayCards = cards && cards.length > 0 ? cards : FOOTER_CARDS;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {FOOTER_CARDS.map((card) => (
+      {displayCards.map((card) => (
         <Card key={card.title} className="p-4">
           <div className="flex items-start gap-3">
             <div className={`${card.iconBg} p-2 rounded-lg`}>

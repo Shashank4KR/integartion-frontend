@@ -42,8 +42,8 @@ export default function FeeCollectionByTypeChart({ segments = [], recentPayments
       <div className="pt-3 border-t border-slate-100">
         <p className="text-xs font-semibold text-slate-700 mb-2">Recent Payments</p>
         <div className="space-y-2">
-          {recentPayments.map((item) => (
-            <div key={item.student} className="flex items-center justify-between">
+          {recentPayments.map((item, index) => (
+            <div key={`${item.student}-${index}`} className="flex items-center justify-between">
               <p className="text-xs text-slate-900">{item.student}</p>
               <div className="text-right">
                 <p className="text-xs font-semibold text-slate-900">{item.amount}</p>

@@ -42,8 +42,8 @@ export default function FeeCollectionSummaryChart({ data = [], recentCollections
       <div className="mt-4 pt-4 border-t border-slate-100">
         <p className="text-xs font-semibold text-slate-700 mb-2">Recent Collections</p>
         <div className="space-y-2">
-          {recentCollections.map((item) => (
-            <div key={`${item.student}-${item.date}`} className="flex items-center justify-between">
+          {recentCollections.map((item, index) => (
+            <div key={`${item.student}-${item.date}-${index}`} className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-900">{item.student}</p>
                 <p className="text-[11px] text-slate-500">{item.course}</p>

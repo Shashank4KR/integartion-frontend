@@ -60,16 +60,23 @@ export default function RecentTransactionsTable({ rows, onView, onViewAll }: Rec
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-slate-50 hover:bg-slate-50/50">
-                <td className="px-5 py-3 font-mono text-xs text-slate-600">{row.receiptRefNo}</td>
-                <td className="px-5 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{row.studentName}</p>
-                    <p className="text-xs text-slate-500">{row.classGrade}</p>
-                  </div>
-                </td>
-                <td className="px-5 py-3 text-xs text-slate-600">{row.category}</td>
+            {rows.map((row) => {
+              const r = row as any;
+              const receipt = row.receiptRefNo || r.receipt_ref_no || (row.id ? `TXN-${String(row.id).slice(0, 8).toUpperCase()}` : "-");
+              const student = row.studentName || r.student_name || r.student || "Student";
+              const cls = row.classGrade || r.class_grade || "";
+              const cat = row.category || r.type || r.fee_type || "Fee Payment";
+
+              return (
+                <tr key={row.id} className="border-b border-slate-50 hover:bg-slate-50/50">
+                  <td className="px-5 py-3 font-mono text-xs text-slate-600">{receipt}</td>
+                  <td className="px-5 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">{student}</p>
+                      {cls && <p className="text-xs text-slate-500">{cls}</p>}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3 text-xs text-slate-600">{cat}</td>
                 <td className="px-5 py-3 text-sm font-semibold text-slate-900">₹{row.amount.toLocaleString()}</td>
                 <td className="px-5 py-3">{statusBadge(row.status)}</td>
                 <td className="px-5 py-3 text-xs text-slate-500">{row.date}</td>
@@ -97,7 +104,7 @@ export default function RecentTransactionsTable({ rows, onView, onViewAll }: Rec
                   </div>
                 </td>
               </tr>
-            ))}
+            );})}
           </tbody>
         </table>
       </div>

@@ -217,6 +217,56 @@ function buildRecentPayments(rows: TransactionRow[]) {
   });
 }
 
+function mapTransactionRow(item: unknown): TransactionRow {
+  const r = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+  const id = String(r.id ?? crypto.randomUUID());
+  const receipt = String(
+    r.receiptRefNo ??
+    r.receipt_ref_no ??
+    r.receipt_number ??
+    r.receipt_no ??
+    r.transaction_no ??
+    r.reference_no ??
+    (id && !id.startsWith("exp-") ? `REC-${id.slice(0, 8).toUpperCase()}` : `TXN-${id.slice(0, 8).toUpperCase()}`)
+  );
+  const student = String(
+    r.studentName ??
+    r.student_name ??
+    r.student ??
+    (r.type === "Expense" ? "Expense" : "Student")
+  );
+  const classGrade = String(
+    r.classGrade ??
+    r.class_grade ??
+    r.class_name ??
+    r.className ??
+    ""
+  );
+  const category = String(
+    r.category ??
+    r.type ??
+    r.fee_type ??
+    r.feeType ??
+    r.description ??
+    "Fee Payment"
+  );
+  const rawType = String(r.type ?? "").toLowerCase();
+  const rawStatus = String(r.status ?? "Paid").toLowerCase();
+
+  return {
+    id,
+    receiptRefNo: receipt.trim() || `TXN-${id.slice(0, 8).toUpperCase()}`,
+    date: String(r.date ?? r.payment_date ?? r.created_at ?? "-"),
+    studentName: student.trim() || "Student",
+    classGrade: classGrade.trim(),
+    type: rawType.includes("exp") ? "Expense" : "Income",
+    category: category.trim() || "Fee Payment",
+    paymentMode: String(r.paymentMode ?? r.payment_mode ?? r.payment_method ?? "Online"),
+    amount: getAmountValue(r),
+    status: rawStatus.includes("fail") ? "Failed" : rawStatus.includes("pend") ? "Pending" : "Paid" as any,
+  };
+}
+
 export default function FinanceOverviewPage() {
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [summaryCards, setSummaryCards] = useState<SummaryCard[]>([]);
@@ -266,7 +316,7 @@ export default function FinanceOverviewPage() {
       ]);
 
       const overviewRecord = overview as Record<string, unknown> | undefined;
-      const normalizedRows = Array.isArray(rows) ? rows : [];
+      const normalizedRows = Array.isArray(rows) ? rows.map(mapTransactionRow) : [];
 
       setSummaryCards(buildSummaryCards(overviewRecord, normalizedRows));
       setBalanceCards(buildBalanceCards(overviewRecord));
