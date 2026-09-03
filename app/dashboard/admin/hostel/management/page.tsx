@@ -1,58 +1,119 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
 import HostelManagementPageHeader from "@/components/dashboard/hostel/HostelManagementPageHeader";
 import HostelSummaryCards from "@/components/dashboard/hostel/HostelSummaryCards";
-import { getToken } from "@/lib/auth";
+import AddBlockDialog, { type CreateBlockPayload } from "@/components/dashboard/hostel/AddBlockDialog";
+import { clearAuth, getToken } from "@/lib/auth";
 import { COMPANY_INFO } from "@/lib/constants";
-import { getHostelAllocations, getHostelDashboardStats, listHostelBlocks, listRooms } from "@/lib/services/hostelService";
+import {
+  createHostelBlock,
+  getHostelAllocations,
+  getHostelDashboardStats,
+  listHostelBlocks,
+  listRooms,
+} from "@/lib/services/hostelService";
 
 export default function HostelManagementPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<any | null>(null);
   const [blocks, setBlocks] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [allocations, setAllocations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isAddBlockOpen, setIsAddBlockOpen] = useState(false);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     const token = getToken();
     if (!token) {
-      setLoadError("Please log in to view hostel data.");
-      setIsLoading(false);
+      clearAuth();
+      router.replace("/login");
       return;
     }
 
     setIsLoading(true);
     setLoadError(null);
-    Promise.all([
-      getHostelDashboardStats(token),
-      listHostelBlocks(token),
-      listRooms(token),
-      getHostelAllocations(token),
-    ])
-      .then(([statsData, blockRows, roomRows, allocationRows]) => {
-        setStats(statsData ?? {});
-        setBlocks(Array.isArray(blockRows) ? blockRows : []);
-        setRooms(Array.isArray(roomRows) ? roomRows : []);
-        setAllocations(Array.isArray(allocationRows) ? allocationRows : []);
-      })
-      .catch((error) => {
-        setLoadError(error instanceof Error ? error.message : "Failed to load hostel data.");
-      })
-      .finally(() => setIsLoading(false));
+    try {
+      const [statsData, blockRows, roomRows, allocationRows] = await Promise.all([
+        getHostelDashboardStats(token),
+        listHostelBlocks(token),
+        listRooms(token),
+        getHostelAllocations(token),
+      ]);
+      setStats(statsData ?? {});
+      setBlocks(Array.isArray(blockRows) ? blockRows : []);
+      setRooms(Array.isArray(roomRows) ? roomRows : []);
+      setAllocations(Array.isArray(allocationRows) ? allocationRows : []);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Failed to load hostel data.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleSaveBlock = async (payload: CreateBlockPayload) => {
+    const token = getToken();
+    if (!token) throw new Error("Authentication token not found.");
+    await createHostelBlock(token, payload);
+    await loadData();
+  };
 
   const cards = useMemo(
     () => [
-      { title: "Total Rooms", value: String(stats?.total_rooms ?? 0), footer: `${stats?.total_blocks ?? 0} blocks`, icon: "Bed", iconBg: "bg-blue-50", iconColor: "text-blue-600", tint: "bg-blue-50/60" },
-      { title: "Total Students", value: String(stats?.active_allocations ?? 0), footer: "Active allocations", icon: "Users", iconBg: "bg-emerald-50", iconColor: "text-emerald-600", tint: "bg-emerald-50/60" },
-      { title: "Occupied Beds", value: String(stats?.occupied_beds ?? 0), footer: `${stats?.occupancy_percentage ?? 0}% occupancy`, icon: "User", iconBg: "bg-orange-50", iconColor: "text-orange-500", tint: "bg-orange-50/60" },
-      { title: "Vacant Beds", value: String(stats?.available_beds ?? 0), footer: "Available beds", icon: "ClipboardList", iconBg: "bg-pink-50", iconColor: "text-pink-500", tint: "bg-pink-50/60" },
-      { title: "Total Beds", value: String(stats?.total_beds ?? 0), footer: "Across all rooms", icon: "ClipboardList", iconBg: "bg-blue-50", iconColor: "text-blue-600", tint: "bg-blue-50/60" },
+      {
+        title: "Total Rooms",
+        value: String(stats?.total_rooms ?? 0),
+        footer: `${stats?.total_blocks ?? 0} blocks`,
+        icon: "Bed",
+        iconBg: "bg-blue-50",
+        iconColor: "text-blue-600",
+        tint: "bg-blue-50/60",
+      },
+      {
+        title: "Total Students",
+        value: String(stats?.active_allocations ?? 0),
+        footer: "Active allocations",
+        icon: "Users",
+        iconBg: "bg-emerald-50",
+        iconColor: "text-emerald-600",
+        tint: "bg-emerald-50/60",
+      },
+      {
+        title: "Occupied Beds",
+        value: String(stats?.occupied_beds ?? 0),
+        footer: `${stats?.occupancy_percentage ?? 0}% occupancy`,
+        icon: "User",
+        iconBg: "bg-orange-50",
+        iconColor: "text-orange-500",
+        tint: "bg-orange-50/60",
+      },
+      {
+        title: "Vacant Beds",
+        value: String(stats?.available_beds ?? 0),
+        footer: "Available beds",
+        icon: "ClipboardList",
+        iconBg: "bg-pink-50",
+        iconColor: "text-pink-500",
+        tint: "bg-pink-50/60",
+      },
+      {
+        title: "Total Beds",
+        value: String(stats?.total_beds ?? 0),
+        footer: "Across all rooms",
+        icon: "ClipboardList",
+        iconBg: "bg-blue-50",
+        iconColor: "text-blue-600",
+        tint: "bg-blue-50/60",
+      },
     ],
     [stats],
   );
@@ -61,10 +122,22 @@ export default function HostelManagementPage() {
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
       <div className="p-6">
         <div className="mx-auto max-w-[1400px]">
-          <HostelManagementPageHeader onAddClick={() => {}} onMoreOptions={() => {}} />
+          <HostelManagementPageHeader
+            onAddClick={() => setIsAddBlockOpen(true)}
+            onMoreOptions={() => {}}
+          />
 
-          {loadError ? <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div> : null}
-          {isLoading ? <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">Loading hostel data...</div> : null}
+          {loadError ? (
+            <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          ) : null}
+
+          {isLoading ? (
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
+              Loading hostel data...
+            </div>
+          ) : null}
 
           {!isLoading && !loadError ? <HostelSummaryCards cards={cards} /> : null}
 
@@ -79,8 +152,34 @@ export default function HostelManagementPage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead><tr className="border-b border-slate-100"><th className="px-4 py-3 text-left">Block</th><th className="px-4 py-3 text-left">Type</th><th className="px-4 py-3 text-left">Rooms</th><th className="px-4 py-3 text-left">Status</th></tr></thead>
-                      <tbody>{blocks.map((block) => <tr key={block.id} className="border-b border-slate-50"><td className="px-4 py-3">{block.block_name ?? "-"}</td><td className="px-4 py-3">{block.block_type ?? "-"}</td><td className="px-4 py-3">{block.total_rooms ?? 0}</td><td className="px-4 py-3">{block.status ?? "-"}</td></tr>)}</tbody>
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="px-4 py-3 text-left">Block</th>
+                          <th className="px-4 py-3 text-left">Type</th>
+                          <th className="px-4 py-3 text-left">Rooms</th>
+                          <th className="px-4 py-3 text-left">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {blocks.map((block) => (
+                          <tr key={block.id} className="border-b border-slate-50">
+                            <td className="px-4 py-3 font-medium text-slate-800">{block.block_name ?? "-"}</td>
+                            <td className="px-4 py-3 text-slate-600">{block.block_type ?? "-"}</td>
+                            <td className="px-4 py-3 text-slate-600">{block.total_rooms ?? 0}</td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                                  block.status === "ACTIVE"
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-slate-100 text-slate-700"
+                                }`}
+                              >
+                                {block.status ?? "-"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   </div>
                 )}
@@ -95,8 +194,34 @@ export default function HostelManagementPage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead><tr className="border-b border-slate-100"><th className="px-4 py-3 text-left">Student ID</th><th className="px-4 py-3 text-left">Bed ID</th><th className="px-4 py-3 text-left">Check In</th><th className="px-4 py-3 text-left">Status</th></tr></thead>
-                      <tbody>{allocations.slice(0, 10).map((row) => <tr key={row.id} className="border-b border-slate-50"><td className="px-4 py-3">{row.student_id ?? "-"}</td><td className="px-4 py-3">{row.bed_id ?? "-"}</td><td className="px-4 py-3">{row.check_in_date ?? "-"}</td><td className="px-4 py-3">{row.status ?? "-"}</td></tr>)}</tbody>
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="px-4 py-3 text-left">Student ID</th>
+                          <th className="px-4 py-3 text-left">Bed ID</th>
+                          <th className="px-4 py-3 text-left">Check In</th>
+                          <th className="px-4 py-3 text-left">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allocations.slice(0, 10).map((row) => (
+                          <tr key={row.id} className="border-b border-slate-50">
+                            <td className="px-4 py-3 font-mono text-xs text-slate-700">{row.student_id ?? "-"}</td>
+                            <td className="px-4 py-3 font-mono text-xs text-slate-700">{row.bed_id ?? "-"}</td>
+                            <td className="px-4 py-3 text-slate-600">{row.check_in_date ?? "-"}</td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                                  row.status === "ACTIVE"
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-slate-100 text-slate-700"
+                                }`}
+                              >
+                                {row.status ?? "-"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   </div>
                 )}
@@ -105,8 +230,16 @@ export default function HostelManagementPage() {
           ) : null}
 
           {!isLoading && !loadError && rooms.length === 0 && blocks.length === 0 && allocations.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500">No hostel records found.</div>
+            <div className="rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500">
+              No hostel records found.
+            </div>
           ) : null}
+
+          <AddBlockDialog
+            open={isAddBlockOpen}
+            onClose={() => setIsAddBlockOpen(false)}
+            onSave={handleSaveBlock}
+          />
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
             <span>{COMPANY_INFO.copyright}</span>

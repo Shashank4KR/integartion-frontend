@@ -46,6 +46,7 @@ export default function MarkAttendanceDialog({
   const [studentId, setStudentId] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [teacherId, setTeacherId] = useState("");
+  const [selectedDate, setSelectedDate] = useState(dateDisplay);
   const [periodNo, setPeriodNo] = useState("1");
   const [status, setStatus] = useState<AttendanceStatus>("PRESENT");
   const [submitting, setSubmitting] = useState(false);
@@ -57,18 +58,20 @@ export default function MarkAttendanceDialog({
       setStudentId("");
       setSubjectId("");
       setTeacherId("");
+      setSelectedDate(dateDisplay);
       setPeriodNo("1");
       setStatus("PRESENT");
       setError(null);
       setSubmitting(false);
       submittingRef.current = false;
     }
-  }, [open]);
+  }, [open, dateDisplay]);
 
   const validationError = (() => {
     if (!studentId) return "Please select a student.";
     if (!subjectId) return "Please select a subject.";
     if (!teacherId) return "Please select a teacher.";
+    if (!selectedDate) return "Please select a date.";
     if (!periodNo || Number.isNaN(Number(periodNo)) || Number(periodNo) < 1) return "Please enter a valid period number.";
     return null;
   })();
@@ -80,7 +83,7 @@ export default function MarkAttendanceDialog({
     setError(null);
 
     try {
-      const apiDate = toISODate(dateDisplay);
+      const apiDate = toISODate(selectedDate);
       const period = Number(periodNo);
 
       const existing = await getAllAttendance(token, {
@@ -121,7 +124,7 @@ export default function MarkAttendanceDialog({
       submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [validationError, token, studentId, classId, subjectId, teacherId, dateDisplay, periodNo, status, markedBy, onSuccess, onClose]);
+  }, [validationError, token, studentId, classId, subjectId, teacherId, selectedDate, periodNo, status, markedBy, onSuccess, onClose]);
 
   const studentOptions = students.map((s) => ({
     value: s.id,
@@ -173,7 +176,7 @@ export default function MarkAttendanceDialog({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-2 block text-xs font-semibold text-slate-700">Date</label>
-            <DatePicker value={dateDisplay} onChange={() => {}} />
+            <DatePicker value={selectedDate} onChange={setSelectedDate} />
           </div>
           <div>
             <label className="mb-2 block text-xs font-semibold text-slate-700">Period</label>

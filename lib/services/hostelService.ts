@@ -374,6 +374,25 @@ export async function listMaintenanceRequests(
   return (await response.json()) as any[];
 }
 
+export async function createMaintenanceRequest(
+  token: string,
+  payload: any,
+): Promise<any> {
+  const response = await fetch("/api/maintenance-requests", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to create maintenance request.");
+  }
+  return (await response.json()) as any;
+}
+
 export async function getMessDashboard(
   token: string,
 ): Promise<any> {
@@ -490,3 +509,17 @@ export async function getHostelVisitors(
   }
   return (await response.json()) as any[];
 }
+
+export async function listAvailableBeds(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch(`${BASE}/beds/available`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch available beds.");
+  }
+  return (await response.json()) as any[];
+}
+

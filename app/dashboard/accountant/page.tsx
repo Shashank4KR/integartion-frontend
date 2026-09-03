@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Wallet, AlertCircle, Receipt, FileBarChart, Users2, TrendingUp } from "lucide-react";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
@@ -12,7 +13,7 @@ import BarChart from "@/components/shared/charts/BarChart";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import type { RoleStat, RoleQuickAction, InfoRow } from "@/lib/dashboard/role-dashboards/types";
 import { COMPANY_INFO } from "@/lib/constants";
-import { getToken } from "@/lib/auth";
+import { clearAuth, getToken } from "@/lib/auth";
 import {
   getFinanceOverview,
   getFinanceReport,
@@ -48,6 +49,7 @@ const accountantQuickActions: RoleQuickAction[] = [
 ];
 
 export default function AccountantDashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<RoleStat[]>([]);
   const [recentPayments, setRecentPayments] = useState<InfoRow[]>([]);
   const [invoiceRows, setInvoiceRows] = useState<InfoRow[]>([]);
@@ -61,8 +63,8 @@ export default function AccountantDashboardPage() {
     const load = async () => {
       const token = getToken();
       if (!token) {
-        setError("Please log in to view the dashboard.");
-        setLoading(false);
+        clearAuth();
+        router.replace("/login");
         return;
       }
 

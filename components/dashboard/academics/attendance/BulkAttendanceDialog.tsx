@@ -51,6 +51,7 @@ export default function BulkAttendanceDialog({
 }: BulkAttendanceDialogProps) {
   const [subjectId, setSubjectId] = useState("");
   const [teacherId, setTeacherId] = useState("");
+  const [selectedDate, setSelectedDate] = useState(dateDisplay);
   const [periodNo, setPeriodNo] = useState("1");
   const [statuses, setStatuses] = useState<Record<string, AttendanceStatus | undefined>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -61,17 +62,19 @@ export default function BulkAttendanceDialog({
     if (open) {
       setSubjectId("");
       setTeacherId("");
+      setSelectedDate(dateDisplay);
       setPeriodNo("1");
       setStatuses({});
       setError(null);
       setSubmitting(false);
       submittingRef.current = false;
     }
-  }, [open]);
+  }, [open, dateDisplay]);
 
   const validationError = (() => {
     if (!subjectId) return "Please select a subject.";
     if (!teacherId) return "Please select a teacher.";
+    if (!selectedDate) return "Please select a date.";
     if (!periodNo || Number.isNaN(Number(periodNo)) || Number(periodNo) < 1) return "Please enter a valid period number.";
     const unmarked = students.filter((s) => !statuses[s.id]);
     if (unmarked.length > 0) {
@@ -116,7 +119,7 @@ export default function BulkAttendanceDialog({
           status: statuses[s.id]!,
         }));
 
-      const apiDate = toISODate(dateDisplay);
+      const apiDate = toISODate(selectedDate);
       const period = Number(periodNo);
 
       const existing = await getAllAttendance(token, {
@@ -163,7 +166,7 @@ export default function BulkAttendanceDialog({
       submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [validationError, token, classId, subjectId, teacherId, dateDisplay, periodNo, markedBy, students, statuses, onSuccess, onClose]);
+  }, [validationError, token, classId, subjectId, teacherId, selectedDate, periodNo, markedBy, students, statuses, onSuccess, onClose]);
 
   return (
     <Modal open={open} onClose={onClose} title="Bulk Attendance" maxWidth="max-w-4xl">
@@ -197,7 +200,7 @@ export default function BulkAttendanceDialog({
           </div>
           <div>
             <label className="mb-2 block text-xs font-semibold text-slate-700">Date</label>
-            <DatePicker value={dateDisplay} onChange={() => {}} />
+            <DatePicker value={selectedDate} onChange={setSelectedDate} />
           </div>
           <div>
             <label className="mb-2 block text-xs font-semibold text-slate-700">Period</label>
@@ -289,7 +292,7 @@ export default function BulkAttendanceDialog({
             disabled={!!validationError || submitting}
             className="rounded-lg bg-[#7c3aed] px-4 py-2 text-sm font-semibold text-white hover:brightness-110 transition disabled:opacity-70"
           >
-            {submitting ? "Submitting…" : "Submit Attendance"}
+            {submitting ? "Saving…" : "Save Bulk Attendance"}
           </button>
         </div>
       </div>

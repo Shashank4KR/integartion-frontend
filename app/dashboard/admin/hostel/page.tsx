@@ -1,11 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
 import HostelSummaryCards from "@/components/dashboard/hostel/HostelSummaryCards";
-import { getToken } from "@/lib/auth";
+import { clearAuth, getToken } from "@/lib/auth";
 import { COMPANY_INFO } from "@/lib/constants";
 import { getHostelDashboardStats } from "@/lib/services/hostelService";
 
@@ -20,6 +21,7 @@ interface HostelStats {
 }
 
 export default function HostelOverviewPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<HostelStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -27,10 +29,11 @@ export default function HostelOverviewPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      setLoadError("Please log in to view hostel data.");
-      setIsLoading(false);
+      clearAuth();
+      router.replace("/login");
       return;
     }
+
 
     setIsLoading(true);
     setLoadError(null);

@@ -3,15 +3,28 @@ import type { UserResponse } from "@/types/auth";
 const TOKEN_STORAGE_KEY = "edtech_access_token";
 const USER_STORAGE_KEY = "edtech_user";
 const AVATAR_STORAGE_KEY = "edtech_user_avatar";
+const ROLE_COOKIE_KEY = "edtech_user_role";
 export const AVATAR_CHANGE_EVENT = "edtech_avatar_changed";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
 }
 
+function setCookie(name: string, value: string, days = 7): void {
+  if (!isBrowser()) return;
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function deleteCookie(name: string): void {
+  if (!isBrowser()) return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+}
+
 export function saveToken(token: string): void {
   if (!isBrowser()) return;
   localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  setCookie(TOKEN_STORAGE_KEY, token);
 }
 
 export function getToken(): string | null {
@@ -22,6 +35,10 @@ export function getToken(): string | null {
 export function saveUser(user: UserResponse): void {
   if (!isBrowser()) return;
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  const roleName = (user.role?.role_name ?? (user as any).role_name ?? "").trim().toUpperCase();
+  if (roleName) {
+    setCookie(ROLE_COOKIE_KEY, roleName);
+  }
 }
 
 export function getStoredUser(): UserResponse | null {
@@ -78,6 +95,8 @@ export function clearAuth(): void {
   localStorage.removeItem(USER_STORAGE_KEY);
   localStorage.removeItem("edtech_student");
   localStorage.removeItem(AVATAR_STORAGE_KEY);
+  deleteCookie(TOKEN_STORAGE_KEY);
+  deleteCookie(ROLE_COOKIE_KEY);
 }
 
 export const ROLE_DASHBOARD_PATHS: Record<string, string> = {

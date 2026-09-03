@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import WelcomeBanner from "@/components/dashboard/role-dashboards/WelcomeBanner";
 import StatGrid from "@/components/dashboard/role-dashboards/StatGrid";
@@ -8,13 +9,7 @@ import QuickActions from "@/components/dashboard/role-dashboards/QuickActions";
 import DashboardCard from "@/components/dashboard/role-dashboards/DashboardCard";
 import InfoList from "@/components/dashboard/role-dashboards/InfoList";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
-import {
-  librarianStats,
-  librarianQuickActions,
-  recentIssues,
-  overdueBooks,
-  fineSummary,
-} from "@/lib/dashboard/role-dashboards/librarian";
+import { librarianQuickActions } from "@/lib/dashboard/role-dashboards/librarian";
 import { COMPANY_INFO } from "@/lib/constants";
 import { getToken, getStoredUser } from "@/lib/auth";
 import {
@@ -23,15 +18,16 @@ import {
   listOverdueBookIssues,
   getFineSummary,
 } from "@/lib/services/libraryService";
+import { BookOpen, BookMarked, BookCheck, AlertTriangle, IndianRupee } from "lucide-react";
 
 export default function LibrarianDashboardPage() {
-  const [stats, setStats] = useState<any[]>(librarianStats);
-  const [issues, setIssues] = useState<any[]>(recentIssues);
-  const [overdues, setOverdues] = useState<any[]>(overdueBooks);
-  const [fines, setFines] = useState<any[]>(fineSummary);
+  const [stats, setStats] = useState<any[]>([]);
+  const [issues, setIssues] = useState<any[]>([]);
+  const [overdues, setOverdues] = useState<any[]>([]);
+  const [fines, setFines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>("Anita");
+  const [userName, setUserName] = useState<string>("Librarian");
 
   useEffect(() => {
     let mounted = true;
@@ -61,53 +57,51 @@ export default function LibrarianDashboardPage() {
 
         if (!mounted) return;
 
-        if (summary) {
-          setStats([
-            {
-              id: "total",
-              label: "Total Books",
-              value: summary.total_books ?? 0,
-              change: "Total copies in catalog",
-              icon: librarianStats[0].icon,
-              iconBg: "bg-purple-50",
-              iconColor: "text-purple-500",
-            },
-            {
-              id: "issued",
-              label: "Books Issued",
-              value: summary.issued_books ?? 0,
-              change: "Active loans",
-              icon: librarianStats[1].icon,
-              iconBg: "bg-blue-50",
-              iconColor: "text-blue-500",
-            },
-            {
-              id: "returned",
-              label: "Available Books",
-              value: summary.available_books ?? 0,
-              change: "In library stock",
-              icon: librarianStats[2].icon,
-              iconBg: "bg-green-50",
-              iconColor: "text-green-500",
-            },
-            {
-              id: "overdue",
-              label: "Overdue Books",
-              value: summary.overdue_books ?? 0,
-              change: fineSummaryData ? `₹${fineSummaryData.outstanding ?? 0} outstanding` : "Fines pending",
-              icon: librarianStats[3].icon,
-              iconBg: "bg-red-50",
-              iconColor: "text-red-500",
-            },
-          ]);
-        }
+        setStats([
+          {
+            id: "total",
+            label: "Total Books",
+            value: summary?.total_books ?? 0,
+            change: "Total copies in catalog",
+            icon: BookOpen,
+            iconBg: "bg-purple-50",
+            iconColor: "text-purple-500",
+          },
+          {
+            id: "issued",
+            label: "Books Issued",
+            value: summary?.issued_books ?? (Array.isArray(issuesList) ? issuesList.length : 0),
+            change: "Active loans",
+            icon: BookMarked,
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-500",
+          },
+          {
+            id: "returned",
+            label: "Available Books",
+            value: summary?.available_books ?? 0,
+            change: "In library stock",
+            icon: BookCheck,
+            iconBg: "bg-green-50",
+            iconColor: "text-green-500",
+          },
+          {
+            id: "overdue",
+            label: "Overdue Books",
+            value: summary?.overdue_books ?? (Array.isArray(overduesList) ? overduesList.length : 0),
+            change: fineSummaryData ? `₹${fineSummaryData.outstanding ?? 0} outstanding` : "Fines pending",
+            icon: AlertTriangle,
+            iconBg: "bg-red-50",
+            iconColor: "text-red-500",
+          },
+        ]);
 
         if (Array.isArray(issuesList)) {
           setIssues(
             issuesList.slice(0, 4).map((item) => ({
               id: String(item.id),
               title: item.book_title ?? "Untitled book",
-              description: `${item.student_name ?? "Unknown"} · Class ${item.student_class ?? "-"}`,
+              description: `${item.student_name ?? "Student"} · Class ${item.student_class ?? "-"}`,
               meta: `Issued ${item.issue_date ?? "-"}`,
               iconBg: "bg-purple-50",
               iconColor: "text-purple-500",
@@ -118,10 +112,10 @@ export default function LibrarianDashboardPage() {
 
         if (Array.isArray(overduesList)) {
           setOverdues(
-            overduesList.slice(0, 3).map((item) => ({
+            overduesList.slice(0, 4).map((item) => ({
               id: String(item.id),
               title: item.book_title ?? "Untitled book",
-              description: `${item.student_name ?? "Unknown"} · Class ${item.student_class ?? "-"}`,
+              description: `${item.student_name ?? "Student"} · Class ${item.student_class ?? "-"}`,
               meta: `${item.overdue_days ?? 0} days late`,
               iconBg: "bg-red-50",
               iconColor: "text-red-500",
@@ -137,7 +131,7 @@ export default function LibrarianDashboardPage() {
               title: "Collected Fines",
               description: "Late return charges collected",
               meta: `₹${fineSummaryData.collected ?? 0}`,
-              icon: fineSummary[0].icon,
+              icon: IndianRupee,
               iconBg: "bg-green-50",
               iconColor: "text-green-500",
             },
@@ -146,7 +140,7 @@ export default function LibrarianDashboardPage() {
               title: "Outstanding Fines",
               description: "Fines pending payment",
               meta: `₹${fineSummaryData.outstanding ?? 0}`,
-              icon: fineSummary[1].icon,
+              icon: IndianRupee,
               iconBg: "bg-red-50",
               iconColor: "text-red-500",
             },
@@ -155,23 +149,18 @@ export default function LibrarianDashboardPage() {
               title: "Waived Fines",
               description: "Fines waived off",
               meta: `₹${fineSummaryData.waived ?? 0}`,
-              icon: fineSummary[2].icon,
+              icon: IndianRupee,
               iconBg: "bg-blue-50",
               iconColor: "text-blue-500",
             },
           ]);
         }
-
-        setError(null);
-      } catch (err) {
-        console.error("Error loading library dashboard stats:", err);
+      } catch (err: any) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : "Failed to load library statistics.");
+          setError(err?.message || "Failed to load library dashboard data.");
         }
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     }
 
@@ -182,14 +171,11 @@ export default function LibrarianDashboardPage() {
     };
   }, []);
 
-  const totalIssued = stats.find(s => s.id === "issued")?.value ?? 0;
-  const totalOverdue = stats.find(s => s.id === "overdue")?.value ?? 0;
-
   return (
     <RoleDashboardLayout config={ROLE_CONFIGS.librarian}>
       <WelcomeBanner
-        title={`Welcome back, ${userName}! 👋`}
-        subtitle={`${totalIssued} books are on loan and ${totalOverdue} are overdue across the library.`}
+        title={loading ? "Welcome back" : `Welcome back, ${userName}! 📚`}
+        subtitle="Here is the live circulation and catalog summary for the library."
       />
 
       {error ? (
@@ -199,72 +185,99 @@ export default function LibrarianDashboardPage() {
       ) : null}
 
       {loading ? (
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
-          Loading library dashboard...
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 rounded-xl border border-slate-200 bg-white p-5 animate-pulse" />
+          ))}
         </div>
-      ) : null}
+      ) : (
+        <StatGrid stats={stats} columns={4} />
+      )}
 
-      {!loading && !error ? (
-        <>
-          <StatGrid stats={stats} columns={4} />
+      <div className="mb-8">
+        <QuickActions actions={librarianQuickActions} />
+      </div>
 
-          <div className="mb-8">
-            <QuickActions actions={librarianQuickActions} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <DashboardCard title="Recent Book Issues">
-              <InfoList items={issues} />
-            </DashboardCard>
-
-            <DashboardCard
-              title="Overdue Books"
-              action={
-                <span className="text-xs font-semibold text-red-600">
-                  {totalOverdue} overdue
-                </span>
-              }
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <DashboardCard
+          title="Recent Book Issues"
+          action={
+            <Link
+              href="/dashboard/librarian/issue"
+              className="text-xs font-semibold text-purple-600 hover:text-purple-700"
             >
-              <InfoList items={overdues} />
-            </DashboardCard>
-          </div>
+              Issue Book →
+            </Link>
+          }
+        >
+          {loading ? (
+            <p className="text-sm text-slate-400 py-4">Loading issues...</p>
+          ) : issues.length > 0 ? (
+            <InfoList items={issues} />
+          ) : (
+            <p className="text-sm text-slate-500 py-4">No active book issues recorded.</p>
+          )}
+        </DashboardCard>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <DashboardCard title="Library Fine Summary">
-              <InfoList items={fines} showIcon={false} />
-            </DashboardCard>
+        <DashboardCard
+          title="Overdue Returns"
+          action={
+            <Link
+              href="/dashboard/librarian/overdue"
+              className="text-xs font-semibold text-red-600 hover:text-red-700"
+            >
+              View All →
+            </Link>
+          }
+        >
+          {loading ? (
+            <p className="text-sm text-slate-400 py-4">Loading overdue books...</p>
+          ) : overdues.length > 0 ? (
+            <InfoList items={overdues} />
+          ) : (
+            <p className="text-sm text-slate-500 py-4">No overdue books at this time.</p>
+          )}
+        </DashboardCard>
+      </div>
 
-            <DashboardCard title="Quick Stats">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl bg-purple-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">Total Books</p>
-                  <p className="text-2xl font-bold text-slate-900 mt-1">
-                    {(stats.find(s => s.id === "total")?.value ?? 0).toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-blue-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">Active Loans</p>
-                  <p className="text-2xl font-bold text-slate-900 mt-1">
-                    {(stats.find(s => s.id === "issued")?.value ?? 0).toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-green-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">Available Books</p>
-                  <p className="text-2xl font-bold text-slate-900 mt-1">
-                    {(stats.find(s => s.id === "returned")?.value ?? 0).toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-red-50 p-4">
-                  <p className="text-sm font-medium text-slate-600">Outstanding Fines</p>
-                  <p className="text-2xl font-bold text-slate-900 mt-1">
-                    ₹{(fines.find(f => f.id === "2")?.meta ?? "₹0").replace("₹", "")}
-                  </p>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2">
+          <DashboardCard
+            title="Fine Collection Summary"
+            action={
+              <Link
+                href="/dashboard/librarian/fines"
+                className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+              >
+                Fine Payments →
+              </Link>
+            }
+          >
+            {loading ? (
+              <p className="text-sm text-slate-400 py-4">Loading fines...</p>
+            ) : fines.length > 0 ? (
+              <InfoList items={fines} />
+            ) : (
+              <p className="text-sm text-slate-500 py-4">No fine records available.</p>
+            )}
+          </DashboardCard>
+        </div>
+
+        <div>
+          <DashboardCard title="Quick Circulation Status">
+            <div className="space-y-4">
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <p className="text-xs text-purple-700 font-semibold">Catalog Health</p>
+                <p className="text-sm font-medium text-slate-900 mt-1">Live synchronized</p>
               </div>
-            </DashboardCard>
-          </div>
-        </>
-      ) : null}
+              <div className="p-3 bg-emerald-50 rounded-lg">
+                <p className="text-xs text-emerald-700 font-semibold">Barcode & Search</p>
+                <p className="text-sm font-medium text-slate-900 mt-1">Active indexing</p>
+              </div>
+            </div>
+          </DashboardCard>
+        </div>
+      </div>
 
       <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200">
         <span>{COMPANY_INFO.copyright}</span>

@@ -2,8 +2,9 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
-import { getStoredUser } from "@/lib/auth";
+import { clearAuth, getStoredUser, getToken } from "@/lib/auth";
 
 interface MainLayoutProps {
   sidebar: ReactNode;
@@ -16,11 +17,20 @@ export default function MainLayout({
   header,
   children,
 }: MainLayoutProps) {
+  const router = useRouter();
   const [maintenanceActive, setMaintenanceActive] = useState(false);
   const user = getStoredUser();
   const isAdmin = (user?.role?.role_name || (user as any)?.role_name || "").toUpperCase() === "ADMIN";
 
   useEffect(() => {
+    const token = getToken();
+    const currentUser = getStoredUser();
+    if (!token || !currentUser) {
+      clearAuth();
+      router.replace("/login");
+      return;
+    }
+
     fetch("/api/settings/public/system-status")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -29,7 +39,7 @@ export default function MainLayout({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [router]);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
