@@ -155,8 +155,8 @@ export default function RoomsManagementPage() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-100">
+                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                      <tr>
                         <th className="px-4 py-3 text-left">Room</th>
                         <th className="px-4 py-3 text-left">Block</th>
                         <th className="px-4 py-3 text-left">Floor</th>

@@ -16,13 +16,17 @@ import {
   allocateStudent,
   getHostelAllocations,
   getHostelDashboardStats,
+  listHostelBeds,
 } from "@/lib/services/hostelService";
 import { listStudents } from "@/lib/services/studentService";
+import { listClasses } from "@/lib/services/classService";
 
 export default function HostelStudentsPage() {
   const router = useRouter();
   const [allocations, setAllocations] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [beds, setBeds] = useState<any[]>([]);
   const [stats, setStats] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -39,13 +43,17 @@ export default function HostelStudentsPage() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [allocRows, studentRows, statsData] = await Promise.all([
+      const [allocRows, studentRows, classRows, bedRows, statsData] = await Promise.all([
         getHostelAllocations(token),
         listStudents(token).catch(() => []),
+        listClasses(token).catch(() => []),
+        listHostelBeds(token).catch(() => []),
         getHostelDashboardStats(token),
       ]);
       setAllocations(Array.isArray(allocRows) ? allocRows : []);
       setStudents(Array.isArray(studentRows) ? studentRows : []);
+      setClasses(Array.isArray(classRows) ? classRows : []);
+      setBeds(Array.isArray(bedRows) ? bedRows : []);
       setStats(statsData ?? {});
     } catch (error) {
       setLoadError(
@@ -54,7 +62,7 @@ export default function HostelStudentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     loadData();
@@ -67,16 +75,39 @@ export default function HostelStudentsPage() {
     await loadData();
   };
 
-  const studentMap = useMemo(() => {
-    const map = new Map<string, { name: string; roll: string }>();
-    students.forEach((s) => {
-      const name = s.user
-        ? `${s.user.first_name ?? ""} ${s.user.last_name ?? ""}`.trim()
-        : `Student ${s.admission_number ?? ""}`;
-      map.set(s.id, { name, roll: s.roll_number ?? "-" });
+  const classMap = useMemo(() => {
+    const map = new Map<string, string>();
+    classes.forEach((c) => {
+      if (c.id) {
+        map.set(c.id, `${c.class_name ?? ""}${c.section ? ` - ${c.section}` : ""}`.trim());
+      }
     });
     return map;
-  }, [students]);
+  }, [classes]);
+
+  const studentMap = useMemo(() => {
+    const map = new Map<string, { name: string; roll: string; classLabel?: string }>();
+    students.forEach((s) => {
+      const directName = [s.first_name, s.last_name].filter(Boolean).join(" ").trim();
+      const userName = s.user?.full_name || [s.user?.first_name, s.user?.last_name].filter(Boolean).join(" ").trim();
+      const name = directName || userName || s.user?.email || `Student ${s.admission_no ?? s.id?.slice(0, 8)}`;
+      const roll = s.roll_no || s.roll_number || s.admission_no || "-";
+      const resolvedFromId = s.class_id ? classMap.get(s.class_id) : "";
+      const classLabel = s.class_name || resolvedFromId || (s.class_ ? `${s.class_.class_name}${s.class_.section ? `-${s.class_.section}` : ""}` : "");
+      map.set(s.id, { name, roll, classLabel });
+    });
+    return map;
+  }, [students, classMap]);
+
+  const bedMap = useMemo(() => {
+    const map = new Map<string, string>();
+    beds.forEach((b) => {
+      if (b.id) {
+        map.set(b.id, b.bed_no ? `Bed ${b.bed_no}` : `Bed ${String(b.id).slice(0, 8)}`);
+      }
+    });
+    return map;
+  }, [beds]);
 
   const cards = useMemo(
     () => [
@@ -153,8 +184,8 @@ export default function HostelStudentsPage() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-100">
+                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                      <tr>
                         <th className="px-4 py-3 text-left">Student</th>
                         <th className="px-4 py-3 text-left">Roll Number</th>
                         <th className="px-4 py-3 text-left">Bed ID</th>
@@ -165,16 +196,24 @@ export default function HostelStudentsPage() {
                     <tbody>
                       {allocations.map((row) => {
                         const studentInfo = studentMap.get(row.student_id);
+                        const bedLabel = row.bed?.bed_no ? `Bed ${row.bed.bed_no}` : (bedMap.get(row.bed_id) ?? (row.bed_id ? `Bed ${String(row.bed_id).slice(0, 8)}` : "-"));
                         return (
                           <tr key={row.id} className="border-b border-slate-50">
                             <td className="px-4 py-3 font-medium text-slate-800">
-                              {studentInfo?.name ?? row.student?.user?.first_name ?? `Student (${String(row.student_id).slice(0, 8)})`}
+                              <div>
+                                <p className="font-semibold text-slate-900">
+                                  {studentInfo?.name ?? row.student?.user?.first_name ?? `Student (${String(row.student_id).slice(0, 8)})`}
+                                </p>
+                                {studentInfo?.classLabel ? (
+                                  <p className="text-[11px] text-slate-500">{studentInfo.classLabel}</p>
+                                ) : null}
+                              </div>
                             </td>
-                            <td className="px-4 py-3 text-slate-600">
-                              {studentInfo?.roll ?? row.student?.roll_number ?? "-"}
+                            <td className="px-4 py-3 text-slate-600 font-medium">
+                              {studentInfo?.roll ?? row.student?.roll_no ?? row.student?.roll_number ?? "-"}
                             </td>
-                            <td className="px-4 py-3 font-mono text-xs text-slate-700">
-                              {row.bed?.bed_no ? `Bed ${row.bed.bed_no}` : String(row.bed_id).slice(0, 13)}
+                            <td className="px-4 py-3 text-slate-700 font-medium">
+                              {bedLabel}
                             </td>
                             <td className="px-4 py-3 text-slate-600">{row.check_in_date ?? "-"}</td>
                             <td className="px-4 py-3">

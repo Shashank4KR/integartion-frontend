@@ -218,8 +218,8 @@ export default function MessManagementPage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100">
+                      <thead className="bg-slate-50/80 text-xs font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                        <tr>
                           <th className="px-4 py-3 text-left">Date</th>
                           <th className="px-4 py-3 text-left">Meal</th>
                           <th className="px-4 py-3 text-left">Menu</th>
@@ -228,9 +228,9 @@ export default function MessManagementPage() {
                       <tbody>
                         {menus.map((row) => (
                           <tr key={row.id} className="border-b border-slate-50">
-                            <td className="px-4 py-3">{row.menu_date ?? "-"}</td>
-                            <td className="px-4 py-3">{row.meal_type ?? "-"}</td>
-                            <td className="px-4 py-3">{row.items ?? row.menu_items ?? "-"}</td>
+                            <td className="px-4 py-3 font-medium text-slate-800">{row.menu_date ?? "-"}</td>
+                            <td className="px-4 py-3 text-slate-600">{row.meal_type ?? "-"}</td>
+                            <td className="px-4 py-3 text-slate-600">{row.items ?? row.menu_items ?? "-"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -247,8 +247,8 @@ export default function MessManagementPage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100">
+                      <thead className="bg-slate-50/80 text-xs font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                        <tr>
                           <th className="px-4 py-3 text-left">Date</th>
                           <th className="px-4 py-3 text-left">Category</th>
                           <th className="px-4 py-3 text-left">Amount</th>

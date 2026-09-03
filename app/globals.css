@@ -200,6 +200,20 @@ table td {
   color: #0f172a;
 }
 
+table th,
+table thead {
+  color: #475569;
+}
+
+label {
+  color: #334155;
+}
+
+caption,
+legend {
+  color: #475569;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: #94a3b8;

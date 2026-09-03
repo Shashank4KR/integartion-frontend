@@ -3,8 +3,7 @@
 import WeeklyTimetableGrid from "./WeeklyTimetableGrid";
 import { COMPANY_INFO } from "@/lib/constants";
 import { getSubjectColor } from "./timetableColors";
-import { type PreviewTimetableEntry, type WeekDay } from "./timetableDisplayTypes";
-import { getWeekDates } from "./timetableDateUtils";
+import { type PreviewTimetableEntry, type TimeSlot, type WeekDay } from "./timetableDisplayTypes";
 
 interface TimetablePrintViewProps {
   entries: PreviewTimetableEntry[];
@@ -13,6 +12,8 @@ interface TimetablePrintViewProps {
   weekRange: string;
   subjects: string[];
   weekDates: Record<WeekDay, Date>;
+  onOpenEntry?: (entry: PreviewTimetableEntry) => void;
+  onAddPeriod?: (day: WeekDay, slot: TimeSlot) => void;
 }
 
 // Rendered only for printing. Hidden on screen. The page injects print CSS
@@ -24,6 +25,8 @@ export default function TimetablePrintView({
   weekRange,
   subjects,
   weekDates,
+  onOpenEntry,
+  onAddPeriod,
 }: TimetablePrintViewProps) {
   return (
     <div className="tt-print hidden bg-white p-8 text-slate-900 print:block">
@@ -45,8 +48,8 @@ export default function TimetablePrintView({
         <WeeklyTimetableGrid
           entries={entries}
           weekDates={weekDates}
-          onOpenEntry={() => {}}
-          onAddPeriod={() => {}}
+          onOpenEntry={onOpenEntry || (() => {})}
+          onAddPeriod={onAddPeriod || (() => {})}
         />
       </div>
 

@@ -523,3 +523,16 @@ export async function listAvailableBeds(
   return (await response.json()) as any[];
 }
 
+export async function listHostelBeds(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch(`${BASE}/beds`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch hostel beds.");
+  }
+  return (await response.json()) as any[];
+}
+

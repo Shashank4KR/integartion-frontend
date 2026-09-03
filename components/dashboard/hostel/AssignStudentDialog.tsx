@@ -8,6 +8,7 @@ import Dropdown from "@/components/shared/Dropdown";
 import { getToken } from "@/lib/auth";
 import { listAvailableBeds } from "@/lib/services/hostelService";
 import { listStudents } from "@/lib/services/studentService";
+import { listClasses } from "@/lib/services/classService";
 
 export interface CreateAllocationPayload {
   student_id: string;
@@ -66,17 +67,50 @@ export default function AssignStudentDialog({
     setIsLoading(true);
     setError(null);
 
-    Promise.all([listStudents(token), listAvailableBeds(token)])
-      .then(([studentData, bedData]) => {
+    Promise.all([
+      listStudents(token),
+      listAvailableBeds(token),
+      listClasses(token).catch(() => []),
+    ])
+      .then(([studentData, bedData, classData]) => {
+        const classMap = new Map<string, string>();
+        (Array.isArray(classData) ? classData : []).forEach((c: any) => {
+          if (c.id) {
+            classMap.set(c.id, `${c.class_name ?? ""}${c.section ? ` - ${c.section}` : ""}`.trim());
+          }
+        });
+
         const studentRows: StudentOption[] = (Array.isArray(studentData) ? studentData : []).map(
           (s: any) => {
-            const name = s.user
-              ? `${s.user.first_name ?? ""} ${s.user.last_name ?? ""}`.trim()
-              : `Student (${s.id.slice(0, 8)})`;
-            const roll = s.roll_number ? ` - Roll: ${s.roll_number}` : "";
+            const directName = [s.first_name, s.last_name].filter(Boolean).join(" ").trim();
+            const userName = s.user?.full_name || [s.user?.first_name, s.user?.last_name].filter(Boolean).join(" ").trim();
+            const name = directName || userName || s.user?.email || `Student ${s.admission_no ?? s.id?.slice(0, 8)}`;
+
+            const resolvedFromId = s.class_id ? classMap.get(s.class_id) : "";
+            const className = s.class_name || resolvedFromId || s.class_?.class_name || "";
+            const section = s.class_?.section || s.section || "";
+            const rollNo = s.roll_no || s.roll_number || "";
+            const admissionNo = s.admission_no || s.admission_number || "";
+
+            const metaParts: string[] = [];
+            if (className && section && !className.includes(section)) {
+              metaParts.push(`${className}-${section}`);
+            } else if (className) {
+              metaParts.push(className);
+            } else if (section) {
+              metaParts.push(`Sec ${section}`);
+            }
+
+            if (rollNo) {
+              metaParts.push(`Roll: ${rollNo}`);
+            } else if (admissionNo) {
+              metaParts.push(`Adm: ${admissionNo}`);
+            }
+
+            const metaStr = metaParts.length > 0 ? ` (${metaParts.join(" - ")})` : "";
             return {
               id: s.id,
-              label: `${name}${roll}`,
+              label: `${name}${metaStr}`,
             };
           },
         );

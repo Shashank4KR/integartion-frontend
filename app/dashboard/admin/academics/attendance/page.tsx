@@ -16,7 +16,7 @@ import AttendanceQuickActions from "@/components/dashboard/academics/attendance/
 import MarkAttendanceDialog from "@/components/dashboard/academics/attendance/MarkAttendanceDialog";
 import BulkAttendanceDialog from "@/components/dashboard/academics/attendance/BulkAttendanceDialog";
 import Modal from "@/components/shared/Modal";
-import { listClasses, getClassSubjects, getClassTeachers } from "@/lib/services/classService";
+import { listClasses, getClassSubjects, getClassTeachers, getClassStudents } from "@/lib/services/classService";
 import {
   getAllAttendance,
   getClassAttendanceSummary,
@@ -253,14 +253,7 @@ export default function AttendancePage() {
         const [subjectsData, teachersData, studentsData] = await Promise.allSettled([
           getClassSubjects(token, selectedClassId),
           getClassTeachers(token, selectedClassId),
-          fetch(`/api/students?class_id=${encodeURIComponent(selectedClassId)}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }).then(async (res) => {
-            if (!res.ok) return [];
-            const text = await res.text();
-            if (!text) return [];
-            return JSON.parse(text) as StudentResponse[];
-          }),
+          getClassStudents(token, selectedClassId),
         ]);
 
         if (!cancelled) {

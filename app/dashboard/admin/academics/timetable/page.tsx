@@ -1043,6 +1043,8 @@ export default function TimetablePage() {
         weekRange={weekRange}
         subjects={representedSubjects}
         weekDates={weekDates}
+        onOpenEntry={openView}
+        onAddPeriod={handleAddPeriod}
       />
 
       {/* Modals */}
