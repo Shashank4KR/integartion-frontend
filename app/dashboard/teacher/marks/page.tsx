@@ -274,8 +274,9 @@ export default function TeacherMarksPage() {
             <span className="ml-2 text-slate-600 text-sm">Loading student list...</span>
           </Card>
         ) : students.length === 0 ? (
-          <Card className="p-8 text-center text-slate-500">
-            No students found for the selected class.
+          <Card className="p-8 text-center shadow-sm">
+            <p className="text-sm font-semibold text-slate-700">No current data</p>
+            <p className="text-xs text-slate-500 mt-1">No students found for the selected class.</p>
           </Card>
         ) : (
           <Card className="p-6">

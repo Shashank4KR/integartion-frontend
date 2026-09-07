@@ -371,9 +371,9 @@ export default function TeacherAssignmentsPage() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 mb-4">
               <ClipboardList className="h-7 w-7" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">No assessments created yet</h3>
+            <h3 className="text-lg font-bold text-slate-800">No current data</h3>
             <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
-              Get started by creating your first homework, periodic assessment, or mock test for your students.
+              No assessments created yet. Get started by creating your first homework, periodic assessment, or mock test for your students.
             </p>
             <button
               onClick={handleOpenCreateModal}

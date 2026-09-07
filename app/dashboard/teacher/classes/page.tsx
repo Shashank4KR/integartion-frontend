@@ -169,36 +169,44 @@ export default function TeacherClassesPage() {
           </Card>
         )}
 
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {classes.map((cls) => (
-            <button
-              key={cls.id}
-              onClick={() => setSelectedClassId(cls.id)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap ${
-                selectedClassId === cls.id
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-              }`}
-            >
-              {cls.class_name} {cls.section ? `(${cls.section})` : ""}
-            </button>
-          ))}
-        </div>
-
-        {loadingStudents ? (
-          <Card className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-            <span className="ml-2 text-slate-600 text-sm">Loading class roster...</span>
-          </Card>
-        ) : students.length === 0 ? (
-          <Card className="p-8 text-center text-slate-500">
-            No students enrolled in {activeClass?.class_name || "this class"}.
+        {classes.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-sm font-semibold text-slate-700">No current data</p>
+            <p className="text-xs text-slate-500 mt-1">No assigned classes found for your teacher account.</p>
           </Card>
         ) : (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Students Roster - {activeClass?.class_name} ({students.length})
-            </h2>
+          <>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {classes.map((cls) => (
+                <button
+                  key={cls.id}
+                  onClick={() => setSelectedClassId(cls.id)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                    selectedClassId === cls.id
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  {cls.class_name} {cls.section ? `(${cls.section})` : ""}
+                </button>
+              ))}
+            </div>
+
+            {loadingStudents ? (
+              <Card className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                <span className="ml-2 text-slate-600 text-sm">Loading class roster...</span>
+              </Card>
+            ) : students.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-sm font-semibold text-slate-700">No current data</p>
+                <p className="text-xs text-slate-500 mt-1">No students enrolled in {activeClass?.class_name || "this class"}.</p>
+              </Card>
+            ) : (
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                  Students Roster - {activeClass?.class_name} ({students.length})
+                </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {students.map((student) => {
@@ -225,6 +233,8 @@ export default function TeacherClassesPage() {
             </div>
           </Card>
         )}
+      </>
+    )}
 
         {/* Case Study Modal */}
         {selectedStudent && (

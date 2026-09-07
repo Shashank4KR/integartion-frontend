@@ -90,11 +90,10 @@ export default function TeacherEventsPage() {
         )}
 
         {!loading && !error && events.length === 0 && (
-          <Card className="border-amber-200 bg-amber-50 p-6">
-            <div className="flex items-center gap-3 text-amber-700">
-              <Megaphone className="h-5 w-5" />
-              <p>No upcoming events.</p>
-            </div>
+          <Card className="border-slate-200 bg-white p-8 text-center shadow-sm">
+            <Megaphone className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-700">No current data</p>
+            <p className="text-xs text-slate-500 mt-1">No upcoming events or announcements found.</p>
           </Card>
         )}
 

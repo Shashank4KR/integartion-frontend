@@ -22,6 +22,19 @@ function text(item: unknown, fields: string[], fallback: string) {
   return fields.map((field) => record[field]).find((value): value is string => typeof value === "string" && value.trim().length > 0) ?? fallback;
 }
 
+function formatTimestamp(value: string) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-IN", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxKind }) {
   const router = useRouter();
   const config = inboxes[kind];
@@ -59,7 +72,13 @@ export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxK
           window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
         } catch {}
 
-        setItems(await config.load(token));
+        const rawMessages = ((await config.load(token)) || []) as any[];
+        rawMessages.sort((a, b) => {
+          const dateA = new Date(a.sent_on || a.created_at || a.sent_at || 0).getTime();
+          const dateB = new Date(b.sent_on || b.created_at || b.sent_at || 0).getTime();
+          return dateB - dateA;
+        });
+        setItems(rawMessages);
       }
       setError(null);
     } catch (cause) {
@@ -125,7 +144,7 @@ export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxK
                     {text(item, ["body", "content", "message", "description"], "No additional details were provided.")}
                   </p>
                   <p className="mt-2 text-xs text-slate-400">
-                    {text(item, ["created_at", "sent_at", "timestamp", "date"], "")}
+                    {formatTimestamp(text(item, ["sent_on", "created_at", "sent_at", "timestamp", "date"], ""))}
                   </p>
                 </li>
               ))}
