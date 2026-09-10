@@ -20,6 +20,7 @@ import {
   Megaphone,
   Truck,
   BedDouble,
+  Building2,
   UtensilsCrossed,
   Wrench,
   type LucideIcon,
@@ -44,6 +45,7 @@ export const MENU_ITEMS: MenuItemType[] = [
       icon: BookOpen,
       href: "/dashboard/admin/academics",
       children: [
+        { label: "Departments", icon: Building2, href: "/dashboard/admin/departments" },
         { label: "Classes / Courses", icon: LayoutGrid, href: "/dashboard/admin/academics/classes" },
         { label: "Subjects", icon: BookOpen, href: "/dashboard/admin/academics/subjects" },
         { label: "Timetable", icon: CalendarClock, href: "/dashboard/admin/academics/timetable" },

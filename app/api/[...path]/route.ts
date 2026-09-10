@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
 async function handleProxy(
@@ -41,6 +43,7 @@ async function handleProxy(
       method,
       headers,
       body,
+      cache: "no-store",
     });
 
     const backendContentType = response.headers.get("content-type") || "application/octet-stream";

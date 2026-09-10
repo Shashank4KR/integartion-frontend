@@ -1,4 +1,4 @@
-﻿export const REGISTER_ENDPOINT = "/api/auth/register";
+export const REGISTER_ENDPOINT = "/api/auth/register";
 export const LOGIN_ENDPOINT = "/api/auth/login";
 export const ME_ENDPOINT = "/api/auth/me";
 
@@ -52,6 +52,7 @@ export async function getCurrentUser(token: string): Promise<{
   username: string;
   email: string;
   phone?: string | null;
+  avatar_url?: string | null;
   status: boolean;
   last_login?: string | null;
   role_id: string;
@@ -91,6 +92,7 @@ export async function getCurrentUser(token: string): Promise<{
     username: string;
     email: string;
     phone?: string | null;
+    avatar_url?: string | null;
     status: boolean;
     last_login?: string | null;
     role_id: string;

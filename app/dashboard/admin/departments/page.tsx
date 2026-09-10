@@ -11,6 +11,7 @@ import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { listDepartments, createDepartment, updateDepartment, deleteDepartment } from "@/lib/services/departmentService";
 import type { DepartmentResponse } from "@/types/entities/department";
 import { shortId } from "@/lib/utils/id";
+import { getToken } from "@/lib/auth";
 
 export default function DepartmentsPage() {
   const [items, setItems] = useState<DepartmentResponse[]>([]);
@@ -29,7 +30,7 @@ export default function DepartmentsPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("edtech_access_token");
+    const storedToken = getToken();
     if (!storedToken) return;
     setToken(storedToken);
   }, []);

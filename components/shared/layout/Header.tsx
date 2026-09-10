@@ -9,11 +9,15 @@ import {
   ChevronDown,
   LogOut,
   Settings,
+  Camera,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearAuth, getStoredUser, getToken, getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
+import { clearAuth, getStoredUser, getToken, getStoredAvatar, subscribeAvatarChange, saveUser, saveAvatar } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/services/authService";
+import { updateProfile } from "@/lib/services/settingsService";
 import { getInitials } from "@/lib/utils/formatters";
 import CalendarPicker from "@/components/shared/Calendar";
 import { MENU_ITEMS } from "@/lib/constants";
@@ -82,18 +86,41 @@ export default function DashboardHeader({
   const actions = dashboardRole ? actionPaths[dashboardRole] : undefined;
 
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   useEffect(() => {
-    const loadUserData = () => {
+    const loadUserData = async () => {
       const user = getStoredUser();
-      if (!user) return;
-      setName(user.username);
-      setRole(user.role?.role_name ?? user.role_id);
+      if (user) {
+        setName(user.username);
+        setRole(user.role?.role_name ?? user.role_id);
+        setAvatar(user.avatar_url || getStoredAvatar());
+        setAvatarFailed(false);
+      }
+      const token = getToken();
+      if (token) {
+        try {
+          const freshUser = await getCurrentUser(token);
+          if (freshUser) {
+            saveUser(freshUser as any);
+            setName(freshUser.username);
+            setRole(freshUser.role?.role_name ?? freshUser.role_id);
+            if (freshUser.avatar_url) {
+              setAvatar(freshUser.avatar_url);
+              setAvatarFailed(false);
+            }
+          }
+        } catch {
+          // ignore offline/auth error
+        }
+      }
     };
-    loadUserData();
+    void loadUserData();
     setAvatar(getStoredAvatar());
+    setAvatarFailed(false);
     const unsubscribe = subscribeAvatarChange((newAvatar) => {
       setAvatar(newAvatar);
+      setAvatarFailed(false);
     });
     window.addEventListener("focus", loadUserData);
     return () => {
@@ -273,6 +300,69 @@ export default function DashboardHeader({
     router.replace("/login");
   };
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const headerFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleHeaderPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      const compressed: string = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          const maxDim = 256;
+          let { width, height } = img;
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Canvas context unavailable"));
+            return;
+          }
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("Failed to load image"));
+        };
+        img.src = objectUrl;
+      });
+
+      setAvatar(compressed);
+      saveAvatar(compressed);
+
+      const token = getToken();
+      if (token) {
+        await updateProfile(token, { avatar_url: compressed });
+      }
+      setProfileOpen(false);
+    } catch (err) {
+      console.error("Header avatar upload failed:", err);
+    } finally {
+      setUploadingAvatar(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open || results.length === 0) {
       if (e.key === "Enter" && results.length > 0) {
@@ -437,10 +527,11 @@ export default function DashboardHeader({
               aria-expanded={profileOpen}
               className="flex items-center gap-3 rounded-lg py-2 pl-3 pr-2 transition hover:bg-slate-100"
             >
-              {avatar ? (
+              {avatar && !avatarFailed ? (
                 <img
                   src={avatar}
                   alt={name}
+                  onError={() => setAvatarFailed(true)}
                   className="w-8 h-8 rounded-full object-cover border border-purple-300 shadow-sm"
                 />
               ) : (
@@ -456,9 +547,31 @@ export default function DashboardHeader({
             </button>
 
             {profileOpen && (
-              <div role="menu" className="absolute right-0 z-50 mt-2 w-44 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+              <div role="menu" className="absolute right-0 z-50 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                <label
+                  htmlFor="header-avatar-input"
+                  className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${
+                    uploadingAvatar ? "pointer-events-none opacity-50" : ""
+                  }`}
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+                  ) : (
+                    <Camera className="h-4 w-4 text-slate-500" />
+                  )}
+                  {uploadingAvatar ? "Uploading…" : "Change photo"}
+                </label>
+                <input
+                  ref={headerFileInputRef}
+                  id="header-avatar-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+                  onChange={handleHeaderPhotoUpload}
+                  className="sr-only"
+                />
+
                 {dashboardRole && ["admin", "teacher", "student", "parent", "librarian", "accountant"].includes(dashboardRole) && (
-                  <button type="button" role="menuitem" onClick={() => router.push(`/dashboard/${dashboardRole}/settings`)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                  <button type="button" role="menuitem" onClick={() => { setProfileOpen(false); router.push(`/dashboard/${dashboardRole}/settings`); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50">
                     <Settings className="h-4 w-4" />
                     Settings
                   </button>

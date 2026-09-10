@@ -65,7 +65,7 @@ export async function updateCategorySettings(
 
 export async function updateProfile(
   token: string,
-  payload: { username?: string; email?: string; phone?: string },
+  payload: { username?: string; email?: string; phone?: string; avatar_url?: string | null },
 ): Promise<UserResponse> {
   const response = await fetch(`${AUTH_BASE}/profile`, {
     method: "PUT",

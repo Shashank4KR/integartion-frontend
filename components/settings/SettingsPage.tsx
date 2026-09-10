@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Bell, BookOpen, Building2, ChevronDown, ChevronRight, ClipboardCheck, FileBarChart,
+  Bell, BookOpen, Building2, Camera, ChevronDown, ChevronRight, ClipboardCheck, FileBarChart,
   GraduationCap, KeyRound, Landmark, Menu, Palette, ShieldCheck, SlidersHorizontal,
   UserCircle, UsersRound, X, type LucideIcon,
 } from "lucide-react";
@@ -12,14 +12,15 @@ import {
   AuditActivityLogs, CommunicationTemplates, ExaminationConfiguration, FinanceConfiguration,
   HostelConfiguration, Integrations, LibraryConfiguration, NotificationPreferences,
   OrganizationSettings, ProfileSettings, ReportsExportSettings, RolesPermissions,
-  SystemConfiguration, TransportConfiguration,
+  SystemConfiguration, TransportConfiguration, processImageFile,
 } from "@/components/settings/sections";
-import { getToken, saveUser, getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
+import { getToken, getStoredUser, saveUser, saveAvatar, getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
 import { getCurrentUser } from "@/lib/services/authService";
+import { updateProfile } from "@/lib/services/settingsService";
 import type { UserResponse } from "@/types/auth";
 
 export type SchoolRole = "Admin" | "Teacher" | "Student" | "Parent" | "Librarian" | "Accountant";
-export type SettingsUser = Pick<UserResponse, "username" | "email" | "phone" | "role">;
+export type SettingsUser = Pick<UserResponse, "username" | "email" | "phone" | "role" | "avatar_url">;
 type SectionProps = {
   currentRole: SchoolRole;
   user: SettingsUser;
@@ -62,17 +63,24 @@ const groups: SettingsGroup[] = [
 
 export default function SettingsPage({ currentRole }: { currentRole: SchoolRole }) {
   const router = useRouter();
-  const [user, setUser] = useState<SettingsUser | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const [user, setUser] = useState<SettingsUser | null>(() => {
+    const stored = getStoredUser();
+    return stored ? (stored as SettingsUser) : null;
+  });
+  const [loadingUser, setLoadingUser] = useState(() => !getStoredUser());
 
   useEffect(() => {
     let active = true;
-    const loadIdentity = async () => {
+    const loadIdentity = async (isBackground = false) => {
       const token = getToken();
       if (!token) {
         if (active) setUser(null);
         if (active) setLoadingUser(false);
         return;
+      }
+
+      if (!isBackground && !getStoredUser()) {
+        if (active) setLoadingUser(true);
       }
 
       try {
@@ -81,16 +89,21 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
         if (!active || getToken() !== token) return;
         saveUser(currentUser);
         setUser(currentUser);
+        if (currentUser.avatar_url) {
+          setAvatar(currentUser.avatar_url);
+          setSidebarImgFailed(false);
+          setHeaderImgFailed(false);
+        }
       } catch {
-        if (active) setUser(null);
+        if (active && !getStoredUser()) setUser(null);
       } finally {
         if (active) setLoadingUser(false);
       }
     };
 
-    const refreshIdentity = () => { setLoadingUser(true); void loadIdentity(); };
+    const refreshIdentity = () => { void loadIdentity(true); };
     const onStorage = (event: StorageEvent) => {
-      if (event.key === "edtech_access_token" || event.key === "edtech_user") refreshIdentity();
+      if (event.key === "edtech_access_token") refreshIdentity();
     };
 
     void loadIdentity();
@@ -125,14 +138,46 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
   }, [isRouteMismatch, roleRoute, router]);
 
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [sidebarImgFailed, setSidebarImgFailed] = useState(false);
+  const [headerImgFailed, setHeaderImgFailed] = useState(false);
 
   useEffect(() => {
     setAvatar(getStoredAvatar());
+    setSidebarImgFailed(false);
+    setHeaderImgFailed(false);
     const unsubscribe = subscribeAvatarChange((newAvatar) => {
       setAvatar(newAvatar);
+      setSidebarImgFailed(false);
+      setHeaderImgFailed(false);
     });
     return () => unsubscribe();
   }, []);
+
+  const handleQuickPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const base64 = await processImageFile(file);
+      setAvatar(base64);
+      setSidebarImgFailed(false);
+      setHeaderImgFailed(false);
+      saveAvatar(base64);
+
+      const token = getToken();
+      if (token) {
+        try {
+          const updated = await updateProfile(token, { avatar_url: base64 });
+          setUser((prev) => (prev ? { ...prev, ...updated } : null));
+        } catch (apiErr) {
+          console.warn("[Avatar] Quick upload sync notice:", apiErr);
+        }
+      }
+    } catch (err) {
+      console.error("[Avatar] Quick upload failed:", err);
+    } finally {
+      if (e.target) e.target.value = "";
+    }
+  };
 
   const selectSection = (id: string) => { setActiveId(id); setMobileOpen(false); };
   const sidebar = (
@@ -143,17 +188,34 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-5">
         <div className="mb-5 flex items-center gap-3 rounded-xl border border-violet-400/20 bg-violet-400/10 p-3">
-          {avatar ? (
-            <img
-              src={avatar}
-              alt="Profile"
-              className="h-10 w-10 shrink-0 rounded-full object-cover border border-violet-300 shadow-sm"
-            />
-          ) : (
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-violet-500/30 text-sm font-bold text-violet-200">
-              {user?.username ? user.username.slice(0, 2).toUpperCase() : "U"}
+          <label
+            htmlFor="settings-sidebar-avatar-input"
+            className="group relative block h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-full border border-violet-300 shadow-sm"
+            title="Click to update profile photo"
+          >
+            {avatar && !sidebarImgFailed ? (
+              <img
+                src={avatar}
+                alt="Profile"
+                onError={() => setSidebarImgFailed(true)}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="grid h-full w-full place-items-center bg-violet-500/30 text-sm font-bold text-violet-200">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : "U"}
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-950/50 text-white opacity-0 transition group-hover:opacity-100">
+              <Camera className="h-4 w-4" />
             </div>
-          )}
+          </label>
+          <input
+            id="settings-sidebar-avatar-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+            onChange={handleQuickPhotoUpload}
+            className="sr-only"
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-white">{user?.username ?? "User"}</p>
             <p className="truncate text-xs text-violet-300">{loadingUser ? "Loading…" : user?.role?.role_name ?? "Role unavailable"}</p>
@@ -181,17 +243,34 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
           <div><p className="text-xs font-medium text-slate-500">Settings</p><h1 className="text-lg font-bold text-slate-900">{activeSection.label}</h1></div>
         </div>
         <div className="flex items-center gap-3">
-          {avatar ? (
-            <img
-              src={avatar}
-              alt={user?.username ?? "Profile"}
-              className="h-9 w-9 rounded-full object-cover border border-purple-300 shadow-sm"
-            />
-          ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-sm font-bold text-white shadow-sm">
-              {user?.username ? user.username.slice(0, 2).toUpperCase() : "U"}
+          <label
+            htmlFor="settings-header-avatar-input"
+            className="group relative block h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-full border border-purple-300 shadow-sm"
+            title="Click to update profile photo"
+          >
+            {avatar && !headerImgFailed ? (
+              <img
+                src={avatar}
+                alt={user?.username ?? "Profile"}
+                onError={() => setHeaderImgFailed(true)}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-sm font-bold text-white shadow-sm">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : "U"}
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-950/50 text-white opacity-0 transition group-hover:opacity-100">
+              <Camera className="h-3.5 w-3.5" />
             </div>
-          )}
+          </label>
+          <input
+            id="settings-header-avatar-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+            onChange={handleQuickPhotoUpload}
+            className="sr-only"
+          />
           <div className="hidden sm:block text-left">
             <p className="text-sm font-semibold text-slate-900">{user?.username}</p>
             <p className="text-xs text-slate-500">{user?.role?.role_name}</p>
@@ -206,7 +285,14 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
         <Section
           currentRole={activeRole}
           user={user}
-          onUserUpdate={(updated) => setUser((prev) => (prev ? { ...prev, ...updated } : null))}
+          onUserUpdate={(updated) => {
+            setUser((prev) => (prev ? { ...prev, ...updated } : null));
+            if (updated.avatar_url) {
+              setAvatar(updated.avatar_url);
+              setSidebarImgFailed(false);
+              setHeaderImgFailed(false);
+            }
+          }}
         />
       </div>
     </main>

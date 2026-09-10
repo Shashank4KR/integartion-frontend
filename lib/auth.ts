@@ -32,13 +32,50 @@ export function getToken(): string | null {
   return localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
+export function isValidAvatar(url: string | null | undefined): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith("data:image/")) {
+    const commaIndex = trimmed.indexOf(",");
+    if (commaIndex === -1) return false;
+    const base64Data = trimmed.slice(commaIndex + 1);
+    if (base64Data.length < 50 || base64Data.startsWith("avatar_")) {
+      return false;
+    }
+  }
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:image/") ||
+    trimmed.startsWith("/")
+  );
+}
+
 export function saveUser(user: UserResponse): void {
   if (!isBrowser()) return;
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-  const roleName = (user.role?.role_name ?? (user as any).role_name ?? "").trim().toUpperCase();
-  if (roleName) {
-    setCookie(ROLE_COOKIE_KEY, roleName);
+  try {
+    if (user.avatar_url && !isValidAvatar(user.avatar_url)) {
+      user.avatar_url = null;
+    }
+    if (!user.avatar_url) {
+      const existingAvatar = localStorage.getItem(AVATAR_STORAGE_KEY) || getStoredAvatar();
+      if (existingAvatar && isValidAvatar(existingAvatar)) {
+        user.avatar_url = existingAvatar;
+      }
+    }
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    const roleName = (user.role?.role_name ?? (user as any).role_name ?? "").trim().toUpperCase();
+    if (roleName) {
+      setCookie(ROLE_COOKIE_KEY, roleName);
+    }
+    if (user.avatar_url && isValidAvatar(user.avatar_url)) {
+      localStorage.setItem(AVATAR_STORAGE_KEY, user.avatar_url);
+    }
+  } catch (err) {
+    console.warn("Storage quota warning:", err);
   }
+  window.dispatchEvent(new CustomEvent(AVATAR_CHANGE_EVENT, { detail: user.avatar_url ?? null }));
 }
 
 export function getStoredUser(): UserResponse | null {
@@ -46,7 +83,11 @@ export function getStoredUser(): UserResponse | null {
   const raw = localStorage.getItem(USER_STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as UserResponse;
+    const user = JSON.parse(raw) as UserResponse;
+    if (user.avatar_url && !isValidAvatar(user.avatar_url)) {
+      user.avatar_url = null;
+    }
+    return user;
   } catch {
     return null;
   }
@@ -57,20 +98,52 @@ export function getStoredRoleId(): string | null {
   return user?.role_id ?? null;
 }
 
-export function saveAvatar(avatarUrl: string): void {
+export function saveAvatar(avatarUrl: string | null): void {
   if (!isBrowser()) return;
-  localStorage.setItem(AVATAR_STORAGE_KEY, avatarUrl);
+  try {
+    if (avatarUrl && isValidAvatar(avatarUrl)) {
+      localStorage.setItem(AVATAR_STORAGE_KEY, avatarUrl);
+    } else {
+      localStorage.removeItem(AVATAR_STORAGE_KEY);
+      avatarUrl = null;
+    }
+    const user = getStoredUser();
+    if (user) {
+      user.avatar_url = avatarUrl;
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    }
+  } catch (err) {
+    console.warn("Storage warning in saveAvatar:", err);
+  }
   window.dispatchEvent(new CustomEvent(AVATAR_CHANGE_EVENT, { detail: avatarUrl }));
 }
 
 export function getStoredAvatar(): string | null {
   if (!isBrowser()) return null;
-  return localStorage.getItem(AVATAR_STORAGE_KEY);
+  const direct = localStorage.getItem(AVATAR_STORAGE_KEY);
+  if (direct) {
+    if (isValidAvatar(direct)) return direct;
+    localStorage.removeItem(AVATAR_STORAGE_KEY);
+  }
+  const user = getStoredUser();
+  if (user?.avatar_url && isValidAvatar(user.avatar_url)) {
+    return user.avatar_url;
+  }
+  return null;
 }
 
 export function removeAvatar(): void {
   if (!isBrowser()) return;
-  localStorage.removeItem(AVATAR_STORAGE_KEY);
+  try {
+    localStorage.removeItem(AVATAR_STORAGE_KEY);
+    const user = getStoredUser();
+    if (user) {
+      user.avatar_url = null;
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    }
+  } catch (err) {
+    console.warn("Storage warning in removeAvatar:", err);
+  }
   window.dispatchEvent(new CustomEvent(AVATAR_CHANGE_EVENT, { detail: null }));
 }
 
