@@ -1,11 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import dynamic from "next/dynamic"
 import { Navbar } from "@/components/navbar"
 
-const Hero = dynamic(() => import("@/components/hero").then((m) => m.Hero), { ssr: false })
-const Sections = dynamic(() => import("@/components/sections").then((m) => m.Sections), { ssr: false })
+import { Hero } from "@/components/hero"
+import { Sections } from "@/components/sections"
 
 const SECTION_IDS = ["home", "features", "solutions", "resources", "pricing", "contact"]
 const AUTOPLAY_INTERVAL = 6500

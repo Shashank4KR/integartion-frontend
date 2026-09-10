@@ -109,9 +109,7 @@ export default function AttendanceFilters({
               value={viewType}
               options={["Daily View", "Weekly View", "Monthly View"]}
               onChange={onViewTypeChange}
-              disabled
             />
-            <p className="mt-1 text-[10px] font-medium text-slate-400">Coming soon</p>
           </div>
           <div className="flex-1 min-w-[140px]">
             <Dropdown
@@ -119,7 +117,8 @@ export default function AttendanceFilters({
               value={subject}
               items={subjectOptions}
               onChange={onSubjectChange}
-              disabled={subjectLoading || subjectOptions.length === 0}
+              placeholder="All Subjects"
+              disabled={subjectLoading}
             />
           </div>
           <div className="flex items-center gap-2">

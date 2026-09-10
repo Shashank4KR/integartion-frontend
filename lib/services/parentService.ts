@@ -1,4 +1,4 @@
-﻿import type { ParentCreate, ParentResponse } from "@/types/entities/parent";
+import type { ParentCreate, ParentResponse } from "@/types/entities/parent";
 
 const BASE = "/api/parents";
 
@@ -84,5 +84,18 @@ export async function deleteParent(token: string, id: string): Promise<void> {
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to delete parent.");
   }
+}
+
+export async function getMyChildrenFees(token: string): Promise<any> {
+  const response = await fetch(`${BASE}/me/fees`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch children fees.");
+  }
+
+  return await response.json();
 }
 

@@ -4,6 +4,7 @@ import type { UserResponse } from "@/types/auth";
 export interface DashboardStats {
   total_students: number;
   total_teachers: number;
+  total_parents?: number;
   total_classes: number;
   total_subjects: number;
   total_fees_invoiced: number;
@@ -12,6 +13,7 @@ export interface DashboardStats {
   today_collection: number;
   monthly_collection: number;
   upcoming_events: number;
+  students_by_class?: Array<{ name: string; count: number }>;
 }
 
 export interface StudentDashboardSummary {
@@ -35,6 +37,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const response = await fetch(path, {
     ...init,
+    credentials: 'include', // ensure cookies are sent
     headers: {
       ...(init?.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -42,12 +45,22 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    // If unauthorized, clear stored auth and optionally redirect to login
+    if (response.status === 401) {
+      // Clear auth info
+      if (typeof window !== 'undefined') {
+        import('@/lib/auth').then(({ clearAuth }) => clearAuth());
+      }
+      const detail = await response.text();
+      throw new Error(detail || 'Unauthorized: Please log in');
+    }
     const detail = await response.text();
     throw new Error(detail || `Request failed with ${response.status}`);
   }
 
   return (await response.json()) as T;
 }
+
 
 export async function getCurrentUserProfile(): Promise<UserResponse> {
   return requestJson<UserResponse>("/api/auth/me");

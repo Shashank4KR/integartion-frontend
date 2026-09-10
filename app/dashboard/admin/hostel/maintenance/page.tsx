@@ -8,6 +8,9 @@ import DashboardHeader from "@/components/shared/layout/Header";
 import MaintenanceManagementPageHeader from "@/components/dashboard/hostel/maintenance/MaintenanceManagementPageHeader";
 import MaintenanceSummaryCards from "@/components/dashboard/hostel/maintenance/MaintenanceSummaryCards";
 import RaiseMaintenanceRequestDialog from "@/components/dashboard/hostel/maintenance/RaiseMaintenanceRequestDialog";
+import WorkOrdersDialog from "@/components/dashboard/hostel/maintenance/WorkOrdersDialog";
+import WorkOrderDetailsDialog from "@/components/dashboard/hostel/maintenance/WorkOrderDetailsDialog";
+import type { WorkOrder } from "@/lib/fixtures/maintenance-management-reference-fixture";
 import { clearAuth, getStoredUser, getToken } from "@/lib/auth";
 import { COMPANY_INFO } from "@/lib/constants";
 import {
@@ -25,6 +28,8 @@ export default function MaintenanceManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isRaiseOpen, setIsRaiseOpen] = useState(false);
+  const [workOrdersOpen, setWorkOrdersOpen] = useState(false);
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
 
   const loadData = useCallback(async () => {
     const token = getToken();
@@ -156,7 +161,7 @@ export default function MaintenanceManagementPage() {
         <div className="mx-auto max-w-[1400px]">
           <MaintenanceManagementPageHeader
             onRaiseRequest={() => setIsRaiseOpen(true)}
-            onWorkOrders={() => {}}
+            onWorkOrders={() => setWorkOrdersOpen(true)}
             onMoreOptions={() => {}}
           />
           {loadError ? (
@@ -232,6 +237,18 @@ export default function MaintenanceManagementPage() {
             open={isRaiseOpen}
             onClose={() => setIsRaiseOpen(false)}
             onSave={handleRaiseRequest}
+          />
+
+          <WorkOrdersDialog
+            open={workOrdersOpen}
+            onClose={() => setWorkOrdersOpen(false)}
+            onView={(wo) => setSelectedWorkOrder(wo)}
+          />
+
+          <WorkOrderDetailsDialog
+            open={!!selectedWorkOrder}
+            onClose={() => setSelectedWorkOrder(null)}
+            workOrder={selectedWorkOrder}
           />
 
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">

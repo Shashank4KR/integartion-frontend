@@ -12,9 +12,14 @@ export default function ClassFilters({
   onSectionChange,
   teacherId,
   onTeacherIdChange,
+  classLevel,
+  onClassLevelChange,
+  status,
+  onStatusChange,
   academicYearOptions,
   sectionOptions,
   teacherOptions,
+  classLevelOptions,
   onClear,
 }: {
   search: string;
@@ -25,12 +30,17 @@ export default function ClassFilters({
   onSectionChange: (value: string) => void;
   teacherId: string;
   onTeacherIdChange: (value: string) => void;
+  classLevel: string;
+  onClassLevelChange: (value: string) => void;
+  status: string;
+  onStatusChange: (value: string) => void;
   academicYearOptions: string[];
   sectionOptions: string[];
   teacherOptions: { id: string; label: string }[];
+  classLevelOptions: string[];
   onClear: () => void;
 }) {
-  const hasFilters = search || academicYear || section || teacherId;
+  const hasFilters = search || academicYear || section || teacherId || classLevel || status;
 
   return (
     <Card className="mb-4">
@@ -84,18 +94,25 @@ export default function ClassFilters({
               ))}
             </select>
             <select
-              disabled
-              title="Not available in the current backend."
-              className="h-10 rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-400 outline-none cursor-not-allowed"
+              value={classLevel}
+              onChange={(e) => onClassLevelChange(e.target.value)}
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
             >
               <option value="">Class Level</option>
+              {classLevelOptions.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
             </select>
             <select
-              disabled
-              title="Not available in the current backend."
-              className="h-10 rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-400 outline-none cursor-not-allowed"
+              value={status}
+              onChange={(e) => onStatusChange(e.target.value)}
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
             >
               <option value="">Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
             {hasFilters && (
               <button
@@ -112,3 +129,4 @@ export default function ClassFilters({
     </Card>
   );
 }
+

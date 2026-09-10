@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Wallet, CalendarPlus, FileText, Bell, Percent, Download, BookOpen, Settings } from "lucide-react";
 import Card from "@/components/shared/Card";
 

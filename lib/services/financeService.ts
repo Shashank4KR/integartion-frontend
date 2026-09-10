@@ -320,6 +320,27 @@ export async function processSalary(
 
 export const createSalaryRecord = processSalary;
 
+export async function bulkProcessSalaries(
+  token: string,
+  payload: any[],
+): Promise<any> {
+  const response = await fetch(`${BASE}/salary/bulk-process`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to process bulk salaries.");
+  }
+
+  return (await response.json()) as any;
+}
+
 export async function getFeesSummary(token: string): Promise<any> {
   const response = await fetch("/api/fees/summary", {
     headers: { Authorization: `Bearer ${token}` },

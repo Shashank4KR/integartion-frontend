@@ -11,22 +11,13 @@ const ROLE_DASHBOARDS: Record<string, string> = {
   WARDEN: "/dashboard/warden",
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("edtech_access_token")?.value;
   const rawRole = request.cookies.get("edtech_user_role")?.value;
   const userRole = rawRole ? decodeURIComponent(rawRole).trim().toUpperCase() : null;
 
-  // 1. If user is on /login and is already authenticated, redirect to their role dashboard
-  if (pathname === "/login") {
-    if (token) {
-      const targetDashboard = (userRole && ROLE_DASHBOARDS[userRole]) || "/dashboard/admin";
-      return NextResponse.redirect(new URL(targetDashboard, request.url));
-    }
-    return NextResponse.next();
-  }
-
-  // 2. Protect all /dashboard routes
+  // Protect all /dashboard routes
   if (pathname.startsWith("/dashboard")) {
     if (!token) {
       const loginUrl = new URL("/login", request.url);
@@ -71,5 +62,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: ["/dashboard/:path*"],
 };

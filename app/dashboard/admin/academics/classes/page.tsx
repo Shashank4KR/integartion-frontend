@@ -57,6 +57,8 @@ export default function ClassesPage() {
   const [academicYear, setAcademicYear] = useState("");
   const [section, setSection] = useState("");
   const [teacherId, setTeacherId] = useState("");
+  const [classLevel, setClassLevel] = useState("");
+  const [status, setStatus] = useState("");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClassResponse | null>(null);
@@ -220,12 +222,40 @@ export default function ClassesPage() {
     [classes],
   );
 
+  /** Extract a numeric/string class level from `class_name` (e.g. "10" → "10", "9th" → "9"). */
+  const extractClassLevel = useCallback((className: string): string => {
+    const match = className.match(/(\d+)/);
+    return match ? match[1] : className;
+  }, []);
+
+  const classLevelOptions = useMemo(() => {
+    const levels = Array.from(new Set(classes.map((c) => extractClassLevel(c.class_name))));
+    return levels.sort((a, b) => {
+      const na = parseInt(a, 10);
+      const nb = parseInt(b, 10);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+  }, [classes, extractClassLevel]);
+
+  /** A class is "active" when its academic_year string contains the current calendar year. */
+  const isClassActive = useCallback((academicYr: string): boolean => {
+    const currentYear = new Date().getFullYear().toString();
+    return academicYr.includes(currentYear);
+  }, []);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return classes.filter((c) => {
       if (academicYear && c.academic_year !== academicYear) return false;
       if (section && c.section !== section) return false;
       if (teacherId && c.class_teacher_id !== teacherId) return false;
+      if (classLevel && extractClassLevel(c.class_name) !== classLevel) return false;
+      if (status) {
+        const active = isClassActive(c.academic_year);
+        if (status === "active" && !active) return false;
+        if (status === "inactive" && active) return false;
+      }
       if (term) {
         const haystack = [
           c.class_name,
@@ -239,7 +269,7 @@ export default function ClassesPage() {
       }
       return true;
     });
-  }, [classes, academicYear, section, teacherId, search, teacherLabel]);
+  }, [classes, academicYear, section, teacherId, classLevel, status, search, teacherLabel, extractClassLevel, isClassActive]);
 
   const classSubjectCount = useMemo(() => {
     const map: Record<string, number> = {};
@@ -270,7 +300,7 @@ export default function ClassesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, academicYear, section, teacherId]);
+  }, [search, academicYear, section, teacherId, classLevel, status]);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -357,6 +387,8 @@ export default function ClassesPage() {
     setAcademicYear("");
     setSection("");
     setTeacherId("");
+    setClassLevel("");
+    setStatus("");
   };
 
   const refresh = async () => {
@@ -373,7 +405,7 @@ export default function ClassesPage() {
       String(classStudentCount[c.id] ?? 0),
       String(classSubjectCount[c.id] ?? 0),
       "—",
-      "—",
+      isClassActive(c.academic_year) ? "Active" : "Inactive",
     ]);
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -501,9 +533,14 @@ export default function ClassesPage() {
               onSectionChange={setSection}
               teacherId={teacherId}
               onTeacherIdChange={setTeacherId}
+              classLevel={classLevel}
+              onClassLevelChange={setClassLevel}
+              status={status}
+              onStatusChange={setStatus}
               academicYearOptions={academicYearOptions}
               sectionOptions={sectionOptions}
               teacherOptions={teacherOptions}
+              classLevelOptions={classLevelOptions}
               onClear={clearFilters}
             />
           )}
@@ -530,6 +567,7 @@ export default function ClassesPage() {
                 teacherLabel={teacherLabel}
                 classSubjectCount={classSubjectCount}
                 classStudentCount={classStudentCount}
+                isClassActive={isClassActive}
               />
             )}
           </div>

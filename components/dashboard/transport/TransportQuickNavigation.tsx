@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import Card from "@/components/shared/Card";
 import { Truck, MapPin, CalendarDays, FileText, ChevronRight } from "lucide-react";
@@ -17,6 +18,7 @@ interface TransportQuickNavigationProps {
   onTracking: () => void;
   onSchedule: () => void;
   onReport: () => void;
+  onDriverAssignment?: () => void;
 }
 
 export default function TransportQuickNavigation({
@@ -24,11 +26,13 @@ export default function TransportQuickNavigation({
   onTracking,
   onSchedule,
   onReport,
+  onDriverAssignment,
 }: TransportQuickNavigationProps) {
   const handleClick = (item: QuickNavItem) => {
     if (item.action === "tracking") onTracking();
     else if (item.action === "schedule") onSchedule();
     else if (item.action === "report") onReport();
+    else if (item.action === "driver-assignment") onDriverAssignment?.();
   };
 
   return (
@@ -42,9 +46,9 @@ export default function TransportQuickNavigation({
         <div className="flex flex-col gap-2.5">
           {items.map((item) => {
             const content = (
-              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition cursor-pointer group">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-purple-50 hover:border-purple-200 transition cursor-pointer group">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`${item.iconBg} p-2 rounded-lg flex-shrink-0`}>
+                  <div className={`${item.iconBg} p-2 rounded-lg flex-shrink-0 group-hover:scale-105 transition-transform`}>
                     <span className={item.iconColor}>{iconMap[item.icon]}</span>
                   </div>
                   <div className="min-w-0">
@@ -57,6 +61,20 @@ export default function TransportQuickNavigation({
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#7c3aed] group-hover:translate-x-0.5 transition flex-shrink-0 ml-2" />
               </div>
             );
+
+            // Items with an action should always be buttons (never Links)
+            if (item.action) {
+              return (
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => handleClick(item)}
+                  className="block text-left w-full"
+                >
+                  {content}
+                </button>
+              );
+            }
 
             if (item.href) {
               return (

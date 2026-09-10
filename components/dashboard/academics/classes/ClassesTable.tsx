@@ -12,6 +12,7 @@ export default function ClassesTable({
   teacherLabel,
   classSubjectCount,
   classStudentCount,
+  isClassActive,
 }: {
   items: ClassResponse[];
   onEdit: (item: ClassResponse) => void;
@@ -20,6 +21,7 @@ export default function ClassesTable({
   teacherLabel: (teacherId?: string | null) => string;
   classSubjectCount: Record<string, number>;
   classStudentCount: Record<string, number>;
+  isClassActive: (academicYear: string) => boolean;
 }) {
   if (items.length === 0) {
     return (
@@ -65,7 +67,17 @@ export default function ClassesTable({
                 </button>
               </td>
               <td className="px-4 py-3 text-slate-600">—</td>
-              <td className="px-4 py-3 text-slate-600">—</td>
+              <td className="px-4 py-3">
+                {isClassActive(item.academic_year) ? (
+                  <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-600/20">
+                    Active
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-600/20">
+                    Inactive
+                  </span>
+                )}
+              </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2">
                   <button

@@ -24,6 +24,15 @@ import EditExaminationDialog from "@/components/dashboard/examinations/EditExami
 import DeleteExaminationDialog from "@/components/dashboard/examinations/DeleteExaminationDialog";
 import { getAllExams, createExam, updateExam, deleteExam } from "@/lib/services/examService";
 import { listClasses } from "@/lib/services/classService";
+import {
+  AssignSubjectsModal,
+  AssignInvigilatorsModal,
+  ExamTimetableModal,
+  GenerateAdmitCardModal,
+  EnterMarksModal,
+  PublishResultsModal,
+  ExamReportModal,
+} from "@/components/dashboard/examinations/examActionModals";
 
 function getDisplayCode(id: string): string {
   if (!id) return "-";
@@ -80,6 +89,7 @@ export default function ExaminationsPage() {
   const [upcomingViewAllOpen, setUpcomingViewAllOpen] = useState(false);
   const [quickActionOpen, setQuickActionOpen] = useState(false);
   const [quickActionTitle, setQuickActionTitle] = useState("");
+  const [activeActionModal, setActiveActionModal] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -307,8 +317,11 @@ export default function ExaminationsPage() {
   };
 
   const handleQuickAction = (action: string) => {
-    setQuickActionTitle(action);
-    setQuickActionOpen(true);
+    if (action === "Create Examination") {
+      setCreateOpen(true);
+    } else {
+      setActiveActionModal(action);
+    }
   };
 
   const handleCreate = async (payload: {
@@ -576,6 +589,59 @@ export default function ExaminationsPage() {
         onClose={() => setQuickActionOpen(false)}
         title={quickActionTitle}
         message={`The "${quickActionTitle}" workflow will be connected to the backend in the integration phase.`}
+      />
+
+      <AssignSubjectsModal
+        open={activeActionModal === "Assign Subjects"}
+        onClose={() => setActiveActionModal(null)}
+        exams={exams}
+        classes={classes}
+        token={token || ""}
+      />
+
+      <AssignInvigilatorsModal
+        open={activeActionModal === "Assign Invigilators"}
+        onClose={() => setActiveActionModal(null)}
+        exams={exams}
+        token={token || ""}
+      />
+
+      <ExamTimetableModal
+        open={activeActionModal === "Exam Timetable"}
+        onClose={() => setActiveActionModal(null)}
+        exams={exams}
+        token={token || ""}
+      />
+
+      <GenerateAdmitCardModal
+        open={activeActionModal === "Generate Admit Card"}
+        onClose={() => setActiveActionModal(null)}
+        exams={exams}
+        classes={classes}
+        token={token || ""}
+      />
+
+      <EnterMarksModal
+        open={activeActionModal === "Enter Marks"}
+        onClose={() => setActiveActionModal(null)}
+        exams={exams}
+        classes={classes}
+        token={token || ""}
+      />
+
+      <PublishResultsModal
+        open={activeActionModal === "Publish Results"}
+        onClose={() => setActiveActionModal(null)}
+        exams={exams}
+        token={token || ""}
+      />
+
+      <ExamReportModal
+        open={activeActionModal === "Exam Report"}
+        onClose={() => setActiveActionModal(null)}
+        exams={exams}
+        classes={classes}
+        token={token || ""}
       />
     </MainLayout>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   ArrowUp,
@@ -58,6 +58,12 @@ export default function UserModulesPage() {
   const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFS);
   const [savedPrefs, setSavedPrefs] = useState<Preferences>(DEFAULT_PREFS);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    const current = loadPreferences();
+    setPrefs(current);
+    setSavedPrefs(current);
+  }, []);
 
   const openModal = () => {
     const current = loadPreferences();

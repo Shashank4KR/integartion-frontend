@@ -15,8 +15,14 @@ import TopPerformingClasses from "@/components/dashboard/academics/attendance/To
 import AttendanceQuickActions from "@/components/dashboard/academics/attendance/AttendanceQuickActions";
 import MarkAttendanceDialog from "@/components/dashboard/academics/attendance/MarkAttendanceDialog";
 import BulkAttendanceDialog from "@/components/dashboard/academics/attendance/BulkAttendanceDialog";
-import Modal from "@/components/shared/Modal";
+import AttendanceReportDialog from "@/components/dashboard/academics/attendance/AttendanceReportDialog";
+import StudentAttendanceDialog from "@/components/dashboard/academics/attendance/StudentAttendanceDialog";
+import DailySummaryDialog from "@/components/dashboard/academics/attendance/DailySummaryDialog";
+import MonthlyReportDialog from "@/components/dashboard/academics/attendance/MonthlyReportDialog";
+import AttendanceSettingsDialog from "@/components/dashboard/academics/attendance/AttendanceSettingsDialog";
+import ExportAttendanceDialog from "@/components/dashboard/academics/attendance/ExportAttendanceDialog";
 import { listClasses, getClassSubjects, getClassTeachers, getClassStudents } from "@/lib/services/classService";
+import { listSubjects } from "@/lib/services/subjectService";
 import {
   getAllAttendance,
   getClassAttendanceSummary,
@@ -28,6 +34,7 @@ import {
 } from "@/lib/services/attendanceService";
 import { getStoredUser } from "@/lib/auth";
 import type { ClassResponse } from "@/types/entities/class";
+import type { SubjectResponse } from "@/types/entities/subject";
 import type { ClassSubjectSummary } from "@/types/entities/class-subject-summary";
 import type { StudentResponse } from "@/types/entities/student";
 import type { AttendanceTableRow } from "@/components/dashboard/academics/attendance/AttendanceTable";
@@ -112,6 +119,7 @@ export default function AttendancePage() {
   const [token, setToken] = useState("");
   const [classes, setClasses] = useState<ClassResponse[]>([]);
   const [classSubjects, setClassSubjects] = useState<ClassSubjectSummary[]>([]);
+  const [allSubjects, setAllSubjects] = useState<SubjectResponse[]>([]);
   const [classTeachers, setClassTeachers] = useState<{ id: string; employee_id: string }[]>([]);
   const [students, setStudents] = useState<StudentResponse[]>([]);
 
@@ -147,7 +155,12 @@ export default function AttendancePage() {
 
   const [markAttendanceOpen, setMarkAttendanceOpen] = useState(false);
   const [bulkAttendanceOpen, setBulkAttendanceOpen] = useState(false);
-  const [quickAction, setQuickAction] = useState<string | null>(null);
+  const [attendanceReportOpen, setAttendanceReportOpen] = useState(false);
+  const [studentAttendanceOpen, setStudentAttendanceOpen] = useState(false);
+  const [dailySummaryOpen, setDailySummaryOpen] = useState(false);
+  const [monthlyReportOpen, setMonthlyReportOpen] = useState(false);
+  const [attendanceSettingsOpen, setAttendanceSettingsOpen] = useState(false);
+  const [exportAttendanceOpen, setExportAttendanceOpen] = useState(false);
 
   const markedBy = useMemo(() => getStoredUser()?.id ?? "", []);
 
@@ -155,6 +168,13 @@ export default function AttendancePage() {
     const storedToken = localStorage.getItem("edtech_access_token");
     if (storedToken) setToken(storedToken);
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    listSubjects(token)
+      .then((data) => setAllSubjects(data || []))
+      .catch(() => setAllSubjects([]));
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -212,12 +232,18 @@ export default function AttendancePage() {
     }));
   }, [filteredClasses]);
 
+  const effectiveSubjects = useMemo(() => {
+    if (classSubjects.length > 0) return classSubjects;
+    return allSubjects.map((s) => ({ id: s.id, subject_name: s.subject_name }));
+  }, [classSubjects, allSubjects]);
+
   const subjectOptions = useMemo(() => {
-    return classSubjects.map((s) => ({
+    const list = effectiveSubjects.map((s) => ({
       value: s.id,
       label: s.subject_name,
     }));
-  }, [classSubjects]);
+    return [{ value: "", label: "All Subjects" }, ...list];
+  }, [effectiveSubjects]);
 
   const teacherOptions = useMemo(() => {
     return classTeachers.map((t) => ({
@@ -313,8 +339,24 @@ export default function AttendancePage() {
 
         if (selectedClassId) params.class_id = selectedClassId;
         if (selectedDateISO) {
-          params.start_date = selectedDateISO;
-          params.end_date = selectedDateISO;
+          if (viewType === "Daily View") {
+            params.start_date = selectedDateISO;
+            params.end_date = selectedDateISO;
+          } else if (viewType === "Weekly View") {
+            const parts = selectedDateISO.split("-").map(Number);
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            const day = d.getDay();
+            const diffToMon = d.getDate() - day + (day === 0 ? -6 : 1);
+            const mon = new Date(parts[0], parts[1] - 1, diffToMon);
+            const sun = new Date(parts[0], parts[1] - 1, diffToMon + 6);
+            params.start_date = `${mon.getFullYear()}-${String(mon.getMonth() + 1).padStart(2, "0")}-${String(mon.getDate()).padStart(2, "0")}`;
+            params.end_date = `${sun.getFullYear()}-${String(sun.getMonth() + 1).padStart(2, "0")}-${String(sun.getDate()).padStart(2, "0")}`;
+          } else if (viewType === "Monthly View") {
+            const [y, m] = selectedDateISO.split("-");
+            const lastDay = new Date(parseInt(y, 10), parseInt(m, 10), 0).getDate();
+            params.start_date = `${y}-${m}-01`;
+            params.end_date = `${y}-${m}-${String(lastDay).padStart(2, "0")}`;
+          }
         }
         if (selectedSubjectId) params.subject_id = selectedSubjectId;
         if (statusFilter) params.status = statusFilter;
@@ -337,7 +379,7 @@ export default function AttendancePage() {
 
     loadAttendance();
     return () => { cancelled = true; };
-  }, [token, selectedClassId, selectedDateISO, selectedSubjectId, statusFilter, attendanceRetryKey]);
+  }, [token, selectedClassId, selectedDateISO, selectedSubjectId, statusFilter, viewType, attendanceRetryKey]);
 
   useEffect(() => {
     if (!token || !selectedClassId) {
@@ -513,6 +555,11 @@ export default function AttendancePage() {
     setStatusFilter("");
   }, []);
 
+  const handleViewTypeChange = useCallback((vt: string) => {
+    setViewType(vt);
+    setCurrentPage(1);
+  }, []);
+
   const handleSubjectChange = useCallback((subjectId: string) => {
     setSelectedSubjectId(subjectId);
     setCurrentPage(1);
@@ -532,6 +579,7 @@ export default function AttendancePage() {
     setSelectedSubjectId("");
     setStatusFilter("");
     setSearchTerm("");
+    setViewType("Daily View");
     if (filteredClasses.length > 0) {
       setSelectedClassId(filteredClasses[0].id);
     } else {
@@ -583,8 +631,25 @@ export default function AttendancePage() {
         case "Bulk Attendance":
           setBulkAttendanceOpen(true);
           break;
+        case "Attendance Report":
+          setAttendanceReportOpen(true);
+          break;
+        case "Student Attendance":
+          setStudentAttendanceOpen(true);
+          break;
+        case "Daily Summary":
+          setDailySummaryOpen(true);
+          break;
+        case "Monthly Report":
+          setMonthlyReportOpen(true);
+          break;
+        case "Attendance Settings":
+          setAttendanceSettingsOpen(true);
+          break;
+        case "Export Data":
+          setExportAttendanceOpen(true);
+          break;
         default:
-          setQuickAction(action.label);
           break;
       }
     },
@@ -597,11 +662,11 @@ export default function AttendancePage() {
       classId: selectedClassId,
       dateDisplay: selectedDateDisplay,
       dateISO: selectedDateISO,
-      subjects: classSubjects,
+      subjects: effectiveSubjects,
       onEditSuccess: handleEditSuccess,
       onDeleteSuccess: handleDeleteSuccess,
     }),
-    [token, selectedClassId, selectedDateDisplay, selectedDateISO, classSubjects, handleEditSuccess, handleDeleteSuccess],
+    [token, selectedClassId, selectedDateDisplay, selectedDateISO, effectiveSubjects, handleEditSuccess, handleDeleteSuccess],
   );
 
   const hasSearchResults = searchTerm.trim().length > 0 && tableRows.length === 0 && !attendanceLoading;
@@ -628,7 +693,7 @@ export default function AttendancePage() {
             date={selectedDateDisplay}
             onDateChange={handleDateChange}
             viewType={viewType}
-            onViewTypeChange={setViewType}
+            onViewTypeChange={handleViewTypeChange}
             subjectOptions={subjectOptions}
             subject={selectedSubjectId}
             onSubjectChange={handleSubjectChange}
@@ -663,7 +728,7 @@ export default function AttendancePage() {
 
           <AttendanceTable
             rows={!hasSearchResults ? paginatedRows : []}
-            subjects={classSubjects}
+            subjects={effectiveSubjects}
             loading={attendanceLoading}
             error={null}
             emptyMessage={
@@ -721,30 +786,61 @@ export default function AttendancePage() {
         markedBy={markedBy}
       />
 
-      <Modal
-        open={!!quickAction}
-        onClose={() => setQuickAction(null)}
-        title={quickAction ?? ""}
-        maxWidth="max-w-sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600">
-            &quot;{quickAction}&quot; is a UI-only quick action. Backend integration will be handled in the next phase.
-          </p>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-            No backend API is connected in this phase.
-          </div>
-          <div className="flex items-center justify-end">
-            <button
-              type="button"
-              onClick={() => setQuickAction(null)}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <AttendanceReportDialog
+        open={attendanceReportOpen}
+        onClose={() => setAttendanceReportOpen(false)}
+        token={token}
+        classes={classes}
+        initialClassId={selectedClassId}
+        initialDateISO={selectedDateISO}
+        subjects={classSubjects}
+        students={students}
+      />
+
+      <StudentAttendanceDialog
+        open={studentAttendanceOpen}
+        onClose={() => setStudentAttendanceOpen(false)}
+        token={token}
+        students={students}
+        subjects={classSubjects}
+      />
+
+      <DailySummaryDialog
+        open={dailySummaryOpen}
+        onClose={() => setDailySummaryOpen(false)}
+        token={token}
+        classes={classes}
+        initialClassId={selectedClassId}
+        initialDateISO={selectedDateISO}
+        students={students}
+      />
+
+      <MonthlyReportDialog
+        open={monthlyReportOpen}
+        onClose={() => setMonthlyReportOpen(false)}
+        token={token}
+        classes={classes}
+        initialClassId={selectedClassId}
+        students={students}
+      />
+
+      <AttendanceSettingsDialog
+        open={attendanceSettingsOpen}
+        onClose={() => setAttendanceSettingsOpen(false)}
+        onSaveSuccess={showToast}
+      />
+
+      <ExportAttendanceDialog
+        open={exportAttendanceOpen}
+        onClose={() => setExportAttendanceOpen(false)}
+        token={token}
+        classes={classes}
+        initialClassId={selectedClassId}
+        initialDateISO={selectedDateISO}
+        subjects={classSubjects}
+        students={students}
+        onSuccess={showToast}
+      />
     </MainLayout>
   );
 }
