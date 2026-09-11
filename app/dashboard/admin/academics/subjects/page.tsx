@@ -27,6 +27,7 @@ import { listClassSubjects, createClassSubject, deleteClassSubject } from "@/lib
 import { listTeachers } from "@/lib/services/teacherService";
 import { listUsers } from "@/lib/services/userService";
 import { listTeacherSubjects, createTeacherSubject, deleteTeacherSubject } from "@/lib/services/teacherSubjectService";
+import { listDepartments } from "@/lib/services/departmentService";
 import type {
   SubjectCreate,
   SubjectResponse,
@@ -40,6 +41,7 @@ const PAGE_SIZE = 8;
 
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<SubjectResponse[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; department_name: string }[]>([]);
   const [classes, setClasses] = useState<{ id: string; class_name: string; section: string; academic_year: string }[]>([]);
   const [teachers, setTeachers] = useState<{ id: string; employee_id: string; user_id: string; email?: string }[]>([]);
   const [users, setUsers] = useState<UserResponse[]>([]);
@@ -77,17 +79,21 @@ export default function SubjectsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [subjectData, classData, mappingData, teacherData, teacherMappingData, userData] = await Promise.allSettled([
+      const [subjectData, classData, mappingData, teacherData, teacherMappingData, userData, deptData] = await Promise.allSettled([
         listSubjects(token),
         listClasses(token),
         listClassSubjects(token),
         listTeachers(token),
         listTeacherSubjects(token),
         listUsers(token),
+        listDepartments(token),
       ]);
 
       if (subjectData.status === "fulfilled") {
         setSubjects(subjectData.value);
+      }
+      if (deptData.status === "fulfilled") {
+        setDepartments(deptData.value.map((d) => ({ id: d.id, department_name: d.department_name })));
       }
       if (classData.status === "fulfilled") {
         setClasses(
@@ -468,6 +474,7 @@ export default function SubjectsPage() {
                   onView={openView}
                   classCountBySubject={classCountBySubject}
                   onManageAssignments={setViewingItem}
+                  departments={departments}
                 />
                 {filtered.length > 0 && (
                   <SubjectPagination
@@ -483,7 +490,7 @@ export default function SubjectsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            <SubjectsByDepartment subjects={subjects} />
+            <SubjectsByDepartment subjects={subjects} departments={departments} />
             <PopularSubjects subjects={subjects} classSubjects={classSubjects} />
             <RecentSubjectUpdates subjects={subjects} />
           </div>
@@ -495,6 +502,7 @@ export default function SubjectsPage() {
             submitting={submitting}
             formError={formError}
             editingItem={editingItem}
+            departments={departments}
           />
 
           <DeleteSubjectDialog
@@ -522,6 +530,7 @@ export default function SubjectsPage() {
             onRemoveClassAssignment={handleRemoveClassAssignment}
             onAssignTeachers={handleAssignTeachers}
             onRemoveTeacherAssignment={handleRemoveTeacherAssignment}
+            departments={departments}
           />
         </div>
       </div>

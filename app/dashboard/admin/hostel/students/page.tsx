@@ -14,6 +14,7 @@ import { clearAuth, getToken } from "@/lib/auth";
 import { COMPANY_INFO } from "@/lib/constants";
 import {
   allocateStudent,
+  checkoutHostelStudent,
   getHostelAllocations,
   getHostelDashboardStats,
   listHostelBeds,
@@ -68,11 +69,30 @@ export default function HostelStudentsPage() {
     loadData();
   }, [loadData]);
 
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
   const handleSaveAllocation = async (payload: CreateAllocationPayload) => {
     const token = getToken();
     if (!token) throw new Error("Authentication token not found.");
     await allocateStudent(token, payload);
     await loadData();
+  };
+
+  const handleCheckout = async (allocationId: string) => {
+    const token = getToken();
+    if (!token) return;
+    const confirm = window.confirm("Are you sure you want to checkout this student from the hostel?");
+    if (!confirm) return;
+
+    try {
+      setActionLoadingId(allocationId);
+      await checkoutHostelStudent(token, allocationId, new Date().toISOString().split("T")[0]);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to checkout student.");
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const classMap = useMemo(() => {
@@ -191,6 +211,7 @@ export default function HostelStudentsPage() {
                         <th className="px-4 py-3 text-left">Bed ID</th>
                         <th className="px-4 py-3 text-left">Check In</th>
                         <th className="px-4 py-3 text-left">Status</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -226,6 +247,20 @@ export default function HostelStudentsPage() {
                               >
                                 {row.status ?? "-"}
                               </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {row.status === "ACTIVE" ? (
+                                <button
+                                  type="button"
+                                  disabled={actionLoadingId === row.id}
+                                  onClick={() => handleCheckout(row.id)}
+                                  className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors disabled:opacity-50"
+                                >
+                                  {actionLoadingId === row.id ? "Checking out..." : "Checkout"}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
                             </td>
                           </tr>
                         );

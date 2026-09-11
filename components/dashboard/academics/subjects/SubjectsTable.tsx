@@ -45,6 +45,7 @@ export default function SubjectsTable({
   onView,
   classCountBySubject,
   onManageAssignments,
+  departments = [],
 }: {
   items: SubjectResponse[];
   onEdit: (item: SubjectResponse) => void;
@@ -52,6 +53,7 @@ export default function SubjectsTable({
   onView: (item: SubjectResponse) => void;
   classCountBySubject: Record<string, number>;
   onManageAssignments: (item: SubjectResponse) => void;
+  departments?: { id: string; department_name: string }[];
 }) {
   if (items.length === 0) {
     return (
@@ -83,6 +85,7 @@ export default function SubjectsTable({
             const Icon = getSubjectIcon(item.id);
             const colorSet = getSubjectColor(item.id);
             const classCount = classCountBySubject[item.id] ?? 0;
+            const deptName = departments.find((d) => d.id === item.department_id)?.department_name;
 
             return (
               <tr
@@ -104,7 +107,13 @@ export default function SubjectsTable({
                   <UnavailablePill />
                 </td>
                 <td className="px-4 py-3.5">
-                  <UnavailablePill />
+                  {deptName ? (
+                    <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+                      {deptName}
+                    </span>
+                  ) : (
+                    <UnavailablePill />
+                  )}
                 </td>
                 <td className="px-4 py-3.5">
                   <button

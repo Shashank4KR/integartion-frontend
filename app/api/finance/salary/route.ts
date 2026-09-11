@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       request.headers.get("content-type") || "application/json";
     const authHeader = request.headers.get("authorization");
 
-    const response = await fetch(`${backendUrl}/finance/salary/process`, {
+    const response = await fetch(`${backendUrl}/finance/salary`, {
       method: "POST",
       headers: {
         "Content-Type": contentType,

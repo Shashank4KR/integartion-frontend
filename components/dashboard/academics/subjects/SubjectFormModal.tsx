@@ -12,16 +12,19 @@ export default function SubjectFormModal({
   submitting,
   formError,
   editingItem,
+  departments = [],
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: { subject_code: string; subject_name: string }) => Promise<void>;
+  onSubmit: (payload: { subject_code: string; subject_name: string; department_id?: string | null }) => Promise<void>;
   submitting: boolean;
   formError: string | null;
   editingItem: SubjectResponse | null;
+  departments?: { id: string; department_name: string }[];
 }) {
   const [subject_code, setSubjectCode] = useState("");
   const [subject_name, setSubjectName] = useState("");
+  const [department_id, setDepartmentId] = useState("");
   const [touched, setTouched] = useState({ code: false, name: false });
 
   useEffect(() => {
@@ -30,9 +33,11 @@ export default function SubjectFormModal({
     if (editingItem) {
       setSubjectCode(editingItem.subject_code);
       setSubjectName(editingItem.subject_name);
+      setDepartmentId(editingItem.department_id ?? "");
     } else {
       setSubjectCode("");
       setSubjectName("");
+      setDepartmentId("");
     }
   }, [open, editingItem]);
 
@@ -40,7 +45,11 @@ export default function SubjectFormModal({
     e.preventDefault();
     setTouched({ code: true, name: true });
     if (!subject_code.trim() || !subject_name.trim()) return;
-    await onSubmit({ subject_code: subject_code.trim(), subject_name: subject_name.trim() });
+    await onSubmit({
+      subject_code: subject_code.trim(),
+      subject_name: subject_name.trim(),
+      department_id: department_id || null,
+    });
   };
 
   const codeError = touched.code && !subject_code.trim();
@@ -119,6 +128,24 @@ export default function SubjectFormModal({
           {nameError && (
             <p id="name-error" className="text-xs text-red-500 mt-1">Subject Name is required.</p>
           )}
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+            Department
+          </label>
+          <select
+            value={department_id}
+            onChange={(e) => setDepartmentId(e.target.value)}
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
+          >
+            <option value="">Select Department (Optional)</option>
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.id}>
+                {dept.department_name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">

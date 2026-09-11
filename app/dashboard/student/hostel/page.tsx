@@ -41,7 +41,20 @@ export default function StudentHostelPage() {
           return;
         }
 
-        const studentId = user.id;
+        let studentId = user.id;
+        try {
+          const profileRes = await fetch("/api/students/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+            if (profile?.id) {
+              studentId = profile.id;
+            }
+          }
+        } catch {
+          // Fall back to user.id if profile lookup fails
+        }
 
         const [allocData, leaveData, complaintData, noticeData, feeData, statsData] = await Promise.all([
           getStudentHostelAllocation(token, studentId).catch(() => null),

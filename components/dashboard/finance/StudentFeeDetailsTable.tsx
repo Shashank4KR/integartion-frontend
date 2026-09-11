@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Eye, FileText, MoreVertical } from "lucide-react";
 import StudentFeeDetailsDialog from "./StudentFeeDetailsDialog";
 import FeeInvoiceDialog from "./FeeInvoiceDialog";
@@ -20,6 +20,10 @@ export default function StudentFeeDetailsTable({ searchQuery = "", data, loading
   const [invoiceStudent, setInvoiceStudent] = useState<StudentFeeRow | null>(null);
   const [actionMenu, setActionMenu] = useState<string | null>(null);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const rows = data ?? [];
 
   const filteredRows = rows.filter((row) => {
@@ -31,8 +35,9 @@ export default function StudentFeeDetailsTable({ searchQuery = "", data, loading
     );
   });
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / ITEMS_PER_PAGE));
-  const paginatedRows = filteredRows.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedRows = filteredRows.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -141,12 +146,12 @@ export default function StudentFeeDetailsTable({ searchQuery = "", data, loading
       {filteredRows.length > 0 && (
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
           <span className="text-xs text-slate-500">
-            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredRows.length)} of {filteredRows.length} records
+            Showing {(safeCurrentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeCurrentPage * ITEMS_PER_PAGE, filteredRows.length)} of {filteredRows.length} records
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              disabled={safeCurrentPage === 1}
               className="p-1 rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition"
               aria-label="Previous page"
             >
@@ -157,7 +162,7 @@ export default function StudentFeeDetailsTable({ searchQuery = "", data, loading
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`w-8 h-8 rounded-md text-xs font-medium transition ${
-                  currentPage === page
+                  safeCurrentPage === page
                     ? "bg-[#7c3aed] text-white"
                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                 }`}
@@ -167,7 +172,7 @@ export default function StudentFeeDetailsTable({ searchQuery = "", data, loading
             ))}
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              disabled={safeCurrentPage === totalPages}
               className="p-1 rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition"
               aria-label="Next page"
             >

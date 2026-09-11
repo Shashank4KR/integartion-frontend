@@ -31,6 +31,7 @@ export default function SubjectViewDrawer({
   onRemoveClassAssignment,
   onAssignTeachers,
   onRemoveTeacherAssignment,
+  departments = [],
 }: {
   open: boolean;
   onClose: () => void;
@@ -45,6 +46,7 @@ export default function SubjectViewDrawer({
   onRemoveClassAssignment: (mappingId: string) => Promise<void>;
   onAssignTeachers: (payload: { teacher_id: string; class_id: string }[]) => Promise<void>;
   onRemoveTeacherAssignment: (mappingId: string) => Promise<void>;
+  departments?: { id: string; department_name: string }[];
 }) {
   const [tab, setTab] = useState<Tab>("overview");
 
@@ -109,7 +111,11 @@ export default function SubjectViewDrawer({
               <InfoField label="Subject Code" value={item.subject_code} />
               <InfoField label="Subject Name" value={item.subject_name} />
               <InfoField label="Subject Type" value="—" unavailable tooltip="Subject Type is not available in the current backend." />
-              <InfoField label="Department" value="—" unavailable tooltip="Subjects are not linked to Departments in the current backend." />
+              {departments.find((d) => d.id === item.department_id) ? (
+                <InfoField label="Department" value={departments.find((d) => d.id === item.department_id)!.department_name} />
+              ) : (
+                <InfoField label="Department" value="—" unavailable tooltip="No department assigned to this subject." />
+              )}
               <InfoField label="Credits / Periods" value="—" unavailable tooltip="Credits / Periods are not available in the current backend." />
               <InfoField label="Status" value="—" unavailable tooltip="Status is not available in the current backend." />
               <InfoField label="Assigned Classes" value={String(assignedClasses.length)} />

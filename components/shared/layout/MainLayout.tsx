@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
-import { clearAuth, getStoredUser, getToken } from "@/lib/auth";
+import { clearAuth, logout, getStoredUser, getToken } from "@/lib/auth";
 
 interface MainLayoutProps {
   sidebar: ReactNode;
@@ -26,8 +26,7 @@ export default function MainLayout({
     const token = getToken();
     const currentUser = getStoredUser();
     if (!token || !currentUser) {
-      clearAuth();
-      router.replace("/login");
+      logout("/login");
       return;
     }
 

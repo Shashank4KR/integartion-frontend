@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearAuth, getStoredUser, getToken, getStoredAvatar, subscribeAvatarChange, saveUser, saveAvatar } from "@/lib/auth";
+import { clearAuth, logout, getStoredUser, getToken, getStoredAvatar, subscribeAvatarChange, saveUser, saveAvatar } from "@/lib/auth";
 import { getCurrentUser } from "@/lib/services/authService";
 import { updateProfile } from "@/lib/services/settingsService";
 import { getInitials } from "@/lib/utils/formatters";
@@ -296,8 +296,8 @@ export default function DashboardHeader({
   };
 
   const handleLogout = () => {
-    clearAuth();
-    router.replace("/login");
+    setProfileOpen(false);
+    logout("/login");
   };
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);

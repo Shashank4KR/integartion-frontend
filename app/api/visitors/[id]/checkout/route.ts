@@ -17,14 +17,16 @@ export async function POST(
     const { id } = await params;
     const authHeader = request.headers.get("authorization");
 
+    const now = new Date().toISOString();
     const response = await fetch(
-      `${backendUrl}/visitors/${encodeURIComponent(id)}/checkout`,
+      `${backendUrl}/hostel-visitors/${encodeURIComponent(id)}`,
       {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           ...(authHeader ? { Authorization: authHeader } : {}),
         },
+        body: JSON.stringify({ check_out_time: now }),
       },
     );
 

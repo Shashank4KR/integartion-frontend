@@ -18,7 +18,7 @@ export async function GET(
     const authHeader = request.headers.get("authorization");
 
     const response = await fetch(
-      `${backendUrl}/visitors/${encodeURIComponent(id)}`,
+      `${backendUrl}/hostel-visitors/${encodeURIComponent(id)}`,
       {
         method: "GET",
         headers: { ...(authHeader ? { Authorization: authHeader } : {}) },
@@ -60,7 +60,7 @@ export async function DELETE(
     const authHeader = request.headers.get("authorization");
 
     const response = await fetch(
-      `${backendUrl}/visitors/${encodeURIComponent(id)}`,
+      `${backendUrl}/hostel-visitors/${encodeURIComponent(id)}`,
       {
         method: "DELETE",
         headers: { ...(authHeader ? { Authorization: authHeader } : {}) },

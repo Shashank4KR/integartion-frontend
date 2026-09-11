@@ -63,14 +63,17 @@ const groups: SettingsGroup[] = [
 
 export default function SettingsPage({ currentRole }: { currentRole: SchoolRole }) {
   const router = useRouter();
-  const [user, setUser] = useState<SettingsUser | null>(() => {
-    const stored = getStoredUser();
-    return stored ? (stored as SettingsUser) : null;
-  });
-  const [loadingUser, setLoadingUser] = useState(() => !getStoredUser());
+  const [user, setUser] = useState<SettingsUser | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
     let active = true;
+    const stored = getStoredUser();
+    if (stored) {
+      setUser(stored as SettingsUser);
+      setLoadingUser(false);
+    }
+
     const loadIdentity = async (isBackground = false) => {
       const token = getToken();
       if (!token) {

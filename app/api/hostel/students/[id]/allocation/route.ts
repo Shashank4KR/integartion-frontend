@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const backendUrl = process.env.BACKEND_API_URL;
 
   if (!backendUrl) {
     return NextResponse.json(
       { detail: "Server configuration error: BACKEND_API_URL is not set." },
-      { status: 500 },
+      { status: 500 }
     );
   }
 
   try {
+    const { id } = await params;
     const authHeader = request.headers.get("authorization");
-    const url = new URL(request.url);
-    const query = url.search;
 
-    const response = await fetch(`${backendUrl}/hostel-allocations${query}`, {
+    const response = await fetch(`${backendUrl}/students/${id}/hostel`, {
       method: "GET",
       headers: {
         ...(authHeader ? { Authorization: authHeader } : {}),
@@ -34,7 +36,7 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.json(
       { detail: "Backend is unreachable. Please try again later." },
-      { status: 502 },
+      { status: 502 }
     );
   }
 }

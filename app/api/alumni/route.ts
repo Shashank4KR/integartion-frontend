@@ -25,6 +25,10 @@ export async function GET(request: Request) {
       headers,
     });
 
+    if (response.status === 404) {
+      return NextResponse.json([]);
+    }
+
     const responseBody = await response.text();
 
     return new NextResponse(responseBody, {

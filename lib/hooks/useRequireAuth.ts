@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearAuth, getDashboardPathForRole, getStoredUser, getToken } from "@/lib/auth";
+import { clearAuth, logout, getDashboardPathForRole, getStoredUser, getToken } from "@/lib/auth";
 
 export interface AuthState {
   token: string | null;
@@ -27,15 +27,7 @@ export function useRequireAuth(allowedRoles?: string[]): AuthState {
     const user = getStoredUser();
 
     if (!token || !user) {
-      clearAuth();
-      setAuthState({
-        token: null,
-        user: null,
-        roleName: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
-      router.replace("/login");
+      logout("/login");
       return;
     }
 

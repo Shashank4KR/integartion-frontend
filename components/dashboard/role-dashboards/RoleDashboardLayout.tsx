@@ -7,7 +7,7 @@ import Header from "@/components/shared/layout/Header";
 import RoleSidebar from "@/components/dashboard/role-dashboards/RoleSidebar";
 import MaintenanceScreen from "@/components/shared/MaintenanceScreen";
 import type { RoleConfig } from "@/lib/dashboard/role-dashboards/types";
-import { clearAuth, getDashboardPathForRole, getStoredUser, getToken } from "@/lib/auth";
+import { clearAuth, logout, getDashboardPathForRole, getStoredUser, getToken } from "@/lib/auth";
 
 interface RoleDashboardLayoutProps {
   config: RoleConfig;
@@ -28,8 +28,7 @@ export default function RoleDashboardLayout({
     const currentUser = getStoredUser();
 
     if (!token || !currentUser) {
-      clearAuth();
-      router.replace("/login");
+      logout("/login");
       return;
     }
 

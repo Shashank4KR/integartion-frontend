@@ -232,7 +232,7 @@ export async function getStudentHostelLeaveRequests(
   token: string,
   studentId: string,
 ): Promise<any[]> {
-  const response = await fetch(`${BASE}/leave-requests?studentId=${studentId}`, {
+  const response = await fetch(`/api/students/${studentId}/leave-requests`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
@@ -246,7 +246,7 @@ export async function getStudentHostelComplaints(
   token: string,
   studentId: string,
 ): Promise<any[]> {
-  const response = await fetch(`${BASE}/complaints?studentId=${studentId}`, {
+  const response = await fetch(`/api/students/${studentId}/complaints`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
@@ -272,15 +272,15 @@ export async function getStudentHostelNotices(
 export async function getStudentHostelFees(
   token: string,
   studentId: string,
-): Promise<any> {
-  const response = await fetch(`${BASE}/fee-summary?studentId=${studentId}`, {
+): Promise<any[]> {
+  const response = await fetch(`/api/students/${studentId}/hostel-fees`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch hostel fees.");
   }
-  return (await response.json()) as any;
+  return (await response.json()) as any[];
 }
 
 export async function getHostelDashboardStats(
@@ -535,4 +535,45 @@ export async function listHostelBeds(
   }
   return (await response.json()) as any[];
 }
+
+export async function checkoutHostelStudent(
+  token: string,
+  allocationId: string,
+  checkoutDate: string,
+): Promise<any> {
+  const response = await fetch(`${BASE}/allocations/${allocationId}/checkout`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ checkout_date: checkoutDate }),
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to checkout student.");
+  }
+  return (await response.json()) as any;
+}
+
+export async function transferHostelStudent(
+  token: string,
+  allocationId: string,
+  payload: { bed_id: string; check_in_date: string },
+): Promise<any> {
+  const response = await fetch(`${BASE}/allocations/${allocationId}/transfer`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to transfer student.");
+  }
+  return (await response.json()) as any;
+}
+
 

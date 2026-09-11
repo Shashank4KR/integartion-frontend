@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredUser, getStoredRoleId, clearAuth, getToken } from "@/lib/auth";
+import { getStoredUser, getStoredRoleId, clearAuth, logout, getToken } from "@/lib/auth";
 import { getCurrentStudent } from "@/lib/services/studentService";
 
 export default function StudentLayout({
@@ -21,8 +21,7 @@ export default function StudentLayout({
 
     // Check authentication
     if (!user || !token || !roleId) {
-      clearAuth();
-      router.replace("/login");
+      logout("/login");
       return;
     }
 
@@ -56,13 +55,11 @@ export default function StudentLayout({
           localStorage.setItem("edtech_student", JSON.stringify(student));
           setAuthorized(true);
         } else {
-          clearAuth();
-          router.replace("/login");
+          logout("/login");
         }
       } catch (err) {
         console.error("Failed to load student details:", err);
-        clearAuth();
-        router.replace("/login");
+        logout("/login");
       } finally {
         setLoading(false);
       }

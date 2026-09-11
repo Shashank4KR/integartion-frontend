@@ -18,7 +18,9 @@ function setCookie(name: string, value: string, days = 7): void {
 
 function deleteCookie(name: string): void {
   if (!isBrowser()) return;
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; max-age=0; SameSite=Lax`;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; max-age=0;`;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; max-age=0;`;
 }
 
 export function saveToken(token: string): void {
@@ -164,12 +166,42 @@ export function subscribeAvatarChange(callback: (avatar: string | null) => void)
 
 export function clearAuth(): void {
   if (!isBrowser()) return;
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-  localStorage.removeItem(USER_STORAGE_KEY);
-  localStorage.removeItem("edtech_student");
-  localStorage.removeItem(AVATAR_STORAGE_KEY);
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem("edtech_student");
+    localStorage.removeItem(AVATAR_STORAGE_KEY);
+    localStorage.removeItem("edtech_notifications_viewed_at");
+    localStorage.removeItem("edtech_messages_viewed_at");
+    sessionStorage.clear();
+  } catch (e) {
+    console.error("Failed to clear local storage during logout:", e);
+  }
   deleteCookie(TOKEN_STORAGE_KEY);
   deleteCookie(ROLE_COOKIE_KEY);
+}
+
+export function logout(redirectPath = "/login"): void {
+  if (!isBrowser()) return;
+  const token = getToken();
+
+  // Fire-and-forget notification to backend if available
+  if (token) {
+    try {
+      fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).catch(() => {});
+    } catch {
+      // Ignore network errors during logout
+    }
+  }
+
+  clearAuth();
+  // Bypass Next.js App Router client cache and force a complete browser reload
+  window.location.replace(redirectPath);
 }
 
 export const ROLE_DASHBOARD_PATHS: Record<string, string> = {

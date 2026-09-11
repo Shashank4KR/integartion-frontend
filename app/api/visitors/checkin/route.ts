@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       request.headers.get("content-type") || "application/json";
     const authHeader = request.headers.get("authorization");
 
-    const response = await fetch(`${backendUrl}/visitors/checkin`, {
+    const response = await fetch(`${backendUrl}/hostel-visitors`, {
       method: "POST",
       headers: {
         "Content-Type": contentType,

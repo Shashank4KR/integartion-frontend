@@ -8,9 +8,16 @@ import FeeInstallmentsTab from "./FeeInstallmentsTab";
 import FeeTypesTab from "./FeeTypesTab";
 import DiscountsConcessionsTab from "./DiscountsConcessionsTab";
 
+import type { StudentFeeRow } from "@/lib/fixtures/fees-management-reference-fixture";
+
 type TabKey = "student" | "installments" | "types" | "discounts";
 
-export default function FeesDetailsTabs() {
+interface FeesDetailsTabsProps {
+  data?: StudentFeeRow[];
+  loading?: boolean;
+}
+
+export default function FeesDetailsTabs({ data, loading }: FeesDetailsTabsProps = {}) {
   const [activeTab, setActiveTab] = useState<TabKey>("student");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -60,7 +67,13 @@ export default function FeesDetailsTabs() {
       </div>
 
       <div className="flex-1">
-        {activeTab === "student" && <StudentFeeDetailsTable searchQuery={searchQuery} />}
+        {activeTab === "student" && (
+          <StudentFeeDetailsTable
+            searchQuery={searchQuery}
+            data={data}
+            loading={loading}
+          />
+        )}
         {activeTab === "installments" && <FeeInstallmentsTab />}
         {activeTab === "types" && <FeeTypesTab />}
         {activeTab === "discounts" && <DiscountsConcessionsTab />}
