@@ -103,7 +103,17 @@ export default function ExaminationsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {rows.map((row) => (
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
+                  <div className="flex flex-col items-center justify-center">
+                    <p className="font-medium text-slate-700">No examinations found</p>
+                    <p className="text-xs text-slate-400 mt-1">Create an examination to get started.</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50/50 transition">
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-purple-50 text-purple-700 border-purple-100">
@@ -164,7 +174,8 @@ export default function ExaminationsTable({
                   </div>
                 </td>
               </tr>
-            ))}
+            ))
+          )}
           </tbody>
         </table>
       </div>

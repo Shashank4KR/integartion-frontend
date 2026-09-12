@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { CalendarIcon, Search, X } from "lucide-react";
+import { CalendarIcon, Search, X, Filter } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 import DatePicker from "@/components/shared/DatePicker";
 import type { AttendanceStatus } from "@/types/entities/attendance";
@@ -109,9 +109,7 @@ export default function AttendanceFilters({
               value={viewType}
               options={["Daily View", "Weekly View", "Monthly View"]}
               onChange={onViewTypeChange}
-              disabled
             />
-            <p className="mt-1 text-[10px] font-medium text-slate-400">Coming soon</p>
           </div>
           <div className="flex-1 min-w-[140px]">
             <Dropdown
@@ -128,20 +126,18 @@ export default function AttendanceFilters({
               onClick={onSearch}
               className="inline-flex items-center gap-2 rounded-lg border border-[#7c3aed] bg-white px-4 py-2 text-sm font-semibold text-[#7c3aed] hover:bg-purple-50 transition"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                <path d="m21 21-4.35-4.35" />
               </svg>
               Search
             </button>
             <button
               type="button"
-              onClick={() => { onFilter(); setFilterPanelOpen((p) => !p); }}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#7c3aed] bg-white px-4 py-2 text-sm font-semibold text-[#7c3aed] hover:bg-purple-50 transition"
+              onClick={() => setFilterPanelOpen((open) => !open)}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-              </svg>
+              <Filter className="h-4 w-4" />
               Filters
             </button>
           </div>
@@ -158,17 +154,18 @@ export default function AttendanceFilters({
           >
             <X className="h-4 w-4" />
           </button>
-          <p className="text-xs font-semibold text-slate-700 mb-3">Additional Filters</p>
-          <div className="flex flex-wrap gap-3">
+          <p className="text-xs font-semibold text-slate-700 mb-3">Status Filter</p>
+          <div className="flex flex-wrap gap-2">
             {[
-              { label: "Present Only", status: "PRESENT" as AttendanceStatus },
-              { label: "Absent Only", status: "ABSENT" as AttendanceStatus },
-              { label: "Late Only", status: "LATE" as AttendanceStatus },
-            ].map(({ label, status }) => (
+              { status: "ALL", label: "All Status" },
+              { status: "PRESENT", label: "Present Only" },
+              { status: "ABSENT", label: "Absent Only" },
+              { status: "LATE", label: "Late Only" },
+            ].map(({ status, label }) => (
               <button
-                key={label}
+                key={status}
                 type="button"
-                onClick={() => onStatusFilter(status)}
+                onClick={() => onStatusFilter(status as AttendanceStatus)}
                 className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
                   statusFilter === status
                     ? "border-[#7c3aed] bg-purple-50 text-[#7c3aed]"
@@ -180,11 +177,14 @@ export default function AttendanceFilters({
             ))}
             <button
               type="button"
-              disabled
-              title="Coming soon"
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 opacity-60 cursor-not-allowed transition"
+              onClick={() => onStatusFilter("LOW" as any)}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                (statusFilter as string) === "LOW"
+                  ? "border-[#7c3aed] bg-purple-50 text-[#7c3aed]"
+                  : "border-slate-200 text-slate-600 hover:bg-purple-50 hover:text-[#7c3aed] hover:border-[#7c3aed]"
+              }`}
             >
-              Low Attendance
+              Low Attendance (&lt;75%)
             </button>
           </div>
           <div className="flex items-center justify-end gap-2 mt-4">

@@ -23,6 +23,7 @@ import {
   Building2,
   UtensilsCrossed,
   Wrench,
+  UserCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -120,6 +121,11 @@ export const MENU_ITEMS: MenuItemType[] = [
         label: "Maintenance Management",
         icon: Wrench,
         href: "/dashboard/admin/hostel/maintenance",
+      },
+      {
+        label: "Visitors Log",
+        icon: UserCheck,
+        href: "/dashboard/admin/hostel/visitors",
       },
     ],
   },

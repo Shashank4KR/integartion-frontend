@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   AlertCircle,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Download,
   Eye,
@@ -11,6 +13,7 @@ import {
   Laptop,
   Loader2,
   RefreshCw,
+  Search,
   ShieldCheck,
   Smartphone,
   Upload,
@@ -1640,8 +1643,15 @@ export function AuditActivityLogs(_: SectionProps) {
     }>
   >([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+
+  // Filters & Pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [actionFilter, setActionFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     const token = getToken();
@@ -1650,25 +1660,38 @@ export function AuditActivityLogs(_: SectionProps) {
       return;
     }
 
+    setFetchError(null);
     getAuditLogs(token)
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setLogs(data);
         } else {
-          setLogs([
-            {
-              id: "1",
-              activity: "System Initialized",
-              details: "Default system settings and audit logging initialized",
-              timestamp: new Date().toISOString(),
-              user: { username: "Admin" },
-            },
-          ]);
+          setLogs([]);
         }
       })
-      .catch(() => {})
+      .catch((err: any) => {
+        setFetchError(err?.message || "Failed to load audit logs.");
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const uniqueActions = Array.from(new Set(logs.map((l) => l.activity))).filter(Boolean);
+
+  const filteredLogs = logs.filter((log) => {
+    const query = searchQuery.toLowerCase();
+    const matchesSearch =
+      !searchQuery ||
+      log.activity.toLowerCase().includes(query) ||
+      (log.details && log.details.toLowerCase().includes(query)) ||
+      (log.user?.username && log.user.username.toLowerCase().includes(query));
+
+    const matchesAction = actionFilter === "ALL" || log.activity === actionFilter;
+
+    return matchesSearch && matchesAction;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  const paginatedLogs = filteredLogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleExport = async () => {
     const token = getToken();
@@ -1688,6 +1711,12 @@ export function AuditActivityLogs(_: SectionProps) {
     }
   };
 
+  // Safe details sanitizer to prevent leaking tokens or internal credentials
+  const sanitizeDetails = (details?: string | null) => {
+    if (!details) return "";
+    return details.replace(/(?:password|token|secret|key)=([^&;\s]+)/gi, "$1=[PROTECTED]");
+  };
+
   return (
     <Card
       title="Audit & activity logs"
@@ -1698,13 +1727,58 @@ export function AuditActivityLogs(_: SectionProps) {
         This audit trail is append-only and cryptographically bound. Records cannot be edited or deleted.
       </div>
 
+      {/* Filter and Search Bar */}
+      <div className="mb-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-72">
+          <input
+            type="text"
+            placeholder="Search action, user, or details..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <select
+            value={actionFilter}
+            onChange={(e) => {
+              setActionFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-700 bg-white"
+          >
+            <option value="ALL">All Actions ({logs.length})</option>
+            {uniqueActions.map((act) => (
+              <option key={act} value={act}>
+                {act}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {fetchError && (
+        <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 px-3.5 py-2 text-xs text-rose-700">
+          {fetchError}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-6 text-xs text-slate-500">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Fetching activity logs…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-violet-600" /> Fetching activity logs…
+        </div>
+      ) : paginatedLogs.length === 0 ? (
+        <div className="py-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-lg">
+          No audit activity records found.
         </div>
       ) : (
         <div className="divide-y divide-slate-100">
-          {logs.slice(0, 15).map((log, idx) => (
+          {paginatedLogs.map((log, idx) => (
             <div className="flex items-center gap-3 py-3.5" key={log.id || idx}>
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violet-100 text-violet-700">
                 <UserRound className="h-4 w-4" />
@@ -1712,7 +1786,7 @@ export function AuditActivityLogs(_: SectionProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-900">{log.activity}</p>
                 <p className="text-xs text-slate-500">
-                  {log.details ? `${log.details} · ` : ""}by{" "}
+                  {log.details ? `${sanitizeDetails(log.details)} · ` : ""}by{" "}
                   <span className="font-medium text-slate-700">
                     {log.user?.username || "System Administrator"}
                   </span>
@@ -1726,6 +1800,37 @@ export function AuditActivityLogs(_: SectionProps) {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && filteredLogs.length > pageSize && (
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+          <span>
+            Showing {(currentPage - 1) * pageSize + 1} to{" "}
+            {Math.min(currentPage * pageSize, filteredLogs.length)} of {filteredLogs.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+              aria-label="Previous Page"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+              aria-label="Next Page"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

@@ -439,7 +439,7 @@ export default function AttendancePage() {
         })
       : Array.from(grouped.entries());
 
-    return filteredEntries.map(([studentId, records]) => {
+    const mappedRows = filteredEntries.map(([studentId, records]) => {
       const student = studentMap.get(studentId);
       const subjectStatuses: Record<string, "present" | "absent" | "late" | null> = {};
       let presentCount = 0;
@@ -476,7 +476,17 @@ export default function AttendancePage() {
         dailyStatus: dailyStatusLabel,
       };
     });
-  }, [attendanceRecords, studentMap, searchTerm]);
+
+    if (statusFilter && (statusFilter as string) !== "ALL") {
+      if ((statusFilter as string) === "LOW") {
+        return mappedRows.filter((r) => r.overall < 75);
+      }
+      const target = (statusFilter as string).toLowerCase();
+      return mappedRows.filter((r) => r.dailyStatus === target);
+    }
+
+    return mappedRows;
+  }, [attendanceRecords, studentMap, searchTerm, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(tableRows.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -488,6 +498,27 @@ export default function AttendancePage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedClassId, selectedDateISO, selectedSubjectId, statusFilter, searchTerm]);
+
+  const attendanceOverviewStats = useMemo(() => {
+    if (!attendanceRecords || attendanceRecords.length === 0) {
+      return { average: null, present: null, absent: null, late: null };
+    }
+    const total = attendanceRecords.length;
+    const presentCount = attendanceRecords.filter((r) => r.status === "PRESENT").length;
+    const absentCount = attendanceRecords.filter((r) => r.status === "ABSENT").length;
+    const lateCount = attendanceRecords.filter((r) => r.status === "LATE").length;
+
+    const presentPct = Math.round((presentCount / total) * 100);
+    const absentPct = Math.round((absentCount / total) * 100);
+    const latePct = Math.round((lateCount / total) * 100);
+
+    return {
+      average: presentPct,
+      present: { percentage: presentPct, days: presentCount },
+      absent: { percentage: absentPct, days: absentCount },
+      late: { percentage: latePct, days: lateCount },
+    };
+  }, [attendanceRecords]);
 
   const summaryCards = useMemo(() => {
     const baseCards: { title: string; value: string; footer: string; iconBg: string; iconColor: string; sparkline: number[]; sparkColor: string }[] = [
@@ -752,7 +783,7 @@ export default function AttendancePage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
-            <AttendanceOverviewChart average={null} present={null} absent={null} late={null} />
+            <AttendanceOverviewChart {...attendanceOverviewStats} />
             <AttendanceTrendChart comingSoon />
             <TopPerformingClasses comingSoon />
             <AttendanceQuickActions onAction={handleQuickActionClick} />

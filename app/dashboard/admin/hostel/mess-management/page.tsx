@@ -83,15 +83,20 @@ export default function MessManagementPage() {
     }
 
     try {
+      const mealTypeLower = payload.mealType.toLowerCase();
       await createMenu(token, {
         menu_date: payload.date,
         meal_type: payload.mealType,
         items: payload.menuItems,
+        breakfast: mealTypeLower === "breakfast" ? payload.menuItems : undefined,
+        lunch: mealTypeLower === "lunch" ? payload.menuItems : undefined,
+        dinner: mealTypeLower === "dinner" ? payload.menuItems : undefined,
         start_time: payload.startTime || undefined,
         end_time: payload.endTime || undefined,
         notes: payload.notes || undefined,
       });
       await loadData();
+      setIsAddMenuOpen(false);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to create menu.");
     }
@@ -176,7 +181,7 @@ export default function MessManagementPage() {
       else daysMap[dateStr].breakfast = items;
     });
 
-    return { days: Object.values(daysMap) };
+    return { title: "Current Schedule", days: Object.values(daysMap) };
   }, [menus]);
 
   return (
@@ -230,7 +235,7 @@ export default function MessManagementPage() {
                           <tr key={row.id} className="border-b border-slate-50">
                             <td className="px-4 py-3 font-medium text-slate-800">{row.menu_date ?? "-"}</td>
                             <td className="px-4 py-3 text-slate-600">{row.meal_type ?? "-"}</td>
-                            <td className="px-4 py-3 text-slate-600">{row.items ?? row.menu_items ?? "-"}</td>
+                            <td className="px-4 py-3 text-slate-600">{row.items ?? row.menu_items ?? row.breakfast ?? row.lunch ?? row.dinner ?? "-"}</td>
                           </tr>
                         ))}
                       </tbody>

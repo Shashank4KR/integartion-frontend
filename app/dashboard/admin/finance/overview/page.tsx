@@ -125,19 +125,63 @@ function buildBalanceCards(overview: Record<string, unknown> | undefined): Balan
     return overview.balanceCards as BalanceCard[];
   }
 
+  if (overview && typeof overview === "object") {
+    const bal = (overview.balance ?? (overview as any).data?.balance) as Record<string, unknown> | undefined;
+    if (bal && typeof bal === "object") {
+      return [
+        {
+          title: "Bank Balance",
+          value: formatCurrency(Number(bal.bank_balance ?? 0)),
+          subtitle: "Current active balance",
+          change: "",
+          isPositive: true,
+          chartData: [2, 3, 4, 3, 5],
+          color: "#10b981",
+        },
+        {
+          title: "Cash in Hand",
+          value: formatCurrency(Number(bal.cash_in_hand ?? 0)),
+          subtitle: "Petty cash pool",
+          change: "",
+          isPositive: true,
+          chartData: [1, 2, 2, 3, 3],
+          color: "#3b82f6",
+        },
+        {
+          title: "Total Assets",
+          value: formatCurrency(Number(bal.total_assets ?? 0)),
+          subtitle: "Invoiced & reserves",
+          change: "",
+          isPositive: true,
+          chartData: [5, 6, 7, 7, 8],
+          color: "#7c3aed",
+        },
+        {
+          title: "Total Liabilities",
+          value: formatCurrency(Number(bal.total_liabilities ?? 0)),
+          subtitle: "Expenses & salaries",
+          change: "",
+          isPositive: false,
+          chartData: [3, 2, 3, 2, 1],
+          color: "#ef4444",
+        },
+      ];
+    }
+  }
+
   return [];
 }
 
 function buildOutstandingSummary(overview: Record<string, unknown> | undefined): OutstandingSummary {
   if (overview && typeof overview === "object") {
     const candidate = overview as Record<string, unknown>;
-    if (candidate.outstandingSummary && typeof candidate.outstandingSummary === "object") {
-      const value = candidate.outstandingSummary as Record<string, unknown>;
+    const value = (candidate.outstandingSummary || candidate.outstanding_summary || (candidate as any).data?.outstanding_summary) as Record<string, unknown> | undefined;
+    if (value && typeof value === "object") {
       return {
-        totalStudents: Number(value.totalStudents ?? 0),
-        studentsWithOutstanding: Number(value.studentsWithOutstanding ?? 0),
-        outstandingPercentage: String(value.outstandingPercentage ?? "0%"),
-        totalOutstandingAmount: String(value.totalOutstandingAmount ?? "0"),
+        totalStudents: Number(value.totalStudents ?? value.total_students ?? 0),
+        studentsWithOutstanding: Number(value.studentsWithOutstanding ?? value.students_with_outstanding ?? 0),
+        outstandingPercentage: String(value.outstandingPercentage ?? value.outstanding_percentage ?? "0%"),
+        totalOutstandingAmount: String(value.totalOutstandingAmount ?? value.total_outstanding_amount ?? "0"),
       };
     }
   }

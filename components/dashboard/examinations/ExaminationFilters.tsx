@@ -80,13 +80,9 @@ export default function ExaminationFilters({
             <Dropdown
               label="Academic Year"
               value={academicYear}
-              options={academicYearDisabled ? [] : ["2025-26", "2024-25", "2023-24"]}
-              onChange={academicYearDisabled ? () => {} : onAcademicYearChange}
-              disabled={academicYearDisabled}
+              options={["2025-26", "2024-25", "2023-24"]}
+              onChange={onAcademicYearChange}
             />
-            {academicYearDisabled && (
-              <p className="text-[10px] text-slate-400 mt-1">Coming Soon</p>
-            )}
           </div>
           <div className="col-span-1">
             <Dropdown
@@ -116,13 +112,9 @@ export default function ExaminationFilters({
             <Dropdown
               label="Term"
               value={term}
-              options={termDisabled ? [] : ["Term 1", "Term 2", "Annual"]}
-              onChange={termDisabled ? () => {} : onTermChange}
-              disabled={termDisabled}
+              options={["Term 1", "Term 2", "Annual"]}
+              onChange={onTermChange}
             />
-            {termDisabled && (
-              <p className="text-[10px] text-slate-400 mt-1">Coming Soon</p>
-            )}
           </div>
           <div className="col-span-1">
             <Dropdown

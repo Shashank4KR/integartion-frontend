@@ -99,18 +99,62 @@ export default function FeesManagementPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const [overview, invoices, , , feeStructures, students] = await Promise.all([
+        const [overview, invoices, monthlyReport, yearlyReport, feeStructures, students] = await Promise.all([
           getFinanceOverview(token).catch(() => ({})),
           listInvoices(token).catch(() => []),
           getFinanceReport(token, "monthly-collection").catch(() => ({})),
-          getFinanceReport(token, "outstanding-fees").catch(() => ({})),
+          getFinanceReport(token, "yearly-collection").catch(() => ({})),
           listFeeStructures(token).catch(() => []),
           listStudents(token).catch(() => []),
         ]);
 
-        const revenue = Number(overview.total_revenue ?? overview.total_fee_collection ?? 0);
-        const outstanding = Number(overview.pending_fee_amount ?? overview.total_outstanding ?? 0);
-        const invoicesCount = Number(overview.unpaid_invoices ?? overview.invoice_count ?? invoices.length);
+        const invoiceList = Array.isArray(invoices) ? invoices : [];
+
+        // Aggregate live totals directly from the loaded invoices
+        const invTotalExpected = invoiceList.reduce(
+          (sum: number, i: any) => sum + Number(i.amount ?? 0),
+          0
+        );
+        const invTotalPaid = invoiceList.reduce(
+          (sum: number, i: any) => sum + Number(i.paid ?? i.amount_paid ?? 0),
+          0
+        );
+        const invTotalBalance = invoiceList.reduce((sum: number, i: any) => {
+          const total = Number(i.amount ?? 0);
+          const paid = Number(i.paid ?? i.amount_paid ?? 0);
+          return sum + Number(i.balance ?? Math.max(0, total - paid));
+        }, 0);
+
+        // Safely extract from overview (handles backend { summary: { fee_collected, outstanding, fee_expected } } structure)
+        const ovSummary = (overview && typeof overview === "object" && "summary" in overview)
+          ? (overview as any).summary
+          : (overview && typeof overview === "object" && "data" in overview && (overview as any).data?.summary)
+          ? (overview as any).data.summary
+          : overview || {};
+
+        const ovRevenue = Number(
+          ovSummary.fee_collected ??
+          overview.total_revenue ??
+          overview.total_fee_collection ??
+          0
+        );
+        const ovOutstanding = Number(
+          ovSummary.outstanding ??
+          overview.pending_fee_amount ??
+          overview.total_outstanding ??
+          0
+        );
+        const ovExpected = Number(
+          ovSummary.fee_expected ??
+          overview.total_invoiced ??
+          0
+        );
+
+        // Fall back to live invoice calculations when overview properties are not present
+        const revenue = ovRevenue > 0 ? ovRevenue : invTotalPaid;
+        const outstanding = ovOutstanding > 0 ? ovOutstanding : invTotalBalance;
+        const totalExpected = ovExpected > 0 ? ovExpected : (invTotalExpected > 0 ? invTotalExpected : revenue + outstanding);
+        const invoicesCount = Number(overview.unpaid_invoices ?? overview.invoice_count ?? invoiceList.length);
         const concessions = Number(overview.total_concessions ?? 0);
 
         setSummaryCards([
@@ -169,11 +213,65 @@ export default function FeesManagementPage() {
           Outstanding: formatCurrency(outstanding),
         });
 
+        // Collection Trend: 12 months array matching ["Apr", "May", ..., "Mar"]
+        const monthMap: Record<string, number> = {
+          Apr: 0, May: 1, Jun: 2, Jul: 3, Aug: 4, Sep: 5,
+          Oct: 6, Nov: 7, Dec: 8, Jan: 9, Feb: 10, Mar: 11,
+        };
+
+        const expectedTrend = new Array(12).fill(0);
+        const collectedTrend = new Array(12).fill(0);
+
+        const yearlyBreakdown = Array.isArray(yearlyReport?.monthly_breakdown)
+          ? yearlyReport.monthly_breakdown
+          : Array.isArray(yearlyReport?.data?.monthly_breakdown)
+          ? yearlyReport.data.monthly_breakdown
+          : [];
+
+        for (const item of yearlyBreakdown) {
+          if (item?.month && monthMap[item.month] !== undefined) {
+            collectedTrend[monthMap[item.month]] += Number(item.total ?? 0);
+          }
+        }
+
+        invoiceList.forEach((inv: any) => {
+          const dateStr = inv.invoice_date || inv.due_date || inv.created_at;
+          let mIndex = 5; // default Sep
+          if (dateStr) {
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+              const monthNum = d.getMonth() + 1;
+              mIndex = (monthNum + 8) % 12;
+            }
+          }
+          expectedTrend[mIndex] += Number(inv.amount ?? 0);
+          collectedTrend[mIndex] += Number(inv.paid ?? inv.amount_paid ?? 0);
+        });
+
+        if (collectedTrend.every((v) => v === 0) && revenue > 0) {
+          const curMonthIndex = (new Date().getMonth() + 8) % 12;
+          collectedTrend[curMonthIndex] = revenue;
+          expectedTrend[curMonthIndex] = totalExpected > 0 ? totalExpected : revenue;
+        }
+
+        setTrendExpected(expectedTrend);
+        setTrendCollected(collectedTrend);
+
         // Fee Due Overview - calculated directly from invoices
-        const invoiceList = Array.isArray(invoices) ? invoices : [];
+        const todayDateStr = new Date().toISOString().split("T")[0];
         const overdueAmount = invoiceList
-          .filter((i: any) => String(i.status ?? "").toUpperCase() === "OVERDUE")
-          .reduce((sum: number, i: any) => sum + Number(i.balance ?? i.amount ?? 0), 0);
+          .filter((i: any) => {
+            const rawStatus = String(i.status ?? "").toUpperCase();
+            const dueDate = i.due_date ? String(i.due_date).split("T")[0] : "";
+            const isUnpaid = Number(i.balance ?? Math.max(0, Number(i.amount ?? 0) - Number(i.paid ?? i.amount_paid ?? 0))) > 0;
+            return rawStatus === "OVERDUE" || (dueDate && dueDate < todayDateStr && isUnpaid);
+          })
+          .reduce((sum: number, i: any) => {
+            const total = Number(i.amount ?? 0);
+            const paid = Number(i.paid ?? i.amount_paid ?? 0);
+            return sum + Number(i.balance ?? Math.max(0, total - paid));
+          }, 0);
+
         const currentDueAmount = Math.max(0, outstanding - overdueAmount);
         const dueTotal = currentDueAmount + overdueAmount;
         const currentPct = dueTotal > 0 ? Number(((currentDueAmount / dueTotal) * 100).toFixed(1)) : 0;
@@ -437,6 +535,16 @@ export default function FeesManagementPage() {
     setDateRange("This Month");
   };
 
+  const filteredFeeRecords = studentFeeRecords.filter((r) => {
+    if (classGrade !== "All Classes" && !r.classGrade.toLowerCase().includes(classGrade.toLowerCase())) {
+      return false;
+    }
+    if (status !== "All Status" && r.status.toLowerCase() !== status.toLowerCase()) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
       <div className="p-6">
@@ -496,7 +604,7 @@ export default function FeesManagementPage() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2">
               <StudentFeeDetailsTable
-                data={studentFeeRecords}
+                data={filteredFeeRecords}
                 loading={isLoading}
               />
             </div>

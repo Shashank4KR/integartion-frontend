@@ -77,8 +77,8 @@ export async function updateProfile(
   });
 
   if (!response.ok) {
-    const data = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to update profile information.");
+    const data = (await response.json().catch(() => ({}))) as { detail?: string; message?: string };
+    throw new Error(data.message ?? data.detail ?? "Failed to update profile information.");
   }
 
   const updatedUser = (await response.json()) as UserResponse;
@@ -100,8 +100,8 @@ export async function changePassword(
   });
 
   if (!response.ok) {
-    const data = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(data.detail ?? "Failed to change password.");
+    const data = (await response.json().catch(() => ({}))) as { detail?: string; message?: string };
+    throw new Error(data.message ?? data.detail ?? "Failed to change password.");
   }
 
   return (await response.json()) as { message: string };

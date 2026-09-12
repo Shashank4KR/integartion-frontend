@@ -1,4 +1,4 @@
-﻿import { formatApiError } from "@/lib/services/apiError";
+import { formatApiError } from "@/lib/services/apiError";
 import type {
   AttendanceCreate,
   AttendanceListParams,
@@ -65,6 +65,7 @@ function buildQueryString(params: AttendanceListParams): string {
   if (params.start_date) searchParams.set("start_date", params.start_date);
   if (params.end_date) searchParams.set("end_date", params.end_date);
   if (params.status) searchParams.set("status", params.status);
+  if (params.academic_year) searchParams.set("academic_year", params.academic_year);
   const qs = searchParams.toString();
   return qs ? `?${qs}` : "";
 }
