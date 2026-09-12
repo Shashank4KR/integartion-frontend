@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -10,6 +11,10 @@ import FeesManagementFilters from "@/components/dashboard/finance/FeesManagement
 import FeesQuickActions from "@/components/dashboard/finance/FeesQuickActions";
 import AddFeeCollectionDialog from "@/components/dashboard/finance/AddFeeCollectionDialog";
 import FeesActionDialog from "@/components/dashboard/finance/FeesActionDialog";
+import GenerateInvoiceDialog from "@/components/dashboard/finance/invoices/GenerateInvoiceDialog";
+import SendRemindersDialog from "@/components/dashboard/finance/SendRemindersDialog";
+import FeeConcessionDialog from "@/components/dashboard/finance/FeeConcessionDialog";
+import AddInstallmentDialog from "@/components/dashboard/finance/AddInstallmentDialog";
 import FeesCollectionSummaryChart from "@/components/dashboard/finance/FeesCollectionSummaryChart";
 import CollectionTrendChart from "@/components/dashboard/finance/CollectionTrendChart";
 import FeeDueOverviewChart from "@/components/dashboard/finance/FeeDueOverviewChart";
@@ -41,19 +46,16 @@ interface SummaryCard {
 const formatCurrency = (value: number) =>
   `INR ${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-function EmptyPanel({ title }: { title: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white px-5 py-8 text-sm text-slate-600">
-      {title}
-    </div>
-  );
-}
-
 export default function FeesManagementPage() {
+  const router = useRouter();
   const [summaryCards, setSummaryCards] = useState<SummaryCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [generateInvoiceOpen, setGenerateInvoiceOpen] = useState(false);
+  const [sendRemindersOpen, setSendRemindersOpen] = useState(false);
+  const [concessionOpen, setConcessionOpen] = useState(false);
+  const [installmentOpen, setInstallmentOpen] = useState(false);
   const [actionDialog, setActionDialog] = useState<{ open: boolean; title: string; message: string }>({
     open: false,
     title: "",
@@ -97,7 +99,7 @@ export default function FeesManagementPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const [overview, invoices, monthlyReport, outstandingReport, feeStructures, students] = await Promise.all([
+        const [overview, invoices, , , feeStructures, students] = await Promise.all([
           getFinanceOverview(token).catch(() => ({})),
           listInvoices(token).catch(() => []),
           getFinanceReport(token, "monthly-collection").catch(() => ({})),
@@ -193,22 +195,22 @@ export default function FeesManagementPage() {
           const stud = studentMap.get(String(inv.student_id));
           const studentName = inv.student_name || (stud ? `${stud.first_name || ""} ${stud.last_name || ""}`.trim() : "Student");
           const rollNo = stud?.admission_number || stud?.roll_number || String(inv.student_id ?? `STU00${idx + 1}`);
-          const classGrade = stud?.class_name || stud?.grade || inv.class_grade || "General";
+          const classGradeVal = stud?.class_name || stud?.grade || inv.class_grade || "General";
           const totalFee = Number(inv.amount ?? 0);
           const paid = Number(inv.paid ?? inv.amount_paid ?? 0);
           const balance = Number(inv.balance ?? Math.max(0, totalFee - paid));
           const rawStatus = String(inv.status ?? "Pending").toUpperCase();
-          const status = rawStatus === "PAID" ? "Paid" : paid > 0 ? "Partial" : "Overdue";
+          const statusVal = rawStatus === "PAID" ? "Paid" : paid > 0 ? "Partial" : "Overdue";
 
           return {
             id: String(inv.id ?? idx),
             rollNo,
             studentName: studentName || "Student",
-            classGrade,
+            classGrade: classGradeVal,
             totalFee,
             paid,
             outstanding: balance,
-            status,
+            status: statusVal,
             dueDate: String(inv.due_date ?? "N/A"),
           };
         });
@@ -298,6 +300,38 @@ export default function FeesManagementPage() {
     void loadSummary();
   }, []);
 
+  const exportFeesReportCSV = (records: StudentFeeRow[]) => {
+    if (!records || records.length === 0) {
+      showToast("No fee records available to export.");
+      return;
+    }
+    const headers = ["Roll No", "Student Name", "Class/Grade", "Total Fee", "Paid", "Outstanding", "Status", "Due Date"];
+    const csvContent = [
+      headers.join(","),
+      ...records.map((r) => [
+        `"${r.rollNo || ""}"`,
+        `"${r.studentName || ""}"`,
+        `"${r.classGrade || ""}"`,
+        `"${r.totalFee || 0}"`,
+        `"${r.paid || 0}"`,
+        `"${r.outstanding || 0}"`,
+        `"${r.status || ""}"`,
+        `"${r.dueDate || ""}"`,
+      ].join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `fees-management-report-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast("Fee report exported successfully!");
+  };
+
   const handleAddCollection = () => {
     setAddDialogOpen(true);
   };
@@ -320,19 +354,74 @@ export default function FeesManagementPage() {
   };
 
   const handleMoreOptions = () => {
-    setActionDialog({
-      open: true,
-      title: "More Options",
-      message: "Additional fees management options will be available here.",
-    });
+    router.push("/dashboard/admin/finance/overview");
   };
 
   const handleQuickAction = (action: string) => {
-    setActionDialog({
-      open: true,
-      title: action,
-      message: `The "${action}" workflow is ready.`,
-    });
+    switch (action) {
+      case "Collect Fee":
+        setAddDialogOpen(true);
+        break;
+      case "Add Installment":
+        setInstallmentOpen(true);
+        break;
+      case "Generate Invoice":
+        setGenerateInvoiceOpen(true);
+        break;
+      case "Fee Reminder":
+        setSendRemindersOpen(true);
+        break;
+      case "Fee Concession":
+        setConcessionOpen(true);
+        break;
+      case "Export Report":
+        exportFeesReportCSV(studentFeeRecords);
+        break;
+      case "Fee Ledger":
+        router.push("/dashboard/admin/finance/transactions");
+        break;
+      case "Fee Settings":
+        router.push("/dashboard/admin/settings");
+        break;
+      default:
+        setActionDialog({
+          open: true,
+          title: action,
+          message: `The "${action}" workflow is ready.`,
+        });
+        break;
+    }
+  };
+
+  const handleSaveConcession = (data: {
+    studentName: string;
+    classGrade: string;
+    category: string;
+    discountType: "percentage" | "flat";
+    discountValue: number;
+    reason: string;
+  }) => {
+    showToast(`Concession of ${data.discountType === "percentage" ? `${data.discountValue}%` : `₹${data.discountValue}`} applied for ${data.studentName}`);
+  };
+
+  const handleSaveInstallment = (data: {
+    title: string;
+    academicYear: string;
+    dueDate: string;
+    percentage: number;
+    amount: number;
+    lateFeePerDay: number;
+  }) => {
+    showToast(`Installment plan "${data.title}" created successfully`);
+  };
+
+  const handleSendFeeReminders = (data: { audience: string; channels: string[]; message: string }) => {
+    showToast(`Fee reminders broadcasted via ${data.channels.join(", ")} to ${data.audience}`);
+  };
+
+  const handleInvoiceSaved = (invoice: any) => {
+    setGenerateInvoiceOpen(false);
+    showToast(`Invoice ${invoice?.invoiceNumber ?? ""} generated successfully!`);
   };
 
   const handleFilter = () => {
@@ -433,6 +522,30 @@ export default function FeesManagementPage() {
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
         onSave={handleSaveCollection}
+      />
+
+      <GenerateInvoiceDialog
+        open={generateInvoiceOpen}
+        onClose={() => setGenerateInvoiceOpen(false)}
+        onSave={handleInvoiceSaved}
+      />
+
+      <SendRemindersDialog
+        open={sendRemindersOpen}
+        onClose={() => setSendRemindersOpen(false)}
+        onSend={handleSendFeeReminders}
+      />
+
+      <FeeConcessionDialog
+        open={concessionOpen}
+        onClose={() => setConcessionOpen(false)}
+        onSaveConcession={handleSaveConcession}
+      />
+
+      <AddInstallmentDialog
+        open={installmentOpen}
+        onClose={() => setInstallmentOpen(false)}
+        onSaveInstallment={handleSaveInstallment}
       />
 
       <FeesActionDialog

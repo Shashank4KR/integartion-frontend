@@ -54,6 +54,8 @@ export default function SubjectsPage() {
   const [search, setSearch] = useState("");
   const [classIdFilter, setClassIdFilter] = useState("");
   const [academicYearFilter, setAcademicYearFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
+  const [subjectTypeFilter, setSubjectTypeFilter] = useState("");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SubjectResponse | null>(null);
@@ -198,9 +200,15 @@ export default function SubjectsPage() {
         });
         if (!hasMapping) return false;
       }
+      if (departmentFilter) {
+        if (s.department_id !== departmentFilter) return false;
+      }
+      if (subjectTypeFilter) {
+        if (s.subject_type?.toUpperCase() !== subjectTypeFilter.toUpperCase()) return false;
+      }
       return true;
     });
-  }, [subjects, search, classIdFilter, academicYearFilter, classSubjects, classes]);
+  }, [subjects, search, classIdFilter, academicYearFilter, departmentFilter, subjectTypeFilter, classSubjects, classes]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -211,7 +219,7 @@ export default function SubjectsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, classIdFilter, academicYearFilter]);
+  }, [search, classIdFilter, academicYearFilter, departmentFilter, subjectTypeFilter]);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -339,6 +347,8 @@ export default function SubjectsPage() {
     setSearch("");
     setClassIdFilter("");
     setAcademicYearFilter("");
+    setDepartmentFilter("");
+    setSubjectTypeFilter("");
   };
 
   const refresh = async () => {
@@ -347,15 +357,19 @@ export default function SubjectsPage() {
 
   const exportCSV = () => {
     const headers = ["Subject Code", "Subject Name", "Subject Type", "Department", "Classes", "Credits / Periods", "Status"];
-    const rows = paginated.map((s) => [
-      s.subject_code,
-      `"${s.subject_name}"`,
-      "—",
-      "—",
-      String(classCountBySubject[s.id] ?? 0),
-      "—",
-      "—",
-    ]);
+    const rows = paginated.map((s) => {
+      const deptName = departments.find((d) => d.id === s.department_id)?.department_name || "—";
+      const creditsStr = s.credits != null ? `${s.credits} Credits` : "—";
+      return [
+        s.subject_code,
+        `"${s.subject_name}"`,
+        s.subject_type || "—",
+        `"${deptName}"`,
+        String(classCountBySubject[s.id] ?? 0),
+        creditsStr,
+        s.status || "—",
+      ];
+    });
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -438,6 +452,11 @@ export default function SubjectsPage() {
               classId={classIdFilter}
               onClassIdChange={setClassIdFilter}
               classOptions={classOptions}
+              departmentId={departmentFilter}
+              onDepartmentChange={setDepartmentFilter}
+              departments={departments}
+              subjectTypeFilter={subjectTypeFilter}
+              onSubjectTypeChange={setSubjectTypeFilter}
               onClear={clearFilters}
               academicYearFilter={academicYearFilter}
               onAcademicYearChange={setAcademicYearFilter}

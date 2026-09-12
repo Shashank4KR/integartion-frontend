@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Modal from "@/components/shared/Modal";
 import { Loader2 } from "lucide-react";
-import type { SubjectResponse } from "@/types/entities/subject";
+import type { SubjectCreate, SubjectResponse, SubjectUpdate } from "@/types/entities/subject";
 
 export default function SubjectFormModal({
   open,
@@ -16,7 +16,7 @@ export default function SubjectFormModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: { subject_code: string; subject_name: string; department_id?: string | null }) => Promise<void>;
+  onSubmit: (payload: SubjectCreate | SubjectUpdate) => Promise<void>;
   submitting: boolean;
   formError: string | null;
   editingItem: SubjectResponse | null;
@@ -25,6 +25,10 @@ export default function SubjectFormModal({
   const [subject_code, setSubjectCode] = useState("");
   const [subject_name, setSubjectName] = useState("");
   const [department_id, setDepartmentId] = useState("");
+  const [subject_type, setSubjectType] = useState("THEORY");
+  const [credits, setCredits] = useState<number>(3);
+  const [periods_per_week, setPeriodsPerWeek] = useState<number>(4);
+  const [status, setStatus] = useState("ACTIVE");
   const [touched, setTouched] = useState({ code: false, name: false });
 
   useEffect(() => {
@@ -34,10 +38,18 @@ export default function SubjectFormModal({
       setSubjectCode(editingItem.subject_code);
       setSubjectName(editingItem.subject_name);
       setDepartmentId(editingItem.department_id ?? "");
+      setSubjectType(editingItem.subject_type || "THEORY");
+      setCredits(editingItem.credits ?? 3);
+      setPeriodsPerWeek(editingItem.periods_per_week ?? 4);
+      setStatus(editingItem.status || "ACTIVE");
     } else {
       setSubjectCode("");
       setSubjectName("");
       setDepartmentId("");
+      setSubjectType("THEORY");
+      setCredits(3);
+      setPeriodsPerWeek(4);
+      setStatus("ACTIVE");
     }
   }, [open, editingItem]);
 
@@ -49,6 +61,10 @@ export default function SubjectFormModal({
       subject_code: subject_code.trim(),
       subject_name: subject_name.trim(),
       department_id: department_id || null,
+      subject_type: subject_type || "THEORY",
+      credits: Number(credits) || 0,
+      periods_per_week: Number(periods_per_week) || 0,
+      status: status || "ACTIVE",
     });
   };
 
@@ -57,7 +73,7 @@ export default function SubjectFormModal({
 
   return (
     <Modal open={open} onClose={onClose} title={editingItem ? "Edit Subject" : "Add New Subject"} maxWidth="max-w-lg">
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {formError && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {formError}
@@ -66,7 +82,7 @@ export default function SubjectFormModal({
 
         {editingItem && (
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-700 uppercase tracking-wider">Subject ID</label>
+            <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">Subject ID</label>
             <input
               type="text"
               value={editingItem.id}
@@ -77,7 +93,7 @@ export default function SubjectFormModal({
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+          <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
             Subject Code <span className="text-red-500">*</span>
           </label>
           <input
@@ -104,7 +120,7 @@ export default function SubjectFormModal({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+          <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
             Subject Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -131,7 +147,7 @@ export default function SubjectFormModal({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+          <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
             Department
           </label>
           <select
@@ -146,6 +162,68 @@ export default function SubjectFormModal({
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Subject Type
+            </label>
+            <select
+              value={subject_type}
+              onChange={(e) => setSubjectType(e.target.value)}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
+            >
+              <option value="THEORY">Theory</option>
+              <option value="PRACTICAL">Practical</option>
+              <option value="CORE">Core</option>
+              <option value="ELECTIVE">Elective</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Credits
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={credits}
+              onChange={(e) => setCredits(Number(e.target.value))}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Periods / Week
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="40"
+              value={periods_per_week}
+              onChange={(e) => setPeriodsPerWeek(Number(e.target.value))}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
+            />
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">

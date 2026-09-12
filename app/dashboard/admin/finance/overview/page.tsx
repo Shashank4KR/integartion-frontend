@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -17,6 +18,11 @@ import FinanceBalanceCards from "@/components/dashboard/finance/FinanceBalanceCa
 import AddTransactionDialog from "@/components/dashboard/finance/AddTransactionDialog";
 import TransactionDetailsDialog from "@/components/dashboard/finance/TransactionDetailsDialog";
 import FinanceActionDialog from "@/components/dashboard/finance/FinanceActionDialog";
+import RefundProcessingDialog from "@/components/dashboard/finance/RefundProcessingDialog";
+import PaymentLinkDialog from "@/components/dashboard/finance/PaymentLinkDialog";
+import SendRemindersDialog from "@/components/dashboard/finance/SendRemindersDialog";
+import WalletManagementDialog from "@/components/dashboard/finance/WalletManagementDialog";
+import GenerateInvoiceDialog from "@/components/dashboard/finance/invoices/GenerateInvoiceDialog";
 import { getToken } from "@/lib/auth";
 import { getFinanceOverview, listTransactions, recordTransaction } from "@/lib/services/financeService";
 type BalanceCard = any;
@@ -268,6 +274,7 @@ function mapTransactionRow(item: unknown): TransactionRow {
 }
 
 export default function FinanceOverviewPage() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [summaryCards, setSummaryCards] = useState<SummaryCard[]>([]);
   const [balanceCards, setBalanceCards] = useState<BalanceCard[]>([]);
@@ -284,6 +291,12 @@ export default function FinanceOverviewPage() {
     title: "",
     message: "",
   });
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [paymentLinkOpen, setPaymentLinkOpen] = useState(false);
+  const [sendRemindersOpen, setSendRemindersOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [generateInvoiceOpen, setGenerateInvoiceOpen] = useState(false);
+
   const [toast, setToast] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -359,20 +372,118 @@ export default function FinanceOverviewPage() {
     setViewTransaction(tx);
   };
 
+  const exportTransactionsCSV = (rows: TransactionRow[]) => {
+    if (!rows || rows.length === 0) {
+      showToast("No transaction records available to export.");
+      return;
+    }
+    const headers = ["Receipt/Txn No", "Date", "Student/Entity", "Class/Grade", "Type", "Category", "Payment Mode", "Amount", "Status"];
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((r) => [
+        `"${r.receiptRefNo || ""}"`,
+        `"${r.date || ""}"`,
+        `"${r.studentName || ""}"`,
+        `"${r.classGrade || ""}"`,
+        `"${r.type || ""}"`,
+        `"${r.category || ""}"`,
+        `"${r.paymentMode || ""}"`,
+        `"${r.amount || 0}"`,
+        `"${r.status || ""}"`,
+      ].join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `finance-transactions-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast("Finance report exported successfully!");
+  };
+
   const handleQuickAction = (action: string) => {
-    setActionDialog({
-      open: true,
-      title: action,
-      message: `The "${action}" workflow will be connected to the backend in the integration phase.`,
-    });
+    switch (action) {
+      case "New Invoice":
+        setGenerateInvoiceOpen(true);
+        break;
+      case "Refund Processing":
+        setRefundOpen(true);
+        break;
+      case "Fee Structure":
+        router.push("/dashboard/admin/finance/fees-management");
+        break;
+      case "Payment Link":
+        setPaymentLinkOpen(true);
+        break;
+      case "Reports":
+        router.push("/dashboard/admin/reports");
+        break;
+      case "Export Data":
+        exportTransactionsCSV(transactions);
+        break;
+      case "Send Reminders":
+        setSendRemindersOpen(true);
+        break;
+      case "Wallet Management":
+        setWalletOpen(true);
+        break;
+      default:
+        setActionDialog({
+          open: true,
+          title: action,
+          message: `Performing ${action}...`,
+        });
+        break;
+    }
+  };
+
+  const handleProcessRefund = async (refundData: {
+    studentName: string;
+    receiptNo: string;
+    amount: number;
+    reason: string;
+    refundMode: string;
+  }) => {
+    const newTx: TransactionRow = {
+      id: crypto.randomUUID(),
+      receiptRefNo: `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+      date: new Date().toISOString().split("T")[0],
+      studentName: refundData.studentName,
+      classGrade: "Refund",
+      type: "Expense",
+      category: `Fee Refund (${refundData.reason})`,
+      paymentMode: refundData.refundMode,
+      amount: refundData.amount,
+      status: "Paid",
+    };
+    await handleAddTransaction(newTx);
+    showToast(`Refund of ₹${refundData.amount.toLocaleString()} processed for ${refundData.studentName}`);
+  };
+
+  const handleSendPaymentLink = (data: { studentName: string; amount: number; purpose: string; link: string }) => {
+    showToast(`Payment link for ₹${data.amount.toLocaleString()} generated and sent to ${data.studentName}`);
+  };
+
+  const handleSendFeeReminders = (data: { audience: string; channels: string[]; message: string }) => {
+    showToast(`Fee reminders broadcasted via ${data.channels.join(", ")} to ${data.audience}`);
+  };
+
+  const handleWalletUpdate = (data: { studentName: string; type: "credit" | "debit"; amount: number; purpose: string }) => {
+    showToast(`Campus wallet ${data.type === "credit" ? "credited with" : "debited by"} ₹${data.amount.toLocaleString()} for ${data.studentName}`);
+  };
+
+  const handleInvoiceSaved = (invoice: any) => {
+    setGenerateInvoiceOpen(false);
+    showToast(`Invoice ${invoice?.invoiceNumber ?? ""} created successfully!`);
+    void loadFinanceData();
   };
 
   const handleMoreOptions = () => {
-    setActionDialog({
-      open: true,
-      title: "More Options",
-      message: "Additional finance management options will be available here in a future update.",
-    });
+    router.push("/dashboard/admin/finance/expenses");
   };
 
   const handleResetFilters = () => {
@@ -435,32 +546,14 @@ export default function FinanceOverviewPage() {
               <RecentTransactionsTable
                 rows={transactions}
                 onView={handleViewDetails}
-                onViewAll={() =>
-                  setActionDialog({
-                    open: true,
-                    title: "All Transactions",
-                    message: "A full transactions list view will be available here in a future update.",
-                  })
-                }
+                onViewAll={() => router.push("/dashboard/admin/finance/transactions")}
               />
             </div>
             <div className="space-y-6">
               <OutstandingFeeSummary
                 data={outstandingSummary}
-                onViewAll={() =>
-                  setActionDialog({
-                    open: true,
-                    title: "Outstanding Fees",
-                    message: "A detailed outstanding fees report will be available here in a future update.",
-                  })
-                }
-                onSendReminders={() =>
-                  setActionDialog({
-                    open: true,
-                    title: "Send Fee Reminders",
-                    message: "Fee reminders have been queued for sending. This will connect to the backend in the integration phase.",
-                  })
-                }
+                onViewAll={() => router.push("/dashboard/admin/finance/fees-management")}
+                onSendReminders={() => setSendRemindersOpen(true)}
               />
               <FinanceQuickActions onAction={handleQuickAction} />
             </div>
@@ -485,6 +578,36 @@ export default function FinanceOverviewPage() {
         open={!!viewTransaction}
         onClose={() => setViewTransaction(null)}
         transaction={viewTransaction}
+      />
+
+      <GenerateInvoiceDialog
+        open={generateInvoiceOpen}
+        onClose={() => setGenerateInvoiceOpen(false)}
+        onSave={handleInvoiceSaved}
+      />
+
+      <RefundProcessingDialog
+        open={refundOpen}
+        onClose={() => setRefundOpen(false)}
+        onProcessRefund={handleProcessRefund}
+      />
+
+      <PaymentLinkDialog
+        open={paymentLinkOpen}
+        onClose={() => setPaymentLinkOpen(false)}
+        onSendLink={handleSendPaymentLink}
+      />
+
+      <SendRemindersDialog
+        open={sendRemindersOpen}
+        onClose={() => setSendRemindersOpen(false)}
+        onSend={handleSendFeeReminders}
+      />
+
+      <WalletManagementDialog
+        open={walletOpen}
+        onClose={() => setWalletOpen(false)}
+        onWalletUpdate={handleWalletUpdate}
       />
 
       <FinanceActionDialog

@@ -4,14 +4,17 @@ import type { UserResponse } from "@/types/auth";
 export interface DashboardStats {
   total_students: number;
   total_teachers: number;
+  total_parents?: number;
   total_classes: number;
   total_subjects: number;
   total_fees_invoiced: number;
   total_fees_collected: number;
   outstanding_fees: number;
+  total_fees_pending?: number;
   today_collection: number;
   monthly_collection: number;
   upcoming_events: number;
+  students_by_class?: Array<{ name: string; count: number }>;
 }
 
 export interface StudentDashboardSummary {

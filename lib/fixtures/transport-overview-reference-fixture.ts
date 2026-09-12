@@ -37,7 +37,7 @@ export interface QuickNavItem {
   iconBg: string;
   iconColor: string;
   href?: string;
-  action?: "tracking" | "schedule" | "report";
+  action?: "tracking" | "schedule" | "report" | "driver-assignment";
 }
 
 export const OVERVIEW_SUMMARY_CARDS: OverviewSummaryCard[] = [

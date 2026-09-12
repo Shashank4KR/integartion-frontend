@@ -19,6 +19,13 @@ import SalaryComponentsCard from "@/components/dashboard/finance/salary-manageme
 import PayrollTrendChart from "@/components/dashboard/finance/salary-management/PayrollTrendChart";
 import TopDepartmentsByPayroll from "@/components/dashboard/finance/salary-management/TopDepartmentsByPayroll";
 import MonthlySalarySummaryCards from "@/components/dashboard/finance/salary-management/MonthlySalarySummaryCards";
+import ProcessPayrollDialog from "@/components/dashboard/finance/salary-management/ProcessPayrollDialog";
+import SalaryStructureDialog from "@/components/dashboard/finance/salary-management/SalaryStructureDialog";
+import GeneratePayslipDialog from "@/components/dashboard/finance/salary-management/GeneratePayslipDialog";
+import SalaryReportDialog from "@/components/dashboard/finance/salary-management/SalaryReportDialog";
+import TaxSettingsDialog from "@/components/dashboard/finance/salary-management/TaxSettingsDialog";
+import AllowancesDialog from "@/components/dashboard/finance/salary-management/AllowancesDialog";
+import DeductionsDialog from "@/components/dashboard/finance/salary-management/DeductionsDialog";
 import { getToken } from "@/lib/auth";
 import { listSalaryRecords } from "@/lib/services/financeService";
 
@@ -74,6 +81,16 @@ export default function SalaryManagementPage() {
     title: "",
     message: "",
   });
+
+  // Quick Action Dialog States
+  const [processPayrollOpen, setProcessPayrollOpen] = useState(false);
+  const [salaryStructureOpen, setSalaryStructureOpen] = useState(false);
+  const [generatePayslipOpen, setGeneratePayslipOpen] = useState(false);
+  const [salaryReportOpen, setSalaryReportOpen] = useState(false);
+  const [taxSettingsOpen, setTaxSettingsOpen] = useState(false);
+  const [allowancesOpen, setAllowancesOpen] = useState(false);
+  const [deductionsOpen, setDeductionsOpen] = useState(false);
+
   const [toast, setToast] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
 
   const [month, setMonth] = useState("May 2025");
@@ -88,33 +105,38 @@ export default function SalaryManagementPage() {
     setTimeout(() => setToast({ open: false, message: "" }), 3000);
   };
 
+  const loadSalaries = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoadError("Please log in to view salaries.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      const rows = await listSalaryRecords(token);
+      setSalaries(rows.map((item) => mapSalary(item as Record<string, unknown>)));
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load salaries.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadSalaries = async () => {
-      const token = getToken();
-      if (!token) {
-        setLoadError("Please log in to view salaries.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setLoadError(null);
-        const rows = await listSalaryRecords(token);
-        setSalaries(rows.map((item) => mapSalary(item as Record<string, unknown>)));
-      } catch (err) {
-        setLoadError(err instanceof Error ? err.message : "Failed to load salaries.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     void loadSalaries();
   }, []);
 
-  const handleAddSalary = (newSalary: SalaryRow) => {
-    setSalaries((prev) => [newSalary, ...prev]);
-    showToast("Salary added successfully");
+  const handleAddSalarySuccess = () => {
+    showToast("Salary record created and saved to database.");
+    void loadSalaries();
+  };
+
+  const handleProcessPayrollSuccess = () => {
+    showToast("Payroll processed and saved to database.");
+    void loadSalaries();
   };
 
   const handleViewSalary = (salary: SalaryRow) => {
@@ -142,11 +164,34 @@ export default function SalaryManagementPage() {
   };
 
   const handleQuickAction = (action: string) => {
-    setActionDialog({
-      open: true,
-      title: action,
-      message: `The "${action}" workflow will be connected to the backend in the integration phase.`,
-    });
+    switch (action) {
+      case "Add Salary":
+        setAddDialogOpen(true);
+        break;
+      case "Process Payroll":
+        setProcessPayrollOpen(true);
+        break;
+      case "Salary Structure":
+        setSalaryStructureOpen(true);
+        break;
+      case "Generate Payslip":
+        setGeneratePayslipOpen(true);
+        break;
+      case "Salary Report":
+        setSalaryReportOpen(true);
+        break;
+      case "Tax Settings":
+        setTaxSettingsOpen(true);
+        break;
+      case "Allowances":
+        setAllowancesOpen(true);
+        break;
+      case "Deductions":
+        setDeductionsOpen(true);
+        break;
+      default:
+        break;
+    }
   };
 
   const handleThreeDotMenu = () => {
@@ -348,7 +393,52 @@ export default function SalaryManagementPage() {
       <AddSalaryDialog
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
-        onSave={handleAddSalary}
+        onSuccess={handleAddSalarySuccess}
+      />
+
+      <ProcessPayrollDialog
+        open={processPayrollOpen}
+        onClose={() => setProcessPayrollOpen(false)}
+        onSuccess={handleProcessPayrollSuccess}
+        existingCount={salaries.length}
+      />
+
+      <SalaryStructureDialog
+        open={salaryStructureOpen}
+        onClose={() => setSalaryStructureOpen(false)}
+        onSuccess={showToast}
+      />
+
+      <GeneratePayslipDialog
+        open={generatePayslipOpen}
+        onClose={() => setGeneratePayslipOpen(false)}
+        salaries={salaries}
+        onSuccess={showToast}
+      />
+
+      <SalaryReportDialog
+        open={salaryReportOpen}
+        onClose={() => setSalaryReportOpen(false)}
+        salaries={salaries}
+        onSuccess={showToast}
+      />
+
+      <TaxSettingsDialog
+        open={taxSettingsOpen}
+        onClose={() => setTaxSettingsOpen(false)}
+        onSuccess={showToast}
+      />
+
+      <AllowancesDialog
+        open={allowancesOpen}
+        onClose={() => setAllowancesOpen(false)}
+        onSuccess={showToast}
+      />
+
+      <DeductionsDialog
+        open={deductionsOpen}
+        onClose={() => setDeductionsOpen(false)}
+        onSuccess={showToast}
       />
 
       <ImportSalariesDialog

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -11,14 +12,38 @@ import TransportSummaryChart from "@/components/dashboard/transport/TransportSum
 import TransportActivityCard from "@/components/dashboard/transport/TransportActivityCard";
 import TransportQuickNavigation from "@/components/dashboard/transport/TransportQuickNavigation";
 import TransportOverviewDialogs from "@/components/dashboard/transport/TransportOverviewDialogs";
+import AssignDriverDialog from "@/components/dashboard/transport/AssignDriverDialog";
 import { getToken } from "@/lib/auth";
 import { listDrivers, listTransportRoutes, listVehicles, listStudentTransports } from "@/lib/services/transportService";
 import type { QuickNavItem } from "@/lib/fixtures/transport-overview-reference-fixture";
 
+// Quick nav items — Live Tracking and Driver Assignment use action (not href) so
+// they open dialogs instead of navigating.
 const QUICK_NAVIGATION_ITEMS: QuickNavItem[] = [
-  { title: "Transport Management", description: "Manage routes and fleet", href: "/dashboard/admin/transport/management", icon: "bus", iconBg: "bg-purple-50", iconColor: "text-purple-600" },
-  { title: "Live Tracking", description: "Monitor current trips", href: "/dashboard/admin/transport", icon: "map-pin", iconBg: "bg-blue-50", iconColor: "text-blue-600", action: "tracking" },
-  { title: "Driver Assignment", description: "Assign drivers to routes", href: "/dashboard/admin/transport", icon: "calendar-route", iconBg: "bg-emerald-50", iconColor: "text-emerald-600" },
+  {
+    title: "Transport Management",
+    description: "Manage routes and fleet",
+    href: "/dashboard/admin/transport/management",
+    icon: "bus",
+    iconBg: "bg-purple-50",
+    iconColor: "text-purple-600",
+  },
+  {
+    title: "Live Tracking",
+    description: "Monitor current trips",
+    icon: "map-pin",
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-600",
+    action: "tracking",
+  },
+  {
+    title: "Driver Assignment",
+    description: "Assign drivers to routes",
+    icon: "calendar-route",
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+    action: "driver-assignment",
+  },
 ];
 
 const TRANSPORT_GUIDELINES = [
@@ -140,6 +165,8 @@ export default function TransportOverviewPage() {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [driverAssignOpen, setDriverAssignOpen] = useState(false);
+
   const [summaryCards, setSummaryCards] = useState<any[]>([]);
   const [segments, setSegments] = useState<Array<{ label: string; value: number; color: string }>>([]);
   const [activityRows, setActivityRows] = useState<any[]>([]);
@@ -148,6 +175,17 @@ export default function TransportOverviewPage() {
   const [routeDetails, setRouteDetails] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
+
+  // Options for assign driver dialog
+  const [vehicleOptions, setVehicleOptions] = useState<string[]>([]);
+  const [driverOptions, setDriverOptions] = useState<string[]>([]);
+  const [routeOptions, setRouteOptions] = useState<string[]>([]);
+
+  const showToast = (message: string) => {
+    setToast({ open: true, message });
+    setTimeout(() => setToast({ open: false, message: "" }), 3000);
+  };
 
   useEffect(() => {
     const token = getToken();
@@ -207,6 +245,17 @@ export default function TransportOverviewPage() {
         setTotalStudents(total);
         setTotalCapacity(cap);
         setRouteDetails(details);
+
+        // Populate dialog options from live data
+        setVehicleOptions(
+          (vehicleRows as any[]).map((v) => v.bus_number || v.vehicle_number || v.registration_no || String(v.id)).filter(Boolean)
+        );
+        setDriverOptions(
+          (driverRows as any[]).map((d) => `${d.first_name || ""} ${d.last_name || ""}`.trim() || d.name || String(d.id)).filter(Boolean)
+        );
+        setRouteOptions(
+          (routeRows as any[]).map((r) => r.route_name || r.name || `Route ${r.id}`).filter(Boolean)
+        );
       })
       .catch((error) => {
         setLoadError(error instanceof Error ? error.message : "Failed to load transport data.");
@@ -216,33 +265,9 @@ export default function TransportOverviewPage() {
       });
   }, []);
 
-  const showToast = (message: string) => {
-    const toast = document.createElement("div");
-    toast.className = "fixed bottom-6 right-6 z-[200] rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-2xl";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      if (document.body.contains(toast)) {
-        document.body.removeChild(toast);
-      }
-    }, 3000);
-  };
-
-  const handleAction = (action?: string) => {
-    switch (action) {
-      case "tracking":
-        setTrackingOpen(true);
-        break;
-      case "schedule":
-        setScheduleOpen(true);
-        break;
-      case "report":
-        setReportOpen(true);
-        break;
-      default:
-        setMoreOpen(true);
-        break;
-    }
+  const handleDriverAssignSave = async (data: { vehicle: string; driver: string; route: string }) => {
+    showToast(`Driver "${data.driver}" assigned to ${data.route} via ${data.vehicle}`);
+    setDriverAssignOpen(false);
   };
 
   return (
@@ -291,6 +316,7 @@ export default function TransportOverviewPage() {
                 onTracking={() => setTrackingOpen(true)}
                 onSchedule={() => setScheduleOpen(true)}
                 onReport={() => setReportOpen(true)}
+                onDriverAssignment={() => setDriverAssignOpen(true)}
               />
             </div>
           </div>
@@ -310,6 +336,21 @@ export default function TransportOverviewPage() {
         reportOpen={reportOpen}
         onCloseReport={() => setReportOpen(false)}
       />
+
+      <AssignDriverDialog
+        open={driverAssignOpen}
+        onClose={() => setDriverAssignOpen(false)}
+        onSave={handleDriverAssignSave}
+        vehicleOptions={vehicleOptions}
+        driverOptions={driverOptions}
+        routeOptions={routeOptions}
+      />
+
+      {toast.open && (
+        <div className="fixed bottom-6 right-6 z-[200] rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-2xl">
+          {toast.message}
+        </div>
+      )}
     </MainLayout>
   );
 }
