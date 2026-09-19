@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
@@ -24,7 +24,13 @@ import SendRemindersDialog from "@/components/dashboard/finance/SendRemindersDia
 import WalletManagementDialog from "@/components/dashboard/finance/WalletManagementDialog";
 import GenerateInvoiceDialog from "@/components/dashboard/finance/invoices/GenerateInvoiceDialog";
 import { getToken } from "@/lib/auth";
-import { getFinanceOverview, listTransactions, recordTransaction } from "@/lib/services/financeService";
+import { listClasses } from "@/lib/services/classService";
+import {
+  getFinanceOverview,
+  listTransactions,
+  recordTransaction,
+  listFeeStructures,
+} from "@/lib/services/financeService";
 type BalanceCard = any;
 type SummaryCard = any;
 type TransactionRow = any;
@@ -102,7 +108,7 @@ function buildSummaryCards(overview: Record<string, unknown> | undefined, rows: 
       icon: "invoice",
       iconBg: "bg-violet-50",
       iconColor: "text-violet-600",
-      sparkline: rows.length > 0 ? [rows.length, rows.length + 2, rows.length + 1] : [],
+      sparkline: [],
       sparkColor: "#7c3aed",
     },
     {
@@ -112,7 +118,7 @@ function buildSummaryCards(overview: Record<string, unknown> | undefined, rows: 
       icon: "rupee",
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",
-      sparkline: totalAmount > 0 ? [0, 2, 4] : [],
+      sparkline: [],
       sparkColor: "#10b981",
     },
   ];
@@ -135,7 +141,7 @@ function buildBalanceCards(overview: Record<string, unknown> | undefined): Balan
           subtitle: "Current active balance",
           change: "",
           isPositive: true,
-          chartData: [2, 3, 4, 3, 5],
+          chartData: [],
           color: "#10b981",
         },
         {
@@ -144,7 +150,7 @@ function buildBalanceCards(overview: Record<string, unknown> | undefined): Balan
           subtitle: "Petty cash pool",
           change: "",
           isPositive: true,
-          chartData: [1, 2, 2, 3, 3],
+          chartData: [],
           color: "#3b82f6",
         },
         {
@@ -153,7 +159,7 @@ function buildBalanceCards(overview: Record<string, unknown> | undefined): Balan
           subtitle: "Invoiced & reserves",
           change: "",
           isPositive: true,
-          chartData: [5, 6, 7, 7, 8],
+          chartData: [],
           color: "#7c3aed",
         },
         {
@@ -162,7 +168,7 @@ function buildBalanceCards(overview: Record<string, unknown> | undefined): Balan
           subtitle: "Expenses & salaries",
           change: "",
           isPositive: false,
-          chartData: [3, 2, 3, 2, 1],
+          chartData: [],
           color: "#ef4444",
         },
       ];
@@ -216,7 +222,7 @@ function buildRecentCollections(rows: TransactionRow[]): Array<{ student: string
     const statusVal = r.status === "paid" ? "Paid" : r.status === "overdue" ? "Overdue" : "Pending";
     return {
       student: String(r.studentName ?? r.student ?? "Student"),
-      course: String(r.course ?? r.className ?? "N/A"),
+      course: String(r.classGrade || r.course || r.className || "—"),
       status: statusVal as "Paid" | "Pending" | "Overdue",
       amount: formatCurrency(getAmountValue(r)),
       date: String(r.created_at ?? r.date ?? ""),
@@ -224,7 +230,7 @@ function buildRecentCollections(rows: TransactionRow[]): Array<{ student: string
   });
 }
 
-function buildIncomeExpenseSeries(overview: Record<string, unknown> | undefined) {
+function buildIncomeExpenseSeries(overview: Record<string, unknown> | undefined, rows: TransactionRow[] = []) {
   const incomeSeries = Array.isArray(overview?.incomeSeries)
     ? overview.incomeSeries
     : [];
@@ -232,19 +238,49 @@ function buildIncomeExpenseSeries(overview: Record<string, unknown> | undefined)
     ? overview.expenseSeries
     : [];
 
+  if (incomeSeries.length > 0 || expenseSeries.length > 0) {
+    return {
+      incomeData: incomeSeries.map((item: Record<string, unknown>) => ({
+        label: String(item.label ?? ""),
+        value: Number(item.value ?? 0),
+      })),
+      expenseData: expenseSeries.map((item: Record<string, unknown>) => ({
+        label: String(item.label ?? ""),
+        value: Number(item.value ?? 0),
+      })),
+    };
+  }
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const currentMonthIdx = new Date().getMonth();
+  const last6Months = Array.from({ length: 6 }, (_, i) => {
+    const m = (currentMonthIdx - 5 + i + 12) % 12;
+    return monthNames[m];
+  });
+
+  const incomeByMonth: Record<string, number> = {};
+  const expenseByMonth: Record<string, number> = {};
+  last6Months.forEach((m) => {
+    incomeByMonth[m] = 0;
+    expenseByMonth[m] = 0;
+  });
+
+  rows.forEach((row) => {
+    const rawDate = row.date;
+    const d = rawDate ? new Date(rawDate) : null;
+    const monthKey = d && !isNaN(d.getTime()) ? monthNames[d.getMonth()] : monthNames[currentMonthIdx];
+    if (monthKey in incomeByMonth) {
+      if (row.type === "Expense") {
+        expenseByMonth[monthKey] += row.amount;
+      } else {
+        incomeByMonth[monthKey] += row.amount;
+      }
+    }
+  });
+
   return {
-    incomeData: Array.isArray(incomeSeries)
-      ? incomeSeries.map((item: Record<string, unknown>) => ({
-          label: String(item.label ?? ""),
-          value: Number(item.value ?? 0),
-        }))
-      : [],
-    expenseData: Array.isArray(expenseSeries)
-      ? expenseSeries.map((item: Record<string, unknown>) => ({
-          label: String(item.label ?? ""),
-          value: Number(item.value ?? 0),
-        }))
-      : [],
+    incomeData: last6Months.map((m) => ({ label: m, value: Math.round(incomeByMonth[m] || 0) })),
+    expenseData: last6Months.map((m) => ({ label: m, value: Math.round(expenseByMonth[m] || 0) })),
   };
 }
 
@@ -292,6 +328,11 @@ function mapTransactionRow(item: unknown): TransactionRow {
     r.className ??
     ""
   );
+  const academicYear = String(
+    r.academicYear ??
+    r.academic_year ??
+    ""
+  );
   const category = String(
     r.category ??
     r.type ??
@@ -309,6 +350,7 @@ function mapTransactionRow(item: unknown): TransactionRow {
     date: String(r.date ?? r.payment_date ?? r.created_at ?? "-"),
     studentName: student.trim() || "Student",
     classGrade: classGrade.trim(),
+    academicYear: academicYear.trim(),
     type: rawType.includes("exp") ? "Expense" : "Income",
     category: category.trim() || "Fee Payment",
     paymentMode: String(r.paymentMode ?? r.payment_mode ?? r.payment_method ?? "Online"),
@@ -320,10 +362,12 @@ function mapTransactionRow(item: unknown): TransactionRow {
 export default function FinanceOverviewPage() {
   const router = useRouter();
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [classesList, setClassesList] = useState<any[]>([]);
+  const [feeStructuresList, setFeeStructuresList] = useState<any[]>([]);
   const [summaryCards, setSummaryCards] = useState<SummaryCard[]>([]);
   const [balanceCards, setBalanceCards] = useState<BalanceCard[]>([]);
   const [outstandingSummary, setOutstandingSummary] = useState<OutstandingSummary>(EMPTY_OUTSTANDING_SUMMARY);
-  const [academicYear, setAcademicYear] = useState("2025-26");
+  const [academicYear, setAcademicYear] = useState("All Academic Years");
   const [classGrade, setClassGrade] = useState("All Classes");
   const [feeType, setFeeType] = useState("All Fee Types");
   const [paymentStatus, setPaymentStatus] = useState("All Status");
@@ -367,21 +411,25 @@ export default function FinanceOverviewPage() {
     setLoadError(null);
 
     try {
-      const [overview, rows] = await Promise.all([
-        getFinanceOverview(token),
-        listTransactions(token),
+      const [overview, rows, classItems, feeStructItems] = await Promise.all([
+        getFinanceOverview(token).catch(() => ({})),
+        listTransactions(token).catch(() => []),
+        listClasses(token).catch(() => []),
+        listFeeStructures(token).catch(() => []),
       ]);
 
       const overviewRecord = overview as Record<string, unknown> | undefined;
       const normalizedRows = Array.isArray(rows) ? rows.map(mapTransactionRow) : [];
 
+      setClassesList(Array.isArray(classItems) ? classItems : []);
+      setFeeStructuresList(Array.isArray(feeStructItems) ? feeStructItems : []);
       setSummaryCards(buildSummaryCards(overviewRecord, normalizedRows));
       setBalanceCards(buildBalanceCards(overviewRecord));
       setOutstandingSummary(buildOutstandingSummary(overviewRecord));
       setTransactions(normalizedRows);
       setFeeCollectionData(buildFeeCollectionSegments(normalizedRows));
       setRecentCollections(buildRecentCollections(normalizedRows));
-      setIncomeExpenseSeries(buildIncomeExpenseSeries(overviewRecord));
+      setIncomeExpenseSeries(buildIncomeExpenseSeries(overviewRecord, normalizedRows));
       setFeeTypeSegments(buildFeeTypeSegments(overviewRecord, normalizedRows));
       setRecentPayments(buildRecentPayments(normalizedRows));
     } catch (err) {
@@ -531,12 +579,79 @@ export default function FinanceOverviewPage() {
   };
 
   const handleResetFilters = () => {
-    setAcademicYear("2025-26");
+    setAcademicYear("All Academic Years");
     setClassGrade("All Classes");
     setFeeType("All Fee Types");
     setPaymentStatus("All Status");
     setDateRange("This Month");
   };
+
+  const classOptions = useMemo(() => {
+    const set = new Set<string>();
+    classesList.forEach((c) => {
+      const name = `${c.class_name || ""}${c.section ? ` - ${c.section}` : ""}`.trim();
+      if (name) set.add(name);
+    });
+    transactions.forEach((t) => {
+      if (t.classGrade && t.classGrade !== "Expense" && t.classGrade !== "Refund") {
+        set.add(t.classGrade);
+      }
+    });
+    return ["All Classes", ...Array.from(set).sort()];
+  }, [classesList, transactions]);
+
+  const academicYearOptions = useMemo(() => {
+    const set = new Set<string>();
+    classesList.forEach((c) => {
+      if (c.academic_year) set.add(c.academic_year);
+    });
+    transactions.forEach((t) => {
+      if (t.academicYear) set.add(t.academicYear);
+    });
+    return ["All Academic Years", ...Array.from(set).sort()];
+  }, [classesList, transactions]);
+
+  const feeTypeOptions = useMemo(() => {
+    const set = new Set<string>();
+    feeStructuresList.forEach((f) => {
+      const label = f.fee_type || f.name;
+      if (label) set.add(label);
+    });
+    transactions.forEach((t) => {
+      if (t.category && t.type !== "Expense") set.add(t.category);
+      if (t.feeType) set.add(t.feeType);
+    });
+    return ["All Fee Types", ...Array.from(set).sort()];
+  }, [feeStructuresList, transactions]);
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((t) => {
+      if (classGrade !== "All Classes") {
+        if (!t.classGrade || !t.classGrade.toLowerCase().includes(classGrade.toLowerCase())) {
+          return false;
+        }
+      }
+      if (academicYear !== "All Academic Years") {
+        if (t.academicYear && t.academicYear !== academicYear) {
+          return false;
+        }
+      }
+      if (feeType !== "All Fee Types") {
+        const cat = (t.category || "").toLowerCase();
+        const fType = (t.feeType || "").toLowerCase();
+        const target = feeType.toLowerCase();
+        if (!cat.includes(target) && !fType.includes(target)) {
+          return false;
+        }
+      }
+      if (paymentStatus !== "All Status") {
+        if ((t.status || "").toLowerCase() !== paymentStatus.toLowerCase()) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [transactions, classGrade, academicYear, feeType, paymentStatus]);
 
   return (
     <MainLayout sidebar={<Sidebar />} header={<DashboardHeader />}>
@@ -567,10 +682,13 @@ export default function FinanceOverviewPage() {
           <FinanceFilters
             academicYear={academicYear}
             onAcademicYearChange={setAcademicYear}
+            academicYearOptions={academicYearOptions}
             classGrade={classGrade}
             onClassGradeChange={setClassGrade}
+            classOptions={classOptions}
             feeType={feeType}
             onFeeTypeChange={setFeeType}
+            feeTypeOptions={feeTypeOptions}
             paymentStatus={paymentStatus}
             onPaymentStatusChange={setPaymentStatus}
             dateRange={dateRange}
@@ -580,15 +698,24 @@ export default function FinanceOverviewPage() {
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-            <FeeCollectionSummaryChart data={feeCollectionData} recentCollections={recentCollections} />
-            <IncomeExpenseChart incomeData={incomeExpenseSeries.incomeData} expenseData={incomeExpenseSeries.expenseData} />
-            <FeeCollectionByTypeChart segments={feeTypeSegments} recentPayments={recentPayments} />
+            <FeeCollectionSummaryChart
+              data={buildFeeCollectionSegments(filteredTransactions)}
+              recentCollections={buildRecentCollections(filteredTransactions)}
+            />
+            <IncomeExpenseChart
+              incomeData={buildIncomeExpenseSeries(undefined, filteredTransactions).incomeData}
+              expenseData={buildIncomeExpenseSeries(undefined, filteredTransactions).expenseData}
+            />
+            <FeeCollectionByTypeChart
+              segments={buildFeeTypeSegments(undefined, filteredTransactions)}
+              recentPayments={buildRecentPayments(filteredTransactions)}
+            />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2">
               <RecentTransactionsTable
-                rows={transactions}
+                rows={filteredTransactions}
                 onView={handleViewDetails}
                 onViewAll={() => router.push("/dashboard/admin/finance/transactions")}
               />

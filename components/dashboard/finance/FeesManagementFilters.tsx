@@ -4,29 +4,16 @@ import { useState } from "react";
 import { Filter, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 
-const ACADEMIC_YEAR_OPTIONS = ["2024-25", "2025-26"];
-const CLASS_GRADE_OPTIONS = [
-  "All Classes",
-  "VIII - A",
-  "VI - B",
-  "IX - A",
-  "VIII - B",
-  "IX - B",
-  "VI - A",
-  "V - B",
-  "VIII - C",
-];
-const FEE_TYPE_OPTIONS = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Other Fees"];
-const INSTALLMENT_OPTIONS = ["All Installments", "Installment 1", "Installment 2", "Installment 3", "Full Payment"];
-const STATUS_OPTIONS = ["All Status", "Paid", "Partial", "Overdue", "Pending"];
-
 interface FeesManagementFiltersProps {
   academicYear: string;
   onAcademicYearChange: (value: string) => void;
+  academicYearOptions?: string[];
   classGrade: string;
   onClassGradeChange: (value: string) => void;
+  classOptions?: string[];
   feeType: string;
   onFeeTypeChange: (value: string) => void;
+  feeTypeOptions?: string[];
   installment: string;
   onInstallmentChange: (value: string) => void;
   status: string;
@@ -37,13 +24,20 @@ interface FeesManagementFiltersProps {
   onReset: () => void;
 }
 
+const DEFAULT_FEE_TYPE_OPTIONS = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Hostel Fee", "Other Fees"];
+const INSTALLMENT_OPTIONS = ["All Installments", "Installment 1", "Installment 2", "Installment 3", "Full Payment"];
+const STATUS_OPTIONS = ["All Status", "Paid", "Partial", "Overdue", "Pending"];
+
 export default function FeesManagementFilters({
   academicYear,
   onAcademicYearChange,
+  academicYearOptions = ["All Academic Years"],
   classGrade,
   onClassGradeChange,
+  classOptions = ["All Classes"],
   feeType,
   onFeeTypeChange,
+  feeTypeOptions = DEFAULT_FEE_TYPE_OPTIONS,
   installment,
   onInstallmentChange,
   status,
@@ -63,19 +57,19 @@ export default function FeesManagementFilters({
           <Dropdown
             label="Academic Year"
             value={academicYear}
-            options={ACADEMIC_YEAR_OPTIONS}
+            options={academicYearOptions}
             onChange={onAcademicYearChange}
           />
           <Dropdown
             label="Class / Grade"
             value={classGrade}
-            options={CLASS_GRADE_OPTIONS}
+            options={classOptions}
             onChange={onClassGradeChange}
           />
           <Dropdown
             label="Fee Type"
             value={feeType}
-            options={FEE_TYPE_OPTIONS}
+            options={feeTypeOptions}
             onChange={onFeeTypeChange}
           />
           <Dropdown

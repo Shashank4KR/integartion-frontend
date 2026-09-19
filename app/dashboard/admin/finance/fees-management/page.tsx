@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
@@ -29,6 +29,7 @@ import {
   getFinanceReport,
 } from "@/lib/services/financeService";
 import { listStudents } from "@/lib/services/studentService";
+import { listClasses } from "@/lib/services/classService";
 import type { StudentFeeRow } from "@/lib/fixtures/fees-management-reference-fixture";
 
 interface SummaryCard {
@@ -63,7 +64,8 @@ export default function FeesManagementPage() {
   });
   const [toast, setToast] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
 
-  const [academicYear, setAcademicYear] = useState("2024-25");
+  const [classesList, setClassesList] = useState<any[]>([]);
+  const [academicYear, setAcademicYear] = useState("All Academic Years");
   const [classGrade, setClassGrade] = useState("All Classes");
   const [feeType, setFeeType] = useState("All Fee Types");
   const [installment, setInstallment] = useState("All Installments");
@@ -99,15 +101,17 @@ export default function FeesManagementPage() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const [overview, invoices, monthlyReport, yearlyReport, feeStructures, students] = await Promise.all([
+        const [overview, invoices, monthlyReport, yearlyReport, feeStructures, students, classRows] = await Promise.all([
           getFinanceOverview(token).catch(() => ({})),
           listInvoices(token).catch(() => []),
           getFinanceReport(token, "monthly-collection").catch(() => ({})),
           getFinanceReport(token, "yearly-collection").catch(() => ({})),
           listFeeStructures(token).catch(() => []),
           listStudents(token).catch(() => []),
+          listClasses(token).catch(() => []),
         ]);
 
+        setClassesList(Array.isArray(classRows) ? classRows : []);
         const invoiceList = Array.isArray(invoices) ? invoices : [];
 
         // Aggregate live totals directly from the loaded invoices
@@ -527,13 +531,33 @@ export default function FeesManagementPage() {
   };
 
   const handleReset = () => {
-    setAcademicYear("2024-25");
+    setAcademicYear("All Academic Years");
     setClassGrade("All Classes");
     setFeeType("All Fee Types");
     setInstallment("All Installments");
     setStatus("All Status");
     setDateRange("This Month");
   };
+
+  const classOptions = useMemo(() => {
+    const set = new Set<string>();
+    classesList.forEach((c) => {
+      const name = `${c.class_name || ""}${c.section ? ` - ${c.section}` : ""}`.trim();
+      if (name) set.add(name);
+    });
+    studentFeeRecords.forEach((r) => {
+      if (r.classGrade) set.add(r.classGrade);
+    });
+    return ["All Classes", ...Array.from(set).sort()];
+  }, [classesList, studentFeeRecords]);
+
+  const academicYearOptions = useMemo(() => {
+    const set = new Set<string>();
+    classesList.forEach((c) => {
+      if (c.academic_year) set.add(c.academic_year);
+    });
+    return ["All Academic Years", ...Array.from(set).sort()];
+  }, [classesList]);
 
   const filteredFeeRecords = studentFeeRecords.filter((r) => {
     if (classGrade !== "All Classes" && !r.classGrade.toLowerCase().includes(classGrade.toLowerCase())) {
@@ -571,8 +595,10 @@ export default function FeesManagementPage() {
           <FeesManagementFilters
             academicYear={academicYear}
             onAcademicYearChange={setAcademicYear}
+            academicYearOptions={academicYearOptions}
             classGrade={classGrade}
             onClassGradeChange={setClassGrade}
+            classOptions={classOptions}
             feeType={feeType}
             onFeeTypeChange={setFeeType}
             installment={installment}
