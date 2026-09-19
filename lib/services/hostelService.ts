@@ -576,4 +576,33 @@ export async function transferHostelStudent(
   return (await response.json()) as any;
 }
 
+export async function listMessMenus(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch("/api/mess-menu", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch mess menu.");
+  }
+  return (await response.json()) as any[];
+}
+
+export async function getMessMenu(
+  token: string,
+  id?: string,
+): Promise<any> {
+  const url = id ? `/api/mess-menu/${id}` : "/api/mess-menu";
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch mess menu.");
+  }
+  return (await response.json()) as any;
+}
+
+
 

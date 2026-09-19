@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, MapPin, Clock } from "lucide-react";
 import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
+import type { RouteStopItem } from "./AddRouteDialog";
 
 const ROUTE_COLORS = [
   { label: "Purple", value: "#7c3aed" },
@@ -18,39 +19,51 @@ const ROUTE_COLORS = [
 
 const STATUS_OPTIONS = ["Active", "Inactive"];
 
-export interface RouteStopItem {
-  id?: string;
-  stop_name: string;
-  stop_order: number;
-  pickup_time?: string;
+export interface EditableRouteData {
+  id: string;
+  routeName: string;
+  routeColor?: string;
+  startingPoint: string;
+  destination: string;
+  stops?: RouteStopItem[];
+  assignedVehicle?: string;
+  assignedDriver?: string;
+  pickupTime?: string;
+  dropTime?: string;
+  status?: string;
 }
 
-interface AddRouteDialogProps {
+interface EditRouteDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (route: {
-    routeName: string;
-    routeColor: string;
-    startingPoint: string;
-    destination: string;
-    stops: RouteStopItem[];
-    assignedVehicle: string;
-    assignedDriver: string;
-    pickupTime: string;
-    dropTime: string;
-    status: string;
-  }) => Promise<void> | void;
+  route: EditableRouteData | null;
+  onSave: (
+    id: string,
+    updatedRoute: {
+      routeName: string;
+      routeColor: string;
+      startingPoint: string;
+      destination: string;
+      stops: RouteStopItem[];
+      assignedVehicle: string;
+      assignedDriver: string;
+      pickupTime: string;
+      dropTime: string;
+      status: string;
+    }
+  ) => Promise<void> | void;
   vehicleOptions?: string[];
   driverOptions?: string[];
 }
 
-export default function AddRouteDialog({
+export default function EditRouteDialog({
   open,
   onClose,
+  route,
   onSave,
   vehicleOptions = [],
   driverOptions = [],
-}: AddRouteDialogProps) {
+}: EditRouteDialogProps) {
   const [routeName, setRouteName] = useState("");
   const [routeColor, setRouteColor] = useState("#7c3aed");
   const [startingPoint, setStartingPoint] = useState("");
@@ -65,6 +78,22 @@ export default function AddRouteDialog({
   const [status, setStatus] = useState("Active");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (route) {
+      setRouteName(route.routeName || "");
+      setRouteColor(route.routeColor || "#7c3aed");
+      setStartingPoint(route.startingPoint || "");
+      setDestination(route.destination || "");
+      setStopsList(route.stops ? [...route.stops] : []);
+      setAssignedVehicle(route.assignedVehicle || "");
+      setAssignedDriver(route.assignedDriver || "");
+      setPickupTime(route.pickupTime || "07:30 AM");
+      setDropTime(route.dropTime || "03:30 PM");
+      setStatus(route.status || "Active");
+      setError(null);
+    }
+  }, [route]);
 
   const handleAddStop = () => {
     if (!newStopName.trim()) return;
@@ -99,6 +128,7 @@ export default function AddRouteDialog({
   };
 
   const handleSave = async () => {
+    if (!route?.id) return;
     if (!routeName.trim() || !startingPoint.trim() || !destination.trim() || !status) {
       setError("Please fill in Route Name, Starting Point, Destination, and Status.");
       return;
@@ -107,7 +137,7 @@ export default function AddRouteDialog({
     try {
       setSaving(true);
       setError(null);
-      await onSave({
+      await onSave(route.id, {
         routeName: routeName.trim(),
         routeColor,
         startingPoint: startingPoint.trim(),
@@ -119,38 +149,16 @@ export default function AddRouteDialog({
         dropTime,
         status,
       });
-      resetForm();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create route.");
+      setError(err instanceof Error ? err.message : "Failed to update route.");
     } finally {
       setSaving(false);
     }
   };
 
-  const resetForm = () => {
-    setRouteName("");
-    setRouteColor("#7c3aed");
-    setStartingPoint("");
-    setDestination("");
-    setStopsList([]);
-    setNewStopName("");
-    setNewStopTime("");
-    setAssignedVehicle("");
-    setAssignedDriver("");
-    setPickupTime("07:30 AM");
-    setDropTime("03:30 PM");
-    setStatus("Active");
-    setError(null);
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
   return (
-    <Modal open={open} onClose={handleClose} title="Add Transport Route" maxWidth="max-w-2xl">
+    <Modal open={open} onClose={onClose} title={`Edit Route: ${route?.routeName || ""}`} maxWidth="max-w-2xl">
       <div className="space-y-4">
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-xs font-medium text-red-600">
@@ -370,7 +378,7 @@ export default function AddRouteDialog({
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
-            onClick={handleClose}
+            onClick={onClose}
             className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
           >
             Cancel
@@ -380,7 +388,7 @@ export default function AddRouteDialog({
             disabled={saving}
             className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
           >
-            {saving ? "Creating..." : "Create Route"}
+            {saving ? "Saving Changes..." : "Save Changes"}
           </Button>
         </div>
       </div>

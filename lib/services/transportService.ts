@@ -1,4 +1,5 @@
 const BASE = "/api/transport";
+const ROUTES_BASE = "/api/routes";
 
 async function parseError(response: Response, fallback: string): Promise<Error> {
   try {
@@ -35,7 +36,7 @@ function unwrapItems(payload: unknown): any[] {
 export async function listTransportRoutes(
   token: string,
 ): Promise<any[]> {
-  const response = await fetch(`${BASE}/routes`, {
+  const response = await fetch(ROUTES_BASE, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -50,7 +51,7 @@ export async function getTransportRoute(
   token: string,
   id: string,
 ): Promise<any> {
-  const response = await fetch(`${BASE}/routes/${id}`, {
+  const response = await fetch(`${ROUTES_BASE}/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -65,7 +66,7 @@ export async function createTransportRoute(
   token: string,
   payload: any,
 ): Promise<any> {
-  const response = await fetch(`${BASE}/routes`, {
+  const response = await fetch(ROUTES_BASE, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -86,7 +87,7 @@ export async function updateTransportRoute(
   id: string,
   payload: any,
 ): Promise<any> {
-  const response = await fetch(`${BASE}/routes/${id}`, {
+  const response = await fetch(`${ROUTES_BASE}/${id}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -106,7 +107,7 @@ export async function deleteTransportRoute(
   token: string,
   id: string,
 ): Promise<void> {
-  const response = await fetch(`${BASE}/routes/${id}`, {
+  const response = await fetch(`${ROUTES_BASE}/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });

@@ -171,7 +171,7 @@ export default function TransportOverviewPage() {
   const [segments, setSegments] = useState<Array<{ label: string; value: number; color: string }>>([]);
   const [activityRows, setActivityRows] = useState<any[]>([]);
   const [totalStudents, setTotalStudents] = useState(0);
-  const [totalCapacity, setTotalCapacity] = useState<number>(60);
+  const [totalCapacity, setTotalCapacity] = useState<number>(0);
   const [routeDetails, setRouteDetails] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -221,7 +221,7 @@ export default function TransportOverviewPage() {
           studentTransportRows as Array<Record<string, unknown>>
         );
         const total = studentTransportRows.length;
-        const cap = (vehicleRows as any[]).reduce((sum, v) => sum + (Number(v.capacity) || 0), 0) || 60;
+        const cap = (vehicleRows as any[]).reduce((sum, v) => sum + (Number(v.capacity) || 0), 0);
 
         const details = (routeRows as any[]).map((r: any, i: number) => {
           const v = (vehicleRows as any[])[i];
@@ -335,6 +335,12 @@ export default function TransportOverviewPage() {
         onCloseSchedule={() => setScheduleOpen(false)}
         reportOpen={reportOpen}
         onCloseReport={() => setReportOpen(false)}
+        metrics={{
+          activeRoutes: routeDetails.length,
+          activeVehicles: vehicleOptions.length,
+          scheduleAdherence: "100%",
+          onTimeDelivery: "100%",
+        }}
       />
 
       <AssignDriverDialog
