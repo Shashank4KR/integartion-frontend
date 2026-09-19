@@ -22,16 +22,8 @@ const ROOM_MAP: Record<string, string[]> = {
   "Block D (Girls)": ["D-401", "D-402"],
 };
 const CLASS_OPTIONS = [
-  "XII - A",
-  "XI - B",
-  "X - A",
-  "X - B",
-  "IX - A",
-  "IX - B",
-  "VIII - A",
-  "VIII - B",
-  "VII - A",
-  "VII - B",
+  "Class 10-A",
+  "Class 10-B",
 ];
 
 export default function AddHostelStudentDialog({ open, onClose, onSave }: AddHostelStudentDialogProps) {
