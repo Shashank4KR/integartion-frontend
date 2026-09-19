@@ -112,6 +112,22 @@ export default function ClassOverviewTab({
                 {classTeacher ? classTeacher.employee_id : "—"}
               </span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Room Number</span>
+              <span className="font-medium text-slate-900">
+                {selectedClass.room_number || "—"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Status</span>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                (selectedClass.status || "ACTIVE").toUpperCase() === "ACTIVE"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-slate-100 text-slate-600 border border-slate-200"
+              }`}>
+                {(selectedClass.status || "ACTIVE").toUpperCase() === "ACTIVE" ? "Active" : "Inactive"}
+              </span>
+            </div>
           </div>
           <p className="text-xs text-slate-400 mt-3 italic">
             This is {selectedClass.class_name} — {selectedClass.section} for the academic year {selectedClass.academic_year}.

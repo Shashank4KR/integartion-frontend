@@ -26,6 +26,8 @@ export default function ClassFormModal({
   const [section, setSection] = useState("");
   const [academic_year, setAcademicYear] = useState("");
   const [class_teacher_id, setClassTeacherId] = useState("");
+  const [room_number, setRoomNumber] = useState("");
+  const [status, setStatus] = useState("ACTIVE");
 
   useEffect(() => {
     if (!open) return;
@@ -34,11 +36,15 @@ export default function ClassFormModal({
       setSection(editingItem.section);
       setAcademicYear(editingItem.academic_year);
       setClassTeacherId(editingItem.class_teacher_id ?? "");
+      setRoomNumber(editingItem.room_number ?? "");
+      setStatus(editingItem.status ?? "ACTIVE");
     } else {
       setClassName("");
       setSection("");
       setAcademicYear("");
       setClassTeacherId("");
+      setRoomNumber("");
+      setStatus("ACTIVE");
     }
   }, [open, editingItem]);
 
@@ -49,6 +55,8 @@ export default function ClassFormModal({
       section,
       academic_year,
       class_teacher_id: class_teacher_id || null,
+      room_number: room_number.trim() || null,
+      status: status || "ACTIVE",
     };
     await onSubmit(payload);
   };
@@ -129,6 +137,33 @@ export default function ClassFormModal({
                 </option>
               ))}
             </select>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-700">
+              Room Number
+            </label>
+            <input
+              type="text"
+              value={room_number}
+              onChange={(e) => setRoomNumber(e.target.value)}
+              placeholder="e.g. Room 101, Lab 2"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-700">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4">

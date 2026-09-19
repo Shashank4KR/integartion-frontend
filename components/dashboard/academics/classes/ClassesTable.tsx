@@ -16,7 +16,7 @@ export default function ClassesTable({
   items: ClassResponse[];
   onEdit: (item: ClassResponse) => void;
   onDelete: (id: string) => void;
-  onView: (item: ClassResponse) => void;
+  onView: (item: ClassResponse, tab?: "overview" | "students" | "subjects" | "teachers" | "attendance") => void;
   teacherLabel: (teacherId?: string | null) => string;
   classSubjectCount: Record<string, number>;
   classStudentCount: Record<string, number>;
@@ -58,14 +58,24 @@ export default function ClassesTable({
               <td className="px-4 py-3 text-slate-600">{classStudentCount[item.id] ?? 0}</td>
               <td className="px-4 py-3">
                 <button
-                  onClick={() => onView(item)}
+                  onClick={() => onView(item, "subjects")}
                   className="text-[#6d28d9] hover:underline font-medium"
                 >
                   {classSubjectCount[item.id] ?? 0} Subjects
                 </button>
               </td>
-              <td className="px-4 py-3 text-slate-600">—</td>
-              <td className="px-4 py-3 text-slate-600">—</td>
+              <td className="px-4 py-3 text-slate-700 font-medium">{item.room_number || "—"}</td>
+              <td className="px-4 py-3">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    (item.status || "ACTIVE").toUpperCase() === "ACTIVE"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-slate-100 text-slate-600 border border-slate-200"
+                  }`}
+                >
+                  {(item.status || "ACTIVE").toUpperCase() === "ACTIVE" ? "Active" : "Inactive"}
+                </span>
+              </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2">
                   <button

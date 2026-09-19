@@ -12,6 +12,8 @@ export default function ClassFilters({
   onSectionChange,
   teacherId,
   onTeacherIdChange,
+  status,
+  onStatusChange,
   academicYearOptions,
   sectionOptions,
   teacherOptions,
@@ -25,12 +27,14 @@ export default function ClassFilters({
   onSectionChange: (value: string) => void;
   teacherId: string;
   onTeacherIdChange: (value: string) => void;
+  status: string;
+  onStatusChange: (value: string) => void;
   academicYearOptions: string[];
   sectionOptions: string[];
   teacherOptions: { id: string; label: string }[];
   onClear: () => void;
 }) {
-  const hasFilters = search || academicYear || section || teacherId;
+  const hasFilters = search || academicYear || section || teacherId || status;
 
   return (
     <Card className="mb-4">
@@ -42,7 +46,7 @@ export default function ClassFilters({
               type="text"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search by class name, section or academic year..."
+              placeholder="Search by class name, section, academic year or room..."
               className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
             />
           </div>
@@ -84,18 +88,13 @@ export default function ClassFilters({
               ))}
             </select>
             <select
-              disabled
-              title="Not available in the current backend."
-              className="h-10 rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-400 outline-none cursor-not-allowed"
+              value={status}
+              onChange={(e) => onStatusChange(e.target.value)}
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
             >
-              <option value="">Class Level</option>
-            </select>
-            <select
-              disabled
-              title="Not available in the current backend."
-              className="h-10 rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-400 outline-none cursor-not-allowed"
-            >
-              <option value="">Status</option>
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
             </select>
             {hasFilters && (
               <button
