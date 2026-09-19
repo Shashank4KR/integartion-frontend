@@ -40,10 +40,10 @@ export default function Modal({
         onClick={onClose}
       />
       <div
-        className={`relative z-10 w-full ${maxWidth} rounded-2xl bg-white shadow-2xl overflow-hidden`}
+        className={`relative z-10 w-full ${maxWidth} rounded-2xl bg-white shadow-2xl overflow-visible`}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 rounded-t-2xl">
             <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
             <button
               onClick={onClose}
