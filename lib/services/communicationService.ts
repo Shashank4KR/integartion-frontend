@@ -156,6 +156,22 @@ export async function listMessages(
   return unwrapItems(await response.json());
 }
 
+export async function markAllMessagesRead(
+  token: string,
+): Promise<any> {
+  const response = await fetch(`${BASE}/messages/read-all`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    return { ok: false };
+  }
+
+  return unwrapData(await response.json(), { message: "Marked as read" });
+}
+
+
 export async function sendMessage(
   token: string,
   payload: any,

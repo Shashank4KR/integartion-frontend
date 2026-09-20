@@ -22,7 +22,8 @@ import { getInitials } from "@/lib/utils/formatters";
 import CalendarPicker from "@/components/shared/Calendar";
 import { MENU_ITEMS } from "@/lib/constants";
 import { MODULES, QUICK_ACCESS } from "@/lib/modules";
-import { listNotifications, listMessages, markAllNotificationsRead } from "@/lib/services/communicationService";
+import { listNotifications, listMessages, markAllNotificationsRead, markAllMessagesRead } from "@/lib/services/communicationService";
+
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -110,8 +111,8 @@ export default function DashboardHeader({
               setAvatarFailed(false);
             }
           }
-        } catch {
-          // ignore offline/auth error
+        } catch (err) {
+          console.warn("[Header] Failed to load fresh user profile:", err);
         }
       }
     };
@@ -150,13 +151,21 @@ export default function DashboardHeader({
       setHasUnreadNotifications(false);
       try {
         localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
-      } catch {}
+      } catch (err) {
+        console.warn("[Header] Storage error setting notifications viewed:", err);
+      }
     }
     if (pathname && pathname.includes("/messages")) {
       setHasUnreadMessages(false);
       try {
         localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
-      } catch {}
+      } catch (err) {
+        console.warn("[Header] Storage error setting messages viewed:", err);
+      }
+      const token = getToken();
+      if (token) {
+        void markAllMessagesRead(token).catch((err) => console.warn("[Header] markAllMessagesRead error:", err));
+      }
     }
 
     const checkUnread = async () => {
@@ -223,11 +232,13 @@ export default function DashboardHeader({
     setHasUnreadNotifications(false);
     try {
       localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
-    } catch {}
+    } catch (err) {
+      console.warn("[Header] Storage error setting notifications viewed:", err);
+    }
     window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
     const token = getToken();
     if (token) {
-      void markAllNotificationsRead(token).catch(() => {});
+      void markAllNotificationsRead(token).catch((err) => console.warn("[Header] markAllNotificationsRead error:", err));
     }
     if (actions?.notifications) {
       router.push(actions.notifications);
@@ -238,12 +249,19 @@ export default function DashboardHeader({
     setHasUnreadMessages(false);
     try {
       localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
-    } catch {}
+    } catch (err) {
+      console.warn("[Header] Storage error setting messages viewed:", err);
+    }
     window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
+    const token = getToken();
+    if (token) {
+      void markAllMessagesRead(token).catch((err) => console.warn("[Header] markAllMessagesRead error:", err));
+    }
     if (actions?.messages) {
       router.push(actions.messages);
     }
   };
+
 
   useEffect(() => {
     setSelected(0);

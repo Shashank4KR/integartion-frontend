@@ -7,7 +7,8 @@ import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import Header from "@/components/shared/layout/Header";
 import { getToken } from "@/lib/auth";
-import { listMessages, listNotifications, markAllNotificationsRead } from "@/lib/services/communicationService";
+import { listMessages, listNotifications, markAllNotificationsRead, markAllMessagesRead } from "@/lib/services/communicationService";
+
 
 type InboxKind = "messages" | "notifications";
 
@@ -75,13 +76,18 @@ export default function AdminInboxPage({ kind }: { kind: InboxKind }) {
         try {
           localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
-          void markAllNotificationsRead(token).catch(() => {});
-        } catch {}
+          void markAllNotificationsRead(token).catch((err) => console.warn("[AdminInbox] markAllNotificationsRead error:", err));
+        } catch (err) {
+          console.warn("[AdminInbox] notifications storage event error:", err);
+        }
       } else {
         try {
           localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
-        } catch {}
+          void markAllMessagesRead(token).catch((err) => console.warn("[AdminInbox] markAllMessagesRead error:", err));
+        } catch (err) {
+          console.warn("[AdminInbox] messages storage event error:", err);
+        }
       }
 
       const loaded = ((await config.load(token)) || []) as any[];

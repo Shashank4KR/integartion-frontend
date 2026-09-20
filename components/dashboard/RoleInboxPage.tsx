@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { listAnnouncements, listMessages, listNotifications, markAllNotificationsRead } from "@/lib/services/communicationService";
+import { listAnnouncements, listMessages, listNotifications, markAllNotificationsRead, markAllMessagesRead } from "@/lib/services/communicationService";
+
+
+
+
+
 
 type Role = "student" | "teacher" | "parent" | "accountant" | "librarian" | "warden";
 type InboxKind = "messages" | "notifications";
@@ -52,12 +57,14 @@ export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxK
         try {
           localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
-          void markAllNotificationsRead(token).catch(() => {});
-        } catch {}
+          void markAllNotificationsRead(token).catch((err) => console.warn("[RoleInbox] markAllNotificationsRead error:", err));
+        } catch (err) {
+          console.warn("[RoleInbox] notifications storage event error:", err);
+        }
 
         const [announcements, notifications] = await Promise.all([
-          listAnnouncements(token).catch(() => []),
-          listNotifications(token).catch(() => []),
+          listAnnouncements(token).catch((err) => { console.warn("[RoleInbox] listAnnouncements error:", err); return []; }),
+          listNotifications(token).catch((err) => { console.warn("[RoleInbox] listNotifications error:", err); return []; }),
         ]);
         const combined = [...announcements, ...notifications];
         combined.sort((a, b) => {
@@ -70,7 +77,11 @@ export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxK
         try {
           localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
-        } catch {}
+          void markAllMessagesRead(token).catch((err) => console.warn("[RoleInbox] markAllMessagesRead error:", err));
+        } catch (err) {
+          console.warn("[RoleInbox] messages storage event error:", err);
+        }
+
 
         const rawMessages = ((await config.load(token)) || []) as any[];
         rawMessages.sort((a, b) => {
