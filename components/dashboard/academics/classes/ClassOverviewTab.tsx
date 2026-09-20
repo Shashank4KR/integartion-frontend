@@ -63,8 +63,8 @@ export default function ClassOverviewTab({
       await onAssignSubjects(selectedClass.id, selectedSubjectIds);
       setSelectedSubjectIds([]);
       setShowAssignSubjects(false);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassOverviewTab] Assign subjects error:", err);
     } finally {
       setSubmitting(false);
     }
@@ -77,8 +77,8 @@ export default function ClassOverviewTab({
       await onAssignTeacher(selectedClass.id, selectedTeacherId);
       setSelectedTeacherId("");
       setShowAssignTeacher(false);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassOverviewTab] Assign teacher error:", err);
     } finally {
       setSubmitting(false);
     }

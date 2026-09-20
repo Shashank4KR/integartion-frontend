@@ -90,15 +90,15 @@ export default function TeacherClassesPage() {
     setFeedbackSuccess(null);
     try {
       const [att, res, fb] = await Promise.all([
-        getStudentAttendanceSummary(token, student.id).catch(() => null),
-        getStudentExamResults(token, student.id).catch(() => []),
-        getStudentFeedback(token, student.id).catch(() => []),
+        getStudentAttendanceSummary(token, student.id).catch((err) => { console.warn("[TeacherClasses] getStudentAttendanceSummary error:", err); return null; }),
+        getStudentExamResults(token, student.id).catch((err) => { console.warn("[TeacherClasses] getStudentExamResults error:", err); return []; }),
+        getStudentFeedback(token, student.id).catch((err) => { console.warn("[TeacherClasses] getStudentFeedback error:", err); return []; }),
       ]);
       setStudentAttendance(att);
       setStudentResults(res);
       setFeedbacks(fb);
-    } catch {
-      // Ignore fallback
+    } catch (err) {
+      console.warn("[TeacherClasses] Case study data fetch error:", err);
     } finally {
       setLoadingCaseStudy(false);
     }

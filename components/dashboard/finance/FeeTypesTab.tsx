@@ -46,7 +46,7 @@ export default function FeeTypesTab({ feeTypes: initialFeeTypes }: FeeTypesTabPr
           );
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[FeeTypesTab] Failed to load fee types:", err))
       .finally(() => setLoading(false));
   }, [initialFeeTypes]);
 

@@ -413,8 +413,8 @@ export default function AccountantInvoicesPage() {
           amount: updated.amount,
           status: updated.status.toUpperCase(),
         });
-      } catch {
-        // Optimistic update retained
+      } catch (err) {
+        console.warn("[AccountantInvoices] Backend update error, retaining optimistic state:", err);
       }
     }
   };
@@ -465,8 +465,8 @@ export default function AccountantInvoicesPage() {
     if (token && invoice.id) {
       try {
         await deleteInvoice(token, invoice.id);
-      } catch {
-        // Optimistic delete retained
+      } catch (err) {
+        console.warn("[AccountantInvoices] Backend delete error, retaining optimistic state:", err);
       }
     }
   };

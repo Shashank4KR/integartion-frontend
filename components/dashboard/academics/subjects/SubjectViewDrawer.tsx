@@ -237,8 +237,8 @@ function ClassAssignmentsTab({
       if (mapping) {
         await onRemove(mapping.id);
       }
-    } catch {
-      // error handled by parent
+    } catch (err) {
+      console.warn("[SubjectViewDrawer] Remove class mapping error:", err);
     } finally {
       setRemovingId(null);
       setConfirmingClass(null);

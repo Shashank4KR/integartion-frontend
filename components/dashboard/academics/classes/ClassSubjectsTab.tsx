@@ -57,8 +57,8 @@ export default function ClassSubjectsTab({
     try {
       await onAssign(classId, selected);
       setSelected([]);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassSubjectsTab] Assign error:", err);
     } finally {
       setSubmitting(false);
     }
@@ -67,8 +67,8 @@ export default function ClassSubjectsTab({
   const handleRemove = async (mappingId: string) => {
     try {
       await onRemove(mappingId);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassSubjectsTab] Remove error:", err);
     }
   };
 

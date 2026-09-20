@@ -96,8 +96,8 @@ export default function TeacherAttendancePage() {
                 initialMap[rec.student_id] = rec.status as any;
               }
             });
-          } catch {
-            // Ignore if search fails
+          } catch (err) {
+            console.warn("[TeacherAttendance] Failed to load existing attendance records:", err);
           }
         }
 

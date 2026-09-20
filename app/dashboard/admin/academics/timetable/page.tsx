@@ -729,8 +729,8 @@ export default function TimetablePage() {
           ]);
           setClassTimetables(ttData);
           setClassSubjects(subjData);
-        } catch {
-          // silent refresh fallback
+        } catch (refreshErr) {
+          console.warn("[Timetable] Save entry refresh fallback error:", refreshErr);
         }
       }
     } catch (err) {
@@ -819,8 +819,8 @@ export default function TimetablePage() {
           ]);
           setClassTimetables(ttData);
           setClassSubjects(subjData);
-        } catch {
-          // silent refresh fallback
+        } catch (refreshErr) {
+          console.warn("[Timetable] Delete entry refresh fallback error:", refreshErr);
         }
       }
     } catch (err) {

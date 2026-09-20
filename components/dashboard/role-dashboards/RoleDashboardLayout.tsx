@@ -53,7 +53,7 @@ export default function RoleDashboardLayout({
           setIsMaintenance(true);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[RoleDashboardLayout] Maintenance check error:", err));
   }, [config.key, isAdmin, router]);
 
   if (isMaintenance && !isAdmin) {

@@ -277,14 +277,14 @@ export default function GenerateInvoiceDialog({
               payment_method: paymentMode,
               payment_date: invoiceDate,
               remarks: notes || "Initial Invoice Payment",
-            }).catch(() => {});
+            }).catch((err) => console.warn("[GenerateInvoiceDialog] Initial payment creation warning:", err));
           }
 
           if (createdBackendId) {
             generatedId = res?.data?.invoice_number || res?.invoice_number || generatedId;
           }
-        } catch {
-          // Optimistic local creation
+        } catch (err) {
+          console.warn("[GenerateInvoiceDialog] Backend fee invoice sync warning, using local fallback:", err);
         }
       } else if (token && invoiceType === "Salary Invoice") {
         try {

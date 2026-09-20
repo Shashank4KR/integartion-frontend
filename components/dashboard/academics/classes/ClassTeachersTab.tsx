@@ -52,8 +52,8 @@ export default function ClassTeachersTab({
       await onAssignTeacher(selectedClass.id, selectedTeacherId);
       setSelectedTeacherId("");
       setShowAssign(false);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassTeachersTab] Assign teacher error:", err);
     } finally {
       setSubmitting(false);
     }
@@ -64,8 +64,8 @@ export default function ClassTeachersTab({
     setRemovingId(mappingId);
     try {
       await onRemoveTeacherSubject(mappingId);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassTeachersTab] Remove teacher error:", err);
     } finally {
       setRemovingId(null);
     }

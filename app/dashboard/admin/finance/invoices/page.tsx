@@ -407,8 +407,8 @@ export default function InvoicesPage() {
           amount: updated.amount,
           status: updated.status.toUpperCase(),
         });
-      } catch {
-        // Optimistic update retained
+      } catch (err) {
+        console.warn("[AdminInvoices] Backend update error, retaining optimistic state:", err);
       }
     }
   };
@@ -459,8 +459,8 @@ export default function InvoicesPage() {
     if (token && invoice.id) {
       try {
         await deleteInvoice(token, invoice.id);
-      } catch {
-        // Optimistic delete retained
+      } catch (err) {
+        console.warn("[AdminInvoices] Backend delete error, retaining optimistic state:", err);
       }
     }
   };

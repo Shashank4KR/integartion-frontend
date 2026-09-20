@@ -94,8 +94,8 @@ export default function TeacherMarksPage() {
                 };
               }
             });
-          } catch {
-            // Ignore if existing results cannot be retrieved
+          } catch (err) {
+            console.warn("[TeacherMarks] Failed to load existing results:", err);
           }
         }
 

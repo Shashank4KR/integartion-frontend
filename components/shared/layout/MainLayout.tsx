@@ -37,7 +37,7 @@ export default function MainLayout({
           setMaintenanceActive(true);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[MainLayout] System status fetch error:", err));
   }, [router]);
 
   return (

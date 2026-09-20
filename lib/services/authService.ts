@@ -38,8 +38,8 @@ export async function loginRequest(
       } else if (Array.isArray(detail) && detail.length > 0) {
         message = detail.map((item) => item.msg).join(", ");
       }
-    } catch {
-      // response body was not valid JSON; keep the default message
+    } catch (err) {
+      console.warn("[authService] Login response body not valid JSON:", err);
     }
     throw new Error(message);
   }
@@ -81,8 +81,8 @@ export async function getCurrentUser(token: string): Promise<{
       } else if (Array.isArray(detail) && detail.length > 0) {
         message = detail.map((item) => item.msg).join(", ");
       }
-    } catch {
-      // response body was not valid JSON; keep the default message
+    } catch (err) {
+      console.warn("[authService] Profile response body not valid JSON:", err);
     }
     throw new Error(message);
   }

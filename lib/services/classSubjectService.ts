@@ -1,4 +1,4 @@
-﻿import type { ClassSubjectResponse } from "@/types/entities/class-subject";
+import type { ClassSubjectResponse } from "@/types/entities/class-subject";
 
 const BASE = "/api/class-subjects";
 
@@ -63,8 +63,8 @@ export async function deleteClassSubject(token: string, id: string): Promise<voi
     try {
       const data = (await response.json()) as { detail?: string };
       message = data.detail ?? message;
-    } catch {
-      // empty or non-JSON body
+    } catch (err) {
+      console.warn("[classSubjectService] Error parsing non-JSON response body:", err);
     }
     throw new Error(message);
   }

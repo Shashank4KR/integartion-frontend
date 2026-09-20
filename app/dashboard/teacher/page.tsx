@@ -134,8 +134,8 @@ export default function TeacherDashboardPage() {
               if (stu?.id) uniqueStudentIds.add(stu.id);
             });
             computedStudents = uniqueStudentIds.size;
-          } catch {
-            // Keep computedStudents as 0
+          } catch (err) {
+            console.warn("[TeacherDashboard] Student count calculation fallback error:", err);
           }
         }
 
