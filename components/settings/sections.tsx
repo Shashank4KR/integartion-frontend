@@ -551,7 +551,7 @@ export function AccountSecurity(_: SectionProps) {
         if (typeof sec.two_factor_auth === "boolean") setTwoFactor(sec.two_factor_auth);
         if (typeof sec.signin_alerts === "boolean") setSignInAlerts(sec.signin_alerts);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[Settings] Failed to fetch security settings:", err));
 
     void getUserSessions(token)
       .then((res) => {
@@ -569,7 +569,7 @@ export function AccountSecurity(_: SectionProps) {
           ]);
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[Settings] Failed to load user sessions:", err))
       .finally(() => setLoadingSessions(false));
   }, []);
 
@@ -1638,8 +1638,10 @@ export function AuditActivityLogs(_: SectionProps) {
       activity: string;
       details?: string | null;
       timestamp?: string | null;
+      activity_time?: string | null;
       created_at?: string | null;
-      user?: { username?: string } | null;
+      user_id?: string | null;
+      user?: { username?: string; email?: string | null } | null;
     }>
   >([]);
   const [loading, setLoading] = useState(true);
@@ -1788,14 +1790,14 @@ export function AuditActivityLogs(_: SectionProps) {
                 <p className="text-xs text-slate-500">
                   {log.details ? `${sanitizeDetails(log.details)} · ` : ""}by{" "}
                   <span className="font-medium text-slate-700">
-                    {log.user?.username || "System Administrator"}
+                    {log.user?.username || (log.user_id ? "User" : "System Administrator")}
                   </span>
                 </p>
               </div>
               <span className="whitespace-nowrap text-xs text-slate-400">
                 <Clock3 className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
-                {log.timestamp || log.created_at
-                  ? new Date(log.timestamp || log.created_at!).toLocaleString()
+                {log.activity_time || log.timestamp || log.created_at
+                  ? new Date(log.activity_time || log.timestamp || log.created_at!).toLocaleString()
                   : "Recently"}
               </span>
             </div>

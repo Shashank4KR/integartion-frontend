@@ -185,7 +185,7 @@ export function logout(redirectPath = "/login"): void {
   if (!isBrowser()) return;
   const token = getToken();
 
-  // Fire-and-forget notification to backend if available
+  // Fire notification to backend with keepalive so page navigation doesn't abort it
   if (token) {
     try {
       fetch("/api/auth/logout", {
@@ -193,9 +193,10 @@ export function logout(redirectPath = "/login"): void {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }).catch(() => {});
-    } catch {
-      // Ignore network errors during logout
+        keepalive: true,
+      }).catch((err) => console.warn("[Auth] Backend logout request warning:", err));
+    } catch (err) {
+      console.warn("[Auth] Logout invocation error:", err);
     }
   }
 

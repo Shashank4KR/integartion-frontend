@@ -138,26 +138,29 @@ export async function getAuditLogs(token: string): Promise<Array<{
   activity: string;
   details?: string | null;
   timestamp?: string | null;
+  activity_time?: string | null;
   created_at?: string | null;
   user_id?: string | null;
-  user?: { username?: string; email?: string } | null;
+  user?: { id?: string; username?: string; email?: string | null } | null;
 }>> {
-  const response = await fetch(`${AUDIT_BASE}`, {
+  const response = await fetch(`${AUDIT_BASE}?skip=0&limit=500`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!response.ok) {
-    return [];
+    const data = (await response.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(data.detail ?? `Failed to fetch audit logs (${response.status})`);
   }
 
-  return (await response.json().catch(() => [])) as Array<{
+  return (await response.json()) as Array<{
     id: string;
     activity: string;
     details?: string | null;
     timestamp?: string | null;
+    activity_time?: string | null;
     created_at?: string | null;
     user_id?: string | null;
-    user?: { username?: string; email?: string } | null;
+    user?: { id?: string; username?: string; email?: string | null } | null;
   }>;
 }
 
@@ -173,15 +176,18 @@ export async function exportAuditLogsCSV(token: string): Promise<void> {
     `"${(log.activity || "").replace(/"/g, '""')}"`,
     `"${(log.details || "").replace(/"/g, '""')}"`,
     `"${(log.user?.username || log.user_id || "System").replace(/"/g, '""')}"`,
-    `"${log.timestamp || log.created_at || new Date().toISOString()}"`,
+    `"${log.activity_time || log.timestamp || log.created_at || new Date().toISOString()}"`,
   ]);
 
-  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-  const encodedUri = encodeURI(csvContent);
+  const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const blobUrl = URL.createObjectURL(blob);
+
   const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
+  link.setAttribute("href", blobUrl);
   link.setAttribute("download", `audit_activity_logs_${new Date().toISOString().slice(0, 10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(blobUrl);
 }
