@@ -170,7 +170,7 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "Hostel Management",
-    description: "Manage hostel rooms, students and wardens.",
+    description: "Manage hostel rooms, beds, mess and student accommodations.",
     icon: Building2,
     href: "/dashboard/admin/hostel",
     color: "#0e7490",

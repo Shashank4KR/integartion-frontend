@@ -82,7 +82,6 @@ export default function DashboardHeader({
     student: { messages: "/dashboard/student/messages", notifications: "/dashboard/student/notifications" },
     accountant: { messages: "/dashboard/accountant/messages", notifications: "/dashboard/accountant/notifications" },
     librarian: { messages: "/dashboard/librarian/messages", notifications: "/dashboard/librarian/notifications" },
-    warden: { messages: "/dashboard/warden/messages", notifications: "/dashboard/warden/notifications" },
   };
   const actions = dashboardRole ? actionPaths[dashboardRole] : undefined;
 

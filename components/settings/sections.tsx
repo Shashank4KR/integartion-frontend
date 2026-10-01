@@ -1281,7 +1281,7 @@ export function HostelConfiguration(_: SectionProps) {
         },
         {
           key: "require_visitor_approval",
-          label: "Require visitor warden approval",
+          label: "Require visitor supervisor approval",
           hint: "All guest entries must be authenticated by the hostel supervisor.",
           type: "toggle",
         },

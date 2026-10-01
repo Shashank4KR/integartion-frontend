@@ -39,6 +39,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(targetDashboard, request.url));
     }
 
+    // Redirect legacy warden routes to admin hostel
+    if (pathname.startsWith("/dashboard/warden")) {
+      return NextResponse.redirect(new URL("/dashboard/admin/hostel", request.url));
+    }
+
     // Role-based route guard enforcement
     // ADMIN has full superuser access across all modules
     if (userRole === "ADMIN") {
@@ -53,7 +58,6 @@ export function middleware(request: NextRequest) {
       { prefix: "/dashboard/parent", allowedRoles: ["PARENT", "ADMIN"] },
       { prefix: "/dashboard/accountant", allowedRoles: ["ACCOUNTANT", "ADMIN"] },
       { prefix: "/dashboard/librarian", allowedRoles: ["LIBRARIAN", "ADMIN"] },
-      { prefix: "/dashboard/warden", allowedRoles: ["ADMIN"] },
     ];
 
     for (const { prefix, allowedRoles } of routePrefixes) {
