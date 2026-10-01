@@ -8,7 +8,6 @@ const ROLE_DASHBOARDS: Record<string, string> = {
   PARENT: "/dashboard/parent",
   ACCOUNTANT: "/dashboard/accountant",
   LIBRARIAN: "/dashboard/librarian",
-  WARDEN: "/dashboard/warden",
 };
 
 export function middleware(request: NextRequest) {
@@ -54,7 +53,7 @@ export function middleware(request: NextRequest) {
       { prefix: "/dashboard/parent", allowedRoles: ["PARENT", "ADMIN"] },
       { prefix: "/dashboard/accountant", allowedRoles: ["ACCOUNTANT", "ADMIN"] },
       { prefix: "/dashboard/librarian", allowedRoles: ["LIBRARIAN", "ADMIN"] },
-      { prefix: "/dashboard/warden", allowedRoles: ["WARDEN", "ADMIN"] },
+      { prefix: "/dashboard/warden", allowedRoles: ["ADMIN"] },
     ];
 
     for (const { prefix, allowedRoles } of routePrefixes) {
