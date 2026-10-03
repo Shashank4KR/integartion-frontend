@@ -6,11 +6,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MENU_ITEMS, COMPANY_INFO, type MenuItemType } from "@/lib/constants";
 import { getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
+import ContactSupportModal from "@/components/shared/ContactSupportModal";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
 
   useEffect(() => {
     setAvatar(getStoredAvatar());
@@ -64,11 +66,20 @@ export default function Sidebar() {
           <p className="text-purple-200 text-xs mt-1">
             We're here to assist you
           </p>
-          <button className="w-full mt-3 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-lg py-2 text-xs font-semibold hover:from-purple-500 hover:to-purple-600 transition">
+          <button
+            type="button"
+            onClick={() => setIsSupportOpen(true)}
+            className="w-full mt-3 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-lg py-2 text-xs font-semibold hover:from-purple-500 hover:to-purple-600 transition"
+          >
             Contact Support
           </button>
         </div>
       </div>
+
+      <ContactSupportModal
+        open={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+      />
     </div>
   );
 }

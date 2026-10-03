@@ -40,10 +40,10 @@ export default function Modal({
         onClick={onClose}
       />
       <div
-        className={`relative z-10 w-full ${maxWidth} rounded-2xl bg-white shadow-2xl overflow-visible`}
+        className={`relative z-10 w-full ${maxWidth} max-h-[90vh] my-auto flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden`}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 rounded-t-2xl">
+          <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-100 px-6 py-4 rounded-t-2xl bg-white z-10">
             <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
             <button
               onClick={onClose}
@@ -54,7 +54,7 @@ export default function Modal({
             </button>
           </div>
         )}
-        <div className={title ? "p-6" : ""}>{children}</div>
+        <div className={`flex-1 overflow-y-auto ${title ? "p-6" : ""}`}>{children}</div>
       </div>
     </div>
   );
