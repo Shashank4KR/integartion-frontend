@@ -24,15 +24,23 @@ export default function RecentMessExpensesCard({ rows, onViewAll }: RecentMessEx
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-slate-50 last:border-0">
-                <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.date}</td>
-                <td className="px-3 py-2.5 font-medium text-slate-900">{row.particulars}</td>
-                <td className="px-3 py-2.5 text-slate-600">{row.category}</td>
-                <td className="px-3 py-2.5 text-right font-medium text-slate-900 tabular-nums">{row.amount.toLocaleString()}</td>
-                <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.addedBy}</td>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">
+                  No expenses recorded yet.
+                </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} className="border-b border-slate-50 last:border-0">
+                  <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.date}</td>
+                  <td className="px-3 py-2.5 font-medium text-slate-900">{row.particulars}</td>
+                  <td className="px-3 py-2.5 text-slate-600">{row.category}</td>
+                  <td className="px-3 py-2.5 text-right font-medium text-slate-900 tabular-nums">{row.amount.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.addedBy}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -24,15 +24,23 @@ export default function RecentMessCollectionsCard({ rows, onViewAll }: RecentMes
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-slate-50 last:border-0">
-                <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.date}</td>
-                <td className="px-3 py-2.5 font-medium text-slate-900">{row.receivedFrom}</td>
-                <td className="px-3 py-2.5 text-slate-600">{row.blockRoom}</td>
-                <td className="px-3 py-2.5 text-right font-medium text-slate-900 tabular-nums">{row.amount.toLocaleString()}</td>
-                <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.receivedBy}</td>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">
+                  No collections recorded yet.
+                </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} className="border-b border-slate-50 last:border-0">
+                  <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.date}</td>
+                  <td className="px-3 py-2.5 font-medium text-slate-900">{row.receivedFrom}</td>
+                  <td className="px-3 py-2.5 text-slate-600">{row.blockRoom}</td>
+                  <td className="px-3 py-2.5 text-right font-medium text-slate-900 tabular-nums">{row.amount.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{row.receivedBy}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

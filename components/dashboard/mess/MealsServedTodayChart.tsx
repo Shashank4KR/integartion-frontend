@@ -16,7 +16,7 @@ export default function MealsServedTodayChart({ segments, total, timeframe, onTi
   let currentOffset = 0;
 
   const segmentsWithOffset = segments.map((seg) => {
-    const angle = (seg.count / totalVal) * 360;
+    const angle = totalVal > 0 ? (seg.count / totalVal) * 360 : 0;
     const length = (angle / 360) * circumference;
     const offset = currentOffset;
     currentOffset += length;
