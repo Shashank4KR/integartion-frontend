@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,27 +16,39 @@ interface RaiseMaintenanceRequestDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: Record<string, string>) => void;
+  rooms?: any[];
 }
 
 export default function RaiseMaintenanceRequestDialog({
   open,
   onClose,
   onSave,
+  rooms = [],
 }: RaiseMaintenanceRequestDialogProps) {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const defaultRoomNo = rooms.length > 0 ? (rooms[0].room_no || rooms[0].room_number || "") : "";
+
   const [formData, setFormData] = useState({
     requestType: "Repair",
     category: "Electrical",
     issueTitle: "",
     description: "",
     hostelBlock: "Block A",
-    roomNumber: "",
-    requestedBy: "",
+    roomNumber: defaultRoomNo,
+    requestedBy: "Hostel Student",
     priority: "Medium",
-    requestedDate: "",
+    requestedDate: todayStr,
     preferredVisitTime: "",
     attachment: "",
     status: "Open",
   });
+
+  useEffect(() => {
+    if (!formData.roomNumber && rooms.length > 0) {
+      const num = rooms[0].room_no || rooms[0].room_number || "";
+      setFormData((prev) => ({ ...prev, roomNumber: num }));
+    }
+  }, [rooms, formData.roomNumber]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -55,8 +67,7 @@ export default function RaiseMaintenanceRequestDialog({
     const newErrors: Record<string, string> = {};
     if (!formData.issueTitle.trim()) newErrors.issueTitle = "Issue title is required";
     if (!formData.description.trim()) newErrors.description = "Description is required";
-    if (!formData.roomNumber.trim()) newErrors.roomNumber = "Room number is required";
-    if (!formData.requestedBy.trim()) newErrors.requestedBy = "Requested by is required";
+    if (!formData.roomNumber.trim() && rooms.length === 0) newErrors.roomNumber = "Room number is required";
     if (!formData.requestedDate.trim()) newErrors.requestedDate = "Date is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -130,12 +141,29 @@ export default function RaiseMaintenanceRequestDialog({
           </div>
           <div>
             <label className="mb-2 block text-xs font-semibold text-slate-700">Room Number</label>
-            <Input
-              value={formData.roomNumber}
-              onChange={(e) => handleChange("roomNumber", e.target.value)}
-              placeholder="e.g. A-101"
-              className={inputClass("roomNumber")}
-            />
+            {rooms && rooms.length > 0 ? (
+              <select
+                value={formData.roomNumber}
+                onChange={(e) => handleChange("roomNumber", e.target.value)}
+                className={inputClass("roomNumber")}
+              >
+                {rooms.map((r) => {
+                  const num = r.room_no || r.room_number || r.id;
+                  return (
+                    <option key={r.id} value={num}>
+                      Room {num} {r.floor_no !== undefined ? `(Floor ${r.floor_no})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            ) : (
+              <Input
+                value={formData.roomNumber}
+                onChange={(e) => handleChange("roomNumber", e.target.value)}
+                placeholder="e.g. A-101"
+                className={inputClass("roomNumber")}
+              />
+            )}
             {errors.roomNumber && <p className="text-xs text-red-500 mt-1">{errors.roomNumber}</p>}
           </div>
         </div>
@@ -198,8 +226,9 @@ export default function RaiseMaintenanceRequestDialog({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm pt-4 pb-2 border-t border-slate-100 flex items-center justify-end gap-3 mt-4">
           <Button
+            type="button"
             onClick={onClose}
             variant="outline"
             className="bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
@@ -207,8 +236,9 @@ export default function RaiseMaintenanceRequestDialog({
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={handleSubmit}
-            className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white"
+            className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold px-6 shadow-sm"
           >
             Save Request
           </Button>

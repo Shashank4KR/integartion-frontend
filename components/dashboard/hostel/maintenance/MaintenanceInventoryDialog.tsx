@@ -5,18 +5,10 @@ import Modal from "@/components/shared/Modal";
 interface MaintenanceInventoryDialogProps {
   open: boolean;
   onClose: () => void;
+  items?: Array<{ item: string; stock: number; category: string }>;
 }
 
-const INVENTORY = [
-  { item: "Ceiling Fans", stock: 24, category: "Electrical" },
-  { item: "Tube Lights", stock: 50, category: "Electrical" },
-  { item: "Door Locks", stock: 12, category: "Furniture" },
-  { item: "Tap Sets", stock: 18, category: "Plumbing" },
-  { item: "Plug Points", stock: 30, category: "Electrical" },
-  { item: "Geyser Elements", stock: 8, category: "Appliance" },
-];
-
-export default function MaintenanceInventoryDialog({ open, onClose }: MaintenanceInventoryDialogProps) {
+export default function MaintenanceInventoryDialog({ open, onClose, items = [] }: MaintenanceInventoryDialogProps) {
   return (
     <Modal open={open} onClose={onClose} title="Inventory" maxWidth="max-w-2xl">
       <div className="overflow-x-auto">
@@ -29,13 +21,21 @@ export default function MaintenanceInventoryDialog({ open, onClose }: Maintenanc
             </tr>
           </thead>
           <tbody>
-            {INVENTORY.map((inv, idx) => (
-              <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-medium text-slate-700">{inv.item}</td>
-                <td className="px-4 py-3 text-slate-600">{inv.category}</td>
-                <td className="px-4 py-3 text-slate-600">{inv.stock}</td>
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-500">
+                  No inventory items registered.
+                </td>
               </tr>
-            ))}
+            ) : (
+              items.map((inv, idx) => (
+                <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                  <td className="px-4 py-3 font-medium text-slate-700">{inv.item}</td>
+                  <td className="px-4 py-3 text-slate-600">{inv.category}</td>
+                  <td className="px-4 py-3 text-slate-600">{inv.stock}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -41,7 +41,7 @@ export default function EditHostelStudentDialog({
   const [classSection, setClassSection] = useState(row?.classSection || "XII - A");
   const [block, setBlock] = useState(row?.block || BLOCK_OPTIONS[0]);
   const [roomNo, setRoomNo] = useState(row?.roomNo || "");
-  const [checkInDate, setCheckInDate] = useState(row?.checkInDate || "01/01/2025");
+  const [checkInDate, setCheckInDate] = useState(row?.checkInDate || "02/10/2026");
   const [guardianName, setGuardianName] = useState(row?.guardianName || "");
   const [guardianContact, setGuardianContact] = useState(row?.guardianContact || "");
   const [studentContact, setStudentContact] = useState(row?.contactNo || "");
@@ -101,7 +101,7 @@ export default function EditHostelStudentDialog({
     setClassSection("XII - A");
     setBlock(BLOCK_OPTIONS[0]);
     setRoomNo(ROOM_MAP[BLOCK_OPTIONS[0]][0]);
-    setCheckInDate("01/01/2025");
+    setCheckInDate("02/10/2026");
     setGuardianName("");
     setGuardianContact("");
     setStudentContact("");

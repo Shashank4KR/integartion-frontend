@@ -18,7 +18,7 @@ export default function MaintenanceDateRangePicker({
   const [isOpen, setIsOpen] = useState(false);
   const [rangeStart, setRangeStart] = useState<Date | null>(null);
   const [rangeEnd, setRangeEnd] = useState<Date | null>(null);
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 4, 1));
+  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 9, 2));
 
   useEffect(() => {
     if (value && value.includes("-")) {
