@@ -393,6 +393,38 @@ export async function createMaintenanceRequest(
   return (await response.json()) as any;
 }
 
+export async function listWorkOrders(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch("/api/work-orders", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch work orders.");
+  }
+  return (await response.json()) as any[];
+}
+
+export async function createWorkOrder(
+  token: string,
+  payload: any,
+): Promise<any> {
+  const response = await fetch("/api/work-orders", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to create work order.");
+  }
+  return (await response.json()) as any;
+}
+
 export async function getMessDashboard(
   token: string,
 ): Promise<any> {
