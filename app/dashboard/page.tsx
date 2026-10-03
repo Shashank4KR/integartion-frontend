@@ -33,7 +33,6 @@ export default function DashboardIndexPage() {
       "00000000-0000-0000-0000-000000000004": "/dashboard/student",
       "00000000-0000-0000-0000-000000000005": "/dashboard/accountant",
       "00000000-0000-0000-0000-000000000006": "/dashboard/librarian",
-      "00000000-0000-0000-0000-000000000007": "/dashboard/warden",
     };
 
     const target = (roleId && ROLE_ID_PATHS[roleId]) || "/dashboard/admin";

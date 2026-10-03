@@ -69,7 +69,6 @@ export default function NewMessageDialog({
                 { id: "parent", name: "Parent", role: "Parent" },
                 { id: "accountant", name: "Accountant", role: "Accountant" },
                 { id: "librarian", name: "Librarian", role: "Librarian" },
-                { id: "warden", name: "Warden", role: "Warden" },
               ]);
             }
           })
@@ -80,7 +79,6 @@ export default function NewMessageDialog({
               { id: "parent", name: "Parent", role: "Parent" },
               { id: "accountant", name: "Accountant", role: "Accountant" },
               { id: "librarian", name: "Librarian", role: "Librarian" },
-              { id: "warden", name: "Warden", role: "Warden" },
             ]);
           });
       }

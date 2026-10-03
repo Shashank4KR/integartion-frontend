@@ -132,24 +132,6 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "Settings", icon: Settings, href: "/dashboard/librarian/settings" },
     ],
   },
-  warden: {
-    key: "warden",
-    name: "EdTech",
-    tagline: "Smart Campus ERP",
-    basePath: "/dashboard/warden",
-    user: { name: "Ramesh Kumar", role: "Hostel Warden" },
-    nav: [
-      { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/warden" },
-      { label: "Hostel", icon: BedDouble, href: "/dashboard/warden/hostel" },
-      { label: "Rooms", icon: ClipboardList, href: "/dashboard/warden/hostel/rooms" },
-      { label: "Students", icon: Users2, href: "/dashboard/warden/hostel/students" },
-      { label: "Complaints", icon: AlertCircle, href: "/dashboard/warden/hostel/complaints" },
-      { label: "Leave", icon: Clock, href: "/dashboard/warden/hostel/leave" },
-      { label: "Maintenance", icon: Wrench, href: "/dashboard/warden/hostel/maintenance" },
-      { label: "Mess", icon: Receipt, href: "/dashboard/warden/hostel/mess" },
-      { label: "Notices", icon: Megaphone, href: "/dashboard/warden/hostel/notices" },
-    ],
-  },
 };
 
 export type { LucideIcon };

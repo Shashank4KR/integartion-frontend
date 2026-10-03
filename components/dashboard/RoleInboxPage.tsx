@@ -13,7 +13,7 @@ import { listAnnouncements, listMessages, listNotifications, markAllNotification
 
 
 
-type Role = "student" | "teacher" | "parent" | "accountant" | "librarian" | "warden";
+type Role = "student" | "teacher" | "parent" | "accountant" | "librarian";
 type InboxKind = "messages" | "notifications";
 
 const inboxes: Record<InboxKind, { title: string; emptyLabel: string; icon: LucideIcon; load: (token: string) => Promise<unknown[]> }> = {
