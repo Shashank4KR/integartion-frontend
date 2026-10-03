@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { RoleConfig } from "@/lib/dashboard/role-dashboards/types";
 import { getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
+import ContactSupportModal from "@/components/shared/ContactSupportModal";
 
 interface RoleSidebarProps {
   config: RoleConfig;
@@ -14,6 +15,7 @@ interface RoleSidebarProps {
 export default function RoleSidebar({ config }: RoleSidebarProps) {
   const pathname = usePathname();
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
 
   useEffect(() => {
     setAvatar(getStoredAvatar());
@@ -80,11 +82,20 @@ export default function RoleSidebar({ config }: RoleSidebarProps) {
           <p className="text-purple-200 text-xs mt-1">
             Contact our support team
           </p>
-          <button className="w-full mt-3 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-lg py-2 text-xs font-semibold hover:from-purple-500 hover:to-purple-600 transition">
+          <button
+            type="button"
+            onClick={() => setIsSupportOpen(true)}
+            className="w-full mt-3 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-lg py-2 text-xs font-semibold hover:from-purple-500 hover:to-purple-600 transition"
+          >
             Contact Support
           </button>
         </div>
       </div>
+
+      <ContactSupportModal
+        open={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+      />
     </div>
   );
 }
