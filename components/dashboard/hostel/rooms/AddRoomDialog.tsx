@@ -27,7 +27,7 @@ interface AddRoomDialogProps {
     capacity: string;
     gender: string;
     occupiedBeds: string;
-    warden: string;
+    supervisor: string;
     status: string;
     notes: string;
   }) => void;
@@ -41,7 +41,7 @@ export default function AddRoomDialog({ open, onClose, onSave }: AddRoomDialogPr
   const [capacity, setCapacity] = useState("");
   const [gender, setGender] = useState(ADD_ROOM_GENDER_OPTIONS[0]);
   const [occupiedBeds, setOccupiedBeds] = useState("");
-  const [warden, setWarden] = useState("");
+  const [supervisor, setSupervisor] = useState("");
   const [status, setStatus] = useState(ADD_ROOM_STATUS_LIST[0]);
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -55,7 +55,7 @@ export default function AddRoomDialog({ open, onClose, onSave }: AddRoomDialogPr
       setCapacity("");
       setGender(ADD_ROOM_GENDER_OPTIONS[0]);
       setOccupiedBeds("");
-      setWarden("");
+      setSupervisor("");
       setStatus(ADD_ROOM_STATUS_LIST[0]);
       setNotes("");
       setErrors([]);
@@ -87,7 +87,7 @@ export default function AddRoomDialog({ open, onClose, onSave }: AddRoomDialogPr
       capacity,
       gender,
       occupiedBeds,
-      warden,
+      supervisor,
       status,
       notes,
     });
@@ -134,8 +134,8 @@ export default function AddRoomDialog({ open, onClose, onSave }: AddRoomDialogPr
             <Input value={occupiedBeds} onChange={(e) => setOccupiedBeds(e.target.value)} placeholder="e.g. 2" type="number" />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Warden</label>
-            <Input value={warden} onChange={(e) => setWarden(e.target.value)} placeholder="Warden name" />
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Block Supervisor</label>
+            <Input value={supervisor} onChange={(e) => setSupervisor(e.target.value)} placeholder="Supervisor name" />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>

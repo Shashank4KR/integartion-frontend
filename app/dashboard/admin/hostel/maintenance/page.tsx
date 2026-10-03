@@ -234,9 +234,7 @@ export default function MaintenanceManagementPage() {
           : `MR-${idx + 101}`,
         issueType: relatedReq?.issue_type || "General Maintenance",
         assignedTo:
-          wo.assigned_to === "00000000-0000-0000-0000-000000000077"
-            ? "Warden Team"
-            : "Facility Team",
+          "Facility Team",
         status: status as any,
         scheduledDate: schedDate,
         notes: wo.notes || `Scheduled maintenance on ${schedDate}`,
@@ -428,7 +426,7 @@ export default function MaintenanceManagementPage() {
             open={isStaffOpen}
             onClose={() => setIsStaffOpen(false)}
             staff={[
-              { name: "Warden Office", role: "Chief Warden", contact: "warden@example.com", block: "Campus Wide" },
+              { name: "Campus Operations", role: "Facility Supervisor", contact: "facilities@example.com", block: "Campus Wide" },
               { name: "John Admin", role: "Maintenance Admin", contact: "admin@example.com", block: "All Blocks" },
               { name: "Facilities Desk", role: "Operations Support", contact: "support@example.com", block: "Block A - D" },
             ]}

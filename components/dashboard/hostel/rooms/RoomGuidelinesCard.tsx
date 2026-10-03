@@ -6,7 +6,7 @@ const guidelines = [
   "Students must keep their rooms clean and tidy.",
   "Do not damage hostel property and furniture.",
   "Follow hostel rules and maintain discipline.",
-  "Any issue in room or facility must be reported to the warden immediately.",
+  "Any issue in room or facility must be reported to the hostel administration immediately.",
 ];
 
 export default function RoomGuidelinesCard() {
