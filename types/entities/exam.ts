@@ -21,6 +21,8 @@ export type ExamResponse = {
   exam_name: string;
   exam_type: string;
   class_id: string;
+  class_name?: string;
+  section?: string;
   start_date: string;
   end_date: string;
   max_marks: number;

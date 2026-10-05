@@ -24,6 +24,21 @@ function showNotification(message: string) {
   }, 3000);
 }
 
+export function formatExamNameWithSec(exam: ExamResponse, classes?: ClassResponse[]): string {
+  const sec = exam.section || classes?.find((c) => c.id === exam.class_id)?.section;
+  const cls = exam.class_name || classes?.find((c) => c.id === exam.class_id)?.class_name;
+  if (sec && cls) {
+    return `${exam.exam_name} - ${cls} (Sec ${sec})`;
+  }
+  if (sec) {
+    return `${exam.exam_name} - Sec ${sec}`;
+  }
+  if (cls) {
+    return `${exam.exam_name} - ${cls}`;
+  }
+  return exam.exam_name;
+}
+
 // ----------------------------------------------------
 // 1. Assign Subjects Modal
 // ----------------------------------------------------
@@ -134,7 +149,7 @@ export function AssignSubjectsModal({ open, onClose, exams, classes, token }: As
             <option value="">Select Exam</option>
             {exams.map((exam) => (
               <option key={exam.id} value={exam.id}>
-                {exam.exam_name} ({classes.find((c) => c.id === exam.class_id)?.class_name || "Class"})
+                {formatExamNameWithSec(exam, classes)}
               </option>
             ))}
           </select>
@@ -340,7 +355,7 @@ export function AssignInvigilatorsModal({ open, onClose, exams, token }: AssignI
             <option value="">Select Exam</option>
             {exams.map((exam) => (
               <option key={exam.id} value={exam.id}>
-                {exam.exam_name}
+                {formatExamNameWithSec(exam)}
               </option>
             ))}
           </select>
@@ -605,7 +620,7 @@ export function ExamTimetableModal({ open, onClose, exams, token }: ExamTimetabl
             <option value="">Select Exam</option>
             {exams.map((exam) => (
               <option key={exam.id} value={exam.id}>
-                {exam.exam_name}
+                {formatExamNameWithSec(exam)}
               </option>
             ))}
           </select>
@@ -859,7 +874,7 @@ export function GenerateAdmitCardModal({ open, onClose, exams, classes, token }:
               <option value="">Select Exam</option>
               {exams.map((exam) => (
                 <option key={exam.id} value={exam.id}>
-                  {exam.exam_name}
+                  {formatExamNameWithSec(exam)}
                 </option>
               ))}
             </select>
@@ -1213,7 +1228,7 @@ export function EnterMarksModal({ open, onClose, exams, classes, token }: EnterM
               <option value="">Select Exam</option>
               {exams.map((exam) => (
                 <option key={exam.id} value={exam.id}>
-                  {exam.exam_name}
+                  {formatExamNameWithSec(exam, classes)}
                 </option>
               ))}
             </select>
@@ -1387,7 +1402,7 @@ export function PublishResultsModal({ open, onClose, exams, token }: PublishResu
                 <option value="">Select Exam</option>
                 {exams.map((exam) => (
                   <option key={exam.id} value={exam.id}>
-                    {exam.exam_name}
+                    {formatExamNameWithSec(exam)}
                   </option>
                 ))}
               </select>
@@ -1533,7 +1548,7 @@ export function ExamReportModal({ open, onClose, exams, classes, token }: ExamRe
             <option value="">Select Exam</option>
             {exams.map((exam) => (
               <option key={exam.id} value={exam.id}>
-                {exam.exam_name}
+                {formatExamNameWithSec(exam)}
               </option>
             ))}
           </select>
