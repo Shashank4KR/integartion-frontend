@@ -35,7 +35,6 @@ const actionItems: ActionItem[] = [
   { label: "Assign Invigilators", icon: iconMap.UserCheck, bg: "bg-sky-100", color: "text-sky-600" },
   { label: "Exam Timetable", icon: iconMap.CalendarClock, bg: "bg-lime-100", color: "text-lime-600" },
   { label: "Generate Admit Card", icon: iconMap.FileText, bg: "bg-pink-100", color: "text-pink-600" },
-  { label: "Enter Marks", icon: iconMap.Pencil, bg: "bg-orange-100", color: "text-orange-600" },
   { label: "Publish Results", icon: iconMap.CheckCircle, bg: "bg-orange-100", color: "text-orange-600" },
   { label: "Exam Report", icon: iconMap.BarChart3, bg: "bg-sky-100", color: "text-sky-600" },
 ];

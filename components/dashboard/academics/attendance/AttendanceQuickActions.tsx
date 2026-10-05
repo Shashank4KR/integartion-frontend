@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 
 const ACTIONS = [
-  { label: "Mark Attendance", icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { label: "Bulk Attendance", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
   { label: "Attendance Report", icon: FileText, color: "text-orange-500", bg: "bg-orange-50" },
   { label: "Student Attendance", icon: UserCheck, color: "text-[#7c3aed]", bg: "bg-purple-50" },
   { label: "Daily Summary", icon: CalendarDays, color: "text-red-500", bg: "bg-red-50" },
