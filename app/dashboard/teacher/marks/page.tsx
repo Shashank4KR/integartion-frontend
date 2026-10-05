@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
-import { getToken } from "@/lib/auth";
+import { getToken, getStoredUser } from "@/lib/auth";
 import { getCurrentTeacher, getTeacherClasses, getTeacherSubjects, getTeacherExamResults } from "@/lib/services/teacherService";
 import { getAllExams } from "@/lib/services/examService";
 import { getClassStudents } from "@/lib/services/classService";
@@ -15,6 +15,7 @@ import { Loader2, AlertCircle, CheckCircle2, FileBarChart, Save, Trash2 } from "
 export default function TeacherMarksPage() {
   const router = useRouter();
   const [token, setToken] = useState<string>("");
+  const [isForbiddenRole, setIsForbiddenRole] = useState(false);
   const [classes, setClasses] = useState<Array<{ id: string; class_name: string; section?: string }>>([]);
   const [subjects, setSubjects] = useState<Array<{ id: string; subject_name: string }>>([]);
   const [exams, setExams] = useState<Array<{ id: string; exam_name: string; max_marks?: number }>>([]);
@@ -41,6 +42,14 @@ export default function TeacherMarksPage() {
           return;
         }
         setToken(storedToken);
+
+        const storedUser = getStoredUser();
+        const role = (storedUser?.role?.role_name ?? (storedUser as any)?.role_name ?? "").toUpperCase();
+        if (role && role !== "TEACHER") {
+          setIsForbiddenRole(true);
+          setLoading(false);
+          return;
+        }
 
         const teacher = await getCurrentTeacher(storedToken);
         const [clsList, subjList, examList] = await Promise.all([
@@ -183,6 +192,28 @@ export default function TeacherMarksPage() {
         <Card className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
         </Card>
+      </RoleDashboardLayout>
+    );
+  }
+
+  if (isForbiddenRole) {
+    return (
+      <RoleDashboardLayout config={ROLE_CONFIGS.teacher}>
+        <div className="mx-auto max-w-2xl py-12">
+          <Card className="p-8 text-center border-amber-200 bg-amber-50/50">
+            <AlertCircle className="mx-auto h-12 w-12 text-amber-500 mb-4" />
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Marks Entry is Teacher-Only</h2>
+            <p className="text-sm text-slate-600 mb-6">
+              Only teachers can enter or edit examination marks. Administrators can view finalized results, admit cards, and reports in the Admin Examinations module.
+            </p>
+            <button
+              onClick={() => router.push("/dashboard/admin/examinations")}
+              className="rounded-lg bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white hover:brightness-110 transition shadow-sm"
+            >
+              Go to Examinations Dashboard
+            </button>
+          </Card>
+        </div>
       </RoleDashboardLayout>
     );
   }
