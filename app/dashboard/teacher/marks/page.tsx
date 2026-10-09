@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
-import { getToken } from "@/lib/auth";
+import { getToken, getStoredUser } from "@/lib/auth";
 import { getCurrentTeacher, getTeacherClasses, getTeacherSubjects, getTeacherExamResults } from "@/lib/services/teacherService";
 import { getAllExams } from "@/lib/services/examService";
 import { getClassStudents } from "@/lib/services/classService";
@@ -15,9 +15,10 @@ import { Loader2, AlertCircle, CheckCircle2, FileBarChart, Save, Trash2 } from "
 export default function TeacherMarksPage() {
   const router = useRouter();
   const [token, setToken] = useState<string>("");
+  const [isForbiddenRole, setIsForbiddenRole] = useState(false);
   const [classes, setClasses] = useState<Array<{ id: string; class_name: string; section?: string }>>([]);
   const [subjects, setSubjects] = useState<Array<{ id: string; subject_name: string }>>([]);
-  const [exams, setExams] = useState<Array<{ id: string; exam_name: string; max_marks?: number }>>([]);
+  const [exams, setExams] = useState<Array<{ id: string; exam_name: string; class_id?: string; class_name?: string; section?: string; max_marks?: number }>>([]);
 
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
@@ -42,6 +43,14 @@ export default function TeacherMarksPage() {
         }
         setToken(storedToken);
 
+        const storedUser = getStoredUser();
+        const role = (storedUser?.role?.role_name ?? (storedUser as any)?.role_name ?? "").toUpperCase();
+        if (role && role !== "TEACHER") {
+          setIsForbiddenRole(true);
+          setLoading(false);
+          return;
+        }
+
         const teacher = await getCurrentTeacher(storedToken);
         const [clsList, subjList, examList] = await Promise.all([
           getTeacherClasses(storedToken, teacher.id),
@@ -53,9 +62,12 @@ export default function TeacherMarksPage() {
         setSubjects(subjList);
         setExams(examList);
 
-        if (clsList.length > 0) setSelectedClass(clsList[0].id);
+        const initialClassId = clsList.length > 0 ? clsList[0].id : "";
+        if (initialClassId) setSelectedClass(initialClassId);
         if (subjList.length > 0) setSelectedSubject(subjList[0].id);
-        if (examList.length > 0) setSelectedExam(examList[0].id);
+
+        const matchingExam = examList.find((ex: any) => ex.class_id === initialClassId) || examList[0];
+        if (matchingExam) setSelectedExam(matchingExam.id);
       } catch (err: any) {
         setError(err?.message || "Failed to load initial data.");
       } finally {
@@ -64,6 +76,7 @@ export default function TeacherMarksPage() {
     }
     void init();
   }, [router]);
+
 
   useEffect(() => {
     if (!selectedClass || !token) return;
@@ -124,7 +137,16 @@ export default function TeacherMarksPage() {
     }
 
     const currentExam = exams.find((e) => e.id === selectedExam);
-    const maxMarks = currentExam?.max_marks || 100;
+    if (!currentExam) {
+      setError("Please select a valid examination.");
+      return;
+    }
+    if (currentExam.class_id && currentExam.class_id !== selectedClass) {
+      const examClass = classes.find((c) => c.id === currentExam.class_id);
+      setError(`Selected exam is for ${examClass ? `${examClass.class_name} (${examClass.section})` : "a different class"}. Please select an exam matching the selected class.`);
+      return;
+    }
+    const maxMarks = currentExam.max_marks || 100;
 
     // Validation
     for (const s of students) {
@@ -187,6 +209,28 @@ export default function TeacherMarksPage() {
     );
   }
 
+  if (isForbiddenRole) {
+    return (
+      <RoleDashboardLayout config={ROLE_CONFIGS.teacher}>
+        <div className="mx-auto max-w-2xl py-12">
+          <Card className="p-8 text-center border-amber-200 bg-amber-50/50">
+            <AlertCircle className="mx-auto h-12 w-12 text-amber-500 mb-4" />
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Marks Entry is Teacher-Only</h2>
+            <p className="text-sm text-slate-600 mb-6">
+              Only teachers can enter or edit examination marks. Administrators can view finalized results, admit cards, and reports in the Admin Examinations module.
+            </p>
+            <button
+              onClick={() => router.push("/dashboard/admin/examinations")}
+              className="rounded-lg bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white hover:brightness-110 transition shadow-sm"
+            >
+              Go to Examinations Dashboard
+            </button>
+          </Card>
+        </div>
+      </RoleDashboardLayout>
+    );
+  }
+
   const selectedExamObj = exams.find((e) => e.id === selectedExam);
   const maxMarksDisplay = selectedExamObj?.max_marks || 100;
 
@@ -227,11 +271,31 @@ export default function TeacherMarksPage() {
                 {exams.length === 0 ? (
                   <option value="">No active exams found</option>
                 ) : (
-                  exams.map((ex) => (
-                    <option key={ex.id} value={ex.id}>
-                      {ex.exam_name} (Max: {ex.max_marks || 100})
-                    </option>
-                  ))
+                  [...exams]
+                    .sort((a, b) => {
+                      if (selectedClass) {
+                        if (a.class_id === selectedClass && b.class_id !== selectedClass) return -1;
+                        if (b.class_id === selectedClass && a.class_id !== selectedClass) return 1;
+                      }
+                      return 0;
+                    })
+                    .map((ex) => {
+                      const sec = ex.section || classes.find((c) => c.id === ex.class_id)?.section;
+                      const cls = ex.class_name || classes.find((c) => c.id === ex.class_id)?.class_name;
+                      const isMatch = selectedClass && ex.class_id === selectedClass;
+                      const label = sec && cls
+                        ? `${ex.exam_name} - ${cls} (Sec ${sec})`
+                        : sec
+                        ? `${ex.exam_name} - Sec ${sec}`
+                        : cls
+                        ? `${ex.exam_name} - ${cls}`
+                        : ex.exam_name;
+                      return (
+                        <option key={ex.id} value={ex.id}>
+                          {label} {isMatch ? "✓" : ""} (Max: {ex.max_marks || 100})
+                        </option>
+                      );
+                    })
                 )}
               </select>
             </div>
@@ -240,7 +304,14 @@ export default function TeacherMarksPage() {
               <label className="block text-sm font-medium text-slate-700 mb-1">Class / Section</label>
               <select
                 value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
+                onChange={(e) => {
+                  const newClassId = e.target.value;
+                  setSelectedClass(newClassId);
+                  const matching = exams.find((ex) => ex.class_id === newClassId);
+                  if (matching) {
+                    setSelectedExam(matching.id);
+                  }
+                }}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
               >
                 {classes.map((cls) => (

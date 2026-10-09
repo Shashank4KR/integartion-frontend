@@ -168,32 +168,6 @@ export default function AttendanceRowActions({
           <Eye className="h-3.5 w-3.5" />
         </button>
         <button
-          onClick={() => canEdit && setEditOpen(true)}
-          className={`inline-flex items-center justify-center w-7 h-7 rounded-md transition ${
-            canEdit
-              ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
-              : "bg-slate-100 text-slate-400 cursor-not-allowed"
-          }`}
-          aria-label={`Edit attendance for ${student.name}`}
-          title="Edit"
-          disabled={!canEdit}
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={() => canDelete && setDeleteOpen(true)}
-          className={`inline-flex items-center justify-center w-7 h-7 rounded-md transition ${
-            canDelete
-              ? "bg-red-50 text-red-500 hover:bg-red-100"
-              : "bg-slate-100 text-slate-400 cursor-not-allowed"
-          }`}
-          aria-label={`Delete attendance for ${student.name}`}
-          title="Delete"
-          disabled={!canDelete}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-        <button
           onClick={() => setHistoryOpen(true)}
           className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-100 text-slate-500 hover:bg-slate-200 transition"
           aria-label={`View history for ${student.name}`}

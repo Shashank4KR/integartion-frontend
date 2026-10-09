@@ -791,32 +791,6 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      <MarkAttendanceDialog
-        open={markAttendanceOpen}
-        onClose={() => setMarkAttendanceOpen(false)}
-        onSuccess={handleMarkAttendanceSuccess}
-        token={token}
-        classId={selectedClassId}
-        dateDisplay={selectedDateDisplay}
-        students={students}
-        subjects={subjectOptions}
-        teachers={teacherOptions}
-        markedBy={markedBy}
-      />
-
-      <BulkAttendanceDialog
-        open={bulkAttendanceOpen}
-        onClose={() => setBulkAttendanceOpen(false)}
-        onSuccess={handleBulkAttendanceSuccess}
-        token={token}
-        classId={selectedClassId}
-        dateDisplay={selectedDateDisplay}
-        students={students}
-        subjects={subjectOptions}
-        teachers={teacherOptions}
-        markedBy={markedBy}
-      />
-
       <AttendanceReportDialog
         open={attendanceReportOpen}
         onClose={() => setAttendanceReportOpen(false)}

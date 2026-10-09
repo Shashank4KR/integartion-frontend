@@ -29,7 +29,6 @@ import {
   AssignInvigilatorsModal,
   ExamTimetableModal,
   GenerateAdmitCardModal,
-  EnterMarksModal,
   PublishResultsModal,
   ExamReportModal,
 } from "@/components/dashboard/examinations/examActionModals";
@@ -613,14 +612,6 @@ export default function ExaminationsPage() {
 
       <GenerateAdmitCardModal
         open={activeActionModal === "Generate Admit Card"}
-        onClose={() => setActiveActionModal(null)}
-        exams={exams}
-        classes={classes}
-        token={token || ""}
-      />
-
-      <EnterMarksModal
-        open={activeActionModal === "Enter Marks"}
         onClose={() => setActiveActionModal(null)}
         exams={exams}
         classes={classes}
