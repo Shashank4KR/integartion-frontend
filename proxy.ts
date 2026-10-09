@@ -28,8 +28,7 @@ function clearSessionCookies(response: NextResponse): NextResponse {
   response.cookies.set("edtech_user_role", "", { path: "/", maxAge: 0 });
   return response;
 }
-
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("edtech_access_token")?.value;
 

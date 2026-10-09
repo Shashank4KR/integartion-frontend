@@ -6,7 +6,7 @@ import {
   CalendarClock,
   CheckCircle,
   ClipboardList,
-  DollarSign,
+  Wallet,
   MessageSquare,
   Library,
   Truck,
