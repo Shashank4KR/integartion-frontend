@@ -442,6 +442,18 @@ export default function MaintenanceManagementPage() {
             onClose={() => setIsReportOpen(false)}
           />
 
+          <WorkOrdersDialog
+            open={workOrdersOpen}
+            onClose={() => setWorkOrdersOpen(false)}
+            onView={(wo) => setSelectedWorkOrder(wo)}
+          />
+
+          <WorkOrderDetailsDialog
+            open={!!selectedWorkOrder}
+            onClose={() => setSelectedWorkOrder(null)}
+            workOrder={selectedWorkOrder}
+          />
+
           <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200 mt-6">
             <span>{COMPANY_INFO.copyright}</span>
             <span>Version {COMPANY_INFO.version}</span>

@@ -12,6 +12,7 @@ export default function ClassesTable({
   teacherLabel,
   classSubjectCount,
   classStudentCount,
+  isClassActive,
 }: {
   items: ClassResponse[];
   onEdit: (item: ClassResponse) => void;
@@ -20,6 +21,7 @@ export default function ClassesTable({
   teacherLabel: (teacherId?: string | null) => string;
   classSubjectCount: Record<string, number>;
   classStudentCount: Record<string, number>;
+  isClassActive: (academicYear: string) => boolean;
 }) {
   if (items.length === 0) {
     return (

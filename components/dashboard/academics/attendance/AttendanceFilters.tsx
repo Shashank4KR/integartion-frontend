@@ -117,7 +117,8 @@ export default function AttendanceFilters({
               value={subject}
               items={subjectOptions}
               onChange={onSubjectChange}
-              disabled={subjectLoading || subjectOptions.length === 0}
+              placeholder="All Subjects"
+              disabled={subjectLoading}
             />
           </div>
           <div className="flex items-center gap-2">

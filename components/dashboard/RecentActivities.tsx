@@ -70,6 +70,8 @@ export default function RecentActivities() {
   const [open, setOpen] = useState(false);
   const [activitiesList, setActivitiesList] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -92,7 +94,7 @@ export default function RecentActivities() {
 
         setActivitiesList(formatted);
       } catch (err) {
-        console.error("Failed to load audit logs:", err);
+        if (mounted) setLoadError(true);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -104,7 +106,13 @@ export default function RecentActivities() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [reloadKey]);
+
+  const retryLoad = () => {
+    setLoadError(false);
+    setLoading(true);
+    setReloadKey((key) => key + 1);
+  };
 
   const renderItem = (activity: ActivityItem, key: string) => {
     const IconComponent = iconMap[activity.icon as keyof typeof iconMap];
@@ -147,6 +155,17 @@ export default function RecentActivities() {
 
         {loading ? (
           <p className="text-sm text-slate-500 py-4">Loading activities...</p>
+        ) : loadError ? (
+          <div className="py-4 text-sm text-slate-500">
+            <p>Recent activities are temporarily unavailable.</p>
+            <button
+              type="button"
+              onClick={retryLoad}
+              className="mt-2 font-semibold text-purple-600 hover:text-purple-700"
+            >
+              Try again
+            </button>
+          </div>
         ) : activitiesList.length === 0 ? (
           <p className="text-sm text-slate-500 py-4">No recent activities found.</p>
         ) : (

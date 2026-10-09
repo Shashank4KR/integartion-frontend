@@ -57,6 +57,8 @@ export default function ClassesPage() {
   const [academicYear, setAcademicYear] = useState("");
   const [section, setSection] = useState("");
   const [teacherId, setTeacherId] = useState("");
+  const [classLevel, setClassLevel] = useState("");
+  const [status, setStatus] = useState("");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClassResponse | null>(null);
@@ -229,6 +231,28 @@ export default function ClassesPage() {
     () => Array.from(new Set(classes.map((c) => c.section))).sort(),
     [classes],
   );
+
+  /** Extract a numeric/string class level from `class_name` (e.g. "10" → "10", "9th" → "9"). */
+  const extractClassLevel = useCallback((className: string): string => {
+    const match = className.match(/(\d+)/);
+    return match ? match[1] : className;
+  }, []);
+
+  const classLevelOptions = useMemo(() => {
+    const levels = Array.from(new Set(classes.map((c) => extractClassLevel(c.class_name))));
+    return levels.sort((a, b) => {
+      const na = parseInt(a, 10);
+      const nb = parseInt(b, 10);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+  }, [classes, extractClassLevel]);
+
+  /** A class is "active" when its academic_year string contains the current calendar year. */
+  const isClassActive = useCallback((academicYr: string): boolean => {
+    const currentYear = new Date().getFullYear().toString();
+    return academicYr.includes(currentYear);
+  }, []);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -518,6 +542,7 @@ export default function ClassesPage() {
               academicYearOptions={academicYearOptions}
               sectionOptions={sectionOptions}
               teacherOptions={teacherOptions}
+              classLevelOptions={classLevelOptions}
               onClear={clearFilters}
             />
           )}
@@ -544,6 +569,7 @@ export default function ClassesPage() {
                 teacherLabel={teacherLabel}
                 classSubjectCount={classSubjectCount}
                 classStudentCount={classStudentCount}
+                isClassActive={isClassActive}
               />
             )}
           </div>

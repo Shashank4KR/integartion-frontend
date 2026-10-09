@@ -21,20 +21,20 @@ export function Hero({ onNavigate }: { onNavigate: (id: string) => void }) {
       id="home"
       className="relative flex min-h-screen w-full items-center overflow-hidden px-4 py-28"
     >
-      {/* Background image on the right side */}
+      {/* Background image covering the hero section */}
       <div
-  className="absolute inset-0"
-  style={{
-    backgroundImage: "url('/background-image.png')",
-    backgroundSize: "75%",
-    backgroundPosition: "right center",
-    backgroundRepeat: "no-repeat",
-  }}
-  aria-hidden="true"
-/>
+        className="absolute inset-0"
+        style={{
+          backgroundImage: "url('/background-image.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center right",
+          backgroundRepeat: "no-repeat",
+        }}
+        aria-hidden="true"
+      />
 
-      {/* Dark background on left side only */}
-      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
+      {/* Subtle overlay to ensure text readability on the left while keeping the background vivid */}
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent pointer-events-none" />
 
       {/* Left side content with gap from edge */}
       <motion.div

@@ -7,18 +7,21 @@ export { LOGIN_ENDPOINT, ME_ENDPOINT } from "@/lib/services/authService";
 export async function handleLogin(
   username: string,
   password: string,
+  options: { persist?: boolean } = {},
 ): Promise<{ token: string; user: UserResponse }> {
   const data = await loginRequest({ username, password });
-  // Clear the previous identity before resolving and storing the new one.
-  clearAuth();
-
   const user = await getCurrentUser(data.access_token);
 
-  saveToken(data.access_token);
-  saveUser(user);
+  if (options.persist !== false) {
+    // Replace the previous identity only after the new credentials and profile
+    // have both been validated successfully.
+    clearAuth();
+    saveToken(data.access_token ?? "cookie-session");
+    saveUser(user);
+  }
 
   return {
-    token: data.access_token,
+    token: "cookie-session",
     user,
   };
 }
