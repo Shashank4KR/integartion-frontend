@@ -8,7 +8,7 @@ export type LoginCredentials = {
 };
 
 export type LoginResponse = {
-  access_token: string;
+  access_token?: string;
   token_type: string;
 };
 
@@ -47,7 +47,7 @@ export async function loginRequest(
   return (await response.json()) as LoginResponse;
 }
 
-export async function getCurrentUser(token: string): Promise<{
+export async function getCurrentUser(token?: string): Promise<{
   id: string;
   username: string;
   email: string;
@@ -66,9 +66,9 @@ export async function getCurrentUser(token: string): Promise<{
 }> {
   const response = await fetch(ME_ENDPOINT, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: token && token !== "cookie-session"
+      ? { Authorization: `Bearer ${token}` }
+      : undefined,
   });
 
   if (!response.ok) {

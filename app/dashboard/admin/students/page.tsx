@@ -11,6 +11,7 @@ import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { listStudents, createStudent, updateStudent, deleteStudent } from "@/lib/services/studentService";
 import { listUsers, createUser } from "@/lib/services/userService";
 import { listClasses } from "@/lib/services/classService";
+import { listRoles } from "@/lib/services/roleService";
 import type { StudentResponse } from "@/types/entities/student";
 import { shortId } from "@/lib/utils/id";
 
@@ -27,6 +28,7 @@ export default function StudentsPage() {
     { id: string; username: string; email: string; role_id: string; role?: { role_name: string } | null }[]
   >([]);
   const [classes, setClasses] = useState<{ id: string; class_name: string; section: string }[]>([]);
+  const [roles, setRoles] = useState<{ id: string; role_name: string }[]>([]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -66,14 +68,16 @@ export default function StudentsPage() {
       setLoading(true);
       setError(null);
       try {
-        const [studentsData, usersData, classesData] = await Promise.all([
+        const [studentsData, usersData, classesData, rolesData] = await Promise.all([
           listStudents(token),
           listUsers(token),
           listClasses(token),
+          listRoles(token),
         ]);
         setItems(studentsData);
         setUsers(usersData);
         setClasses(classesData.map((c) => ({ id: c.id, class_name: c.class_name, section: c.section })));
+        setRoles(rolesData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load students.");
       } finally {
@@ -86,8 +90,8 @@ export default function StudentsPage() {
   const studentUserIds = useMemo(() => new Set(items.map((i) => i.user_id)), [items]);
 
   const studentRoleId = useMemo(
-    () => users.find((u) => u.role?.role_name?.trim().toUpperCase() === "STUDENT")?.role_id ?? "",
-    [users],
+    () => roles.find((r) => r.role_name.trim().toUpperCase() === "STUDENT")?.id ?? "",
+    [roles],
   );
 
   const eligibleUsers = useMemo<StudentUserOption[]>(

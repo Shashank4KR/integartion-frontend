@@ -14,14 +14,24 @@ async function handleLogout(request: Request) {
     });
 
     const data = await response.text();
-    return new NextResponse(data, {
+    const logoutResponse = new NextResponse(data, {
       status: response.status,
       headers: {
         "Content-Type": response.headers.get("content-type") || "application/json",
       },
     });
+    logoutResponse.cookies.set("edtech_access_token", "", {
+      httpOnly: true,
+      secure: new URL(request.url).protocol === "https:",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    return logoutResponse;
   } catch {
-    return NextResponse.json({ message: "Logged out" }, { status: 200 });
+    const logoutResponse = NextResponse.json({ message: "Logged out" }, { status: 200 });
+    logoutResponse.cookies.set("edtech_access_token", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
+    return logoutResponse;
   }
 }
 

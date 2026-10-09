@@ -56,6 +56,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
+    const authHeader = request.headers.get("authorization");
     const body = await request.text();
     const contentType =
       request.headers.get("content-type") || "application/json";
@@ -64,6 +65,7 @@ export async function PUT(
       method: "PUT",
       headers: {
         "Content-Type": contentType,
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body,
     });

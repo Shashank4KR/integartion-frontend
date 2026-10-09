@@ -1,4 +1,4 @@
-import { getToken } from "@/lib/auth";
+import { clearAuth, getToken } from "@/lib/auth";
 import type { UserResponse } from "@/types/auth";
 
 export interface DashboardStats {
@@ -45,8 +45,19 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || `Request failed with ${response.status}`);
+    const errorText = await response.text();
+    let errorMessage = `Request failed with ${response.status}`;
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.detail || errorJson.message || errorMessage;
+    } catch {
+      errorMessage = errorText || errorMessage;
+    }
+    if (response.status === 401 && typeof window !== "undefined") {
+      clearAuth();
+      window.location.replace("/login?reason=session-expired");
+    }
+    throw new Error(errorMessage);
   }
 
   return (await response.json()) as T;
@@ -149,4 +160,4 @@ export async function getExams(): Promise<any[]> {
 export async function getAnnouncements(): Promise<any[]> {
   return requestJson(`/api/announcements`);
 }
-
+

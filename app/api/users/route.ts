@@ -50,6 +50,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    const authHeader = request.headers.get("authorization");
     const body = await request.text();
     const contentType =
       request.headers.get("content-type") || "application/json";
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": contentType,
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
       body,
     });
