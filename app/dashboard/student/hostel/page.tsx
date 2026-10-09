@@ -41,15 +41,28 @@ export default function StudentHostelPage() {
           return;
         }
 
-        const studentId = user.id;
+        let studentId = user.id;
+        try {
+          const profileRes = await fetch("/api/students/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+            if (profile?.id) {
+              studentId = profile.id;
+            }
+          }
+        } catch (err) {
+          console.warn("[StudentHostel] Profile lookup error, falling back to user.id:", err);
+        }
 
         const [allocData, leaveData, complaintData, noticeData, feeData, statsData] = await Promise.all([
-          getStudentHostelAllocation(token, studentId).catch(() => null),
-          getStudentHostelLeaveRequests(token, studentId).catch(() => []),
-          getStudentHostelComplaints(token, studentId).catch(() => []),
-          getStudentHostelNotices(token).catch(() => []),
-          getStudentHostelFees(token, studentId).catch(() => []),
-          getHostelDashboardStats(token).catch(() => null),
+          getStudentHostelAllocation(token, studentId).catch((err) => { console.warn("[StudentHostel] getStudentHostelAllocation error:", err); return null; }),
+          getStudentHostelLeaveRequests(token, studentId).catch((err) => { console.warn("[StudentHostel] getStudentHostelLeaveRequests error:", err); return []; }),
+          getStudentHostelComplaints(token, studentId).catch((err) => { console.warn("[StudentHostel] getStudentHostelComplaints error:", err); return []; }),
+          getStudentHostelNotices(token).catch((err) => { console.warn("[StudentHostel] getStudentHostelNotices error:", err); return []; }),
+          getStudentHostelFees(token, studentId).catch((err) => { console.warn("[StudentHostel] getStudentHostelFees error:", err); return []; }),
+          getHostelDashboardStats(token).catch((err) => { console.warn("[StudentHostel] getHostelDashboardStats error:", err); return null; }),
         ]);
 
         setAllocation(allocData);

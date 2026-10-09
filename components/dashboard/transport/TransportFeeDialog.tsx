@@ -6,6 +6,7 @@ import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
+import DatePicker from "@/components/shared/DatePicker";
 
 interface TransportFeeDialogProps {
   open: boolean;
@@ -136,10 +137,10 @@ export default function TransportFeeDialog({
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Due Date</label>
-            <Input
+            <DatePicker
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              placeholder="DD/MM/YYYY"
+              onChange={setDueDate}
+              align="right"
             />
           </div>
         </div>

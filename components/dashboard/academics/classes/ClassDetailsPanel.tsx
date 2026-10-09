@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ClassResponse } from "@/types/entities/class";
 import ClassOverviewTab from "./ClassOverviewTab";
 import ClassStudentsTab from "./ClassStudentsTab";
@@ -12,6 +12,7 @@ type Tab = "overview" | "students" | "subjects" | "teachers" | "attendance";
 
 interface ClassDetailsPanelProps {
   selectedClass: ClassResponse;
+  initialTab?: Tab;
   classSubjects: { id: string; subject_id: string }[];
   subjects: { id: string; subject_code: string; subject_name: string }[];
   teachers: { id: string; employee_id: string; user_id: string }[];
@@ -32,6 +33,7 @@ interface ClassDetailsPanelProps {
 
 export default function ClassDetailsPanel({
   selectedClass,
+  initialTab = "overview",
   classSubjects,
   subjects,
   teachers,
@@ -49,7 +51,13 @@ export default function ClassDetailsPanel({
   onRemoveTeacherSubject,
   onClose,
 }: ClassDetailsPanelProps) {
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setTab(initialTab);
+    }
+  }, [initialTab, selectedClass.id]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },

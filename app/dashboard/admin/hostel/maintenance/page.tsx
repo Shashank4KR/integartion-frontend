@@ -7,10 +7,17 @@ import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
 import MaintenanceManagementPageHeader from "@/components/dashboard/hostel/maintenance/MaintenanceManagementPageHeader";
 import MaintenanceSummaryCards from "@/components/dashboard/hostel/maintenance/MaintenanceSummaryCards";
+import MaintenanceRequestsTable from "@/components/dashboard/hostel/maintenance/MaintenanceRequestsTable";
+import MaintenanceQuickActions from "@/components/dashboard/hostel/maintenance/MaintenanceQuickActions";
+import RecentWorkOrdersTable from "@/components/dashboard/hostel/maintenance/RecentWorkOrdersTable";
 import RaiseMaintenanceRequestDialog from "@/components/dashboard/hostel/maintenance/RaiseMaintenanceRequestDialog";
 import WorkOrdersDialog from "@/components/dashboard/hostel/maintenance/WorkOrdersDialog";
+import MaintenanceRequestDetailsDialog from "@/components/dashboard/hostel/maintenance/MaintenanceRequestDetailsDialog";
 import WorkOrderDetailsDialog from "@/components/dashboard/hostel/maintenance/WorkOrderDetailsDialog";
-import type { WorkOrder } from "@/lib/fixtures/maintenance-management-reference-fixture";
+import RequestHistoryDialog from "@/components/dashboard/hostel/maintenance/RequestHistoryDialog";
+import MaintenanceStaffDialog from "@/components/dashboard/hostel/maintenance/MaintenanceStaffDialog";
+import MaintenanceInventoryDialog from "@/components/dashboard/hostel/maintenance/MaintenanceInventoryDialog";
+import MaintenanceReportDialog from "@/components/dashboard/hostel/maintenance/MaintenanceReportDialog";
 import { clearAuth, getStoredUser, getToken } from "@/lib/auth";
 import { COMPANY_INFO } from "@/lib/constants";
 import {
@@ -18,18 +25,39 @@ import {
   getMaintenanceDashboard,
   listMaintenanceRequests,
   listRooms,
+  listWorkOrders,
 } from "@/lib/services/hostelService";
+import {
+  QUICK_ACTIONS,
+  type MaintenanceRequest,
+  type WorkOrder,
+  type QuickActionItem,
+} from "@/lib/fixtures/maintenance-management-reference-fixture";
 
 export default function MaintenanceManagementPage() {
   const router = useRouter();
   const [summary, setSummary] = useState<any | null>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
+  const [rawWorkOrders, setRawWorkOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Dialog states
   const [isRaiseOpen, setIsRaiseOpen] = useState(false);
-  const [workOrdersOpen, setWorkOrdersOpen] = useState(false);
+  const [isWorkOrdersOpen, setIsWorkOrdersOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isStaffOpen, setIsStaffOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // Table pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const loadData = useCallback(async () => {
     const token = getToken();
@@ -42,14 +70,16 @@ export default function MaintenanceManagementPage() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [summaryData, requestRows, roomRows] = await Promise.all([
+      const [summaryData, requestRows, roomRows, workOrderRows] = await Promise.all([
         getMaintenanceDashboard(token).catch(() => ({})),
         listMaintenanceRequests(token).catch(() => []),
         listRooms(token).catch(() => []),
+        listWorkOrders(token).catch(() => []),
       ]);
       setSummary(summaryData ?? {});
       setRequests(Array.isArray(requestRows) ? requestRows : []);
       setRooms(Array.isArray(roomRows) ? roomRows : []);
+      setRawWorkOrders(Array.isArray(workOrderRows) ? workOrderRows : []);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Failed to load maintenance data.");
     } finally {
@@ -70,8 +100,10 @@ export default function MaintenanceManagementPage() {
       return;
     }
 
+    setActionError(null);
+    setSuccessMessage(null);
+
     try {
-      // Resolve room UUID from room number or use first available room
       const targetRoom =
         rooms.find(
           (r) =>
@@ -94,18 +126,135 @@ export default function MaintenanceManagementPage() {
         priority: priorityMap[formData.priority] || "MEDIUM",
       });
 
+      setSuccessMessage("Maintenance request created successfully.");
       await loadData();
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to submit maintenance request.");
+      setActionError(err instanceof Error ? err.message : "Failed to submit maintenance request.");
     }
   };
+
+  const handleQuickAction = (action: QuickActionItem) => {
+    switch (action.label) {
+      case "Raise Request":
+        setIsRaiseOpen(true);
+        break;
+      case "View Work Orders":
+        setIsWorkOrdersOpen(true);
+        break;
+      case "Request History":
+        setIsHistoryOpen(true);
+        break;
+      case "Maintenance Staff":
+        setIsStaffOpen(true);
+        break;
+      case "Inventory":
+        setIsInventoryOpen(true);
+        break;
+      case "Reports":
+        setIsReportOpen(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const mappedRequests: MaintenanceRequest[] = useMemo(() => {
+    return requests.map((r, idx) => {
+      const roomMatch = rooms.find((rm) => rm.id === r.room_id);
+      const roomDisplay = roomMatch
+        ? `Room ${roomMatch.room_no || roomMatch.room_number}`
+        : r.room_id
+        ? `Room #${String(r.room_id).slice(0, 8)}`
+        : "Main Hostel";
+
+      const rawPriority = String(r.priority || "MEDIUM").toUpperCase();
+      const priority =
+        rawPriority === "URGENT" || rawPriority === "EMERGENCY"
+          ? "Emergency"
+          : rawPriority === "HIGH"
+          ? "High"
+          : rawPriority === "LOW"
+          ? "Low"
+          : "Medium";
+
+      const rawStatus = String(r.status || "OPEN").toUpperCase();
+      const status =
+        rawStatus === "RESOLVED" || rawStatus === "COMPLETED"
+          ? "Completed"
+          : rawStatus === "IN_PROGRESS"
+          ? "In Progress"
+          : rawStatus === "OVERDUE"
+          ? "Overdue"
+          : "Open";
+
+      const dateStr = r.requested_on
+        ? new Date(r.requested_on).toLocaleDateString("en-GB")
+        : new Date().toLocaleDateString("en-GB");
+
+      return {
+        id: r.id ? `MR-${String(r.id).slice(0, 8).toUpperCase()}` : `MR-${idx + 101}`,
+        requestedBy: r.requester_name || r.student_name || "Hostel Resident",
+        blockRoom: roomDisplay,
+        issueType: r.issue_type || "General Maintenance",
+        priority: priority as any,
+        status: status as any,
+        requestedOn: dateStr,
+        category: r.category || "Repair",
+        description: r.description || "Hostel maintenance request",
+        requestedDate: dateStr,
+        requestedTime: "10:00 AM",
+        attachment: r.attachment,
+        assignedStaff: r.assigned_to || "Facility Team",
+        relatedWorkOrder: r.work_order_id || `WO-2026-${idx + 101}`,
+      };
+    });
+  }, [requests, rooms]);
+
+  const mappedWorkOrders: WorkOrder[] = useMemo(() => {
+    return rawWorkOrders.map((wo, idx) => {
+      const relatedReq = requests.find((r) => r.id === wo.request_id);
+      const schedDate = wo.scheduled_date
+        ? new Date(wo.scheduled_date).toLocaleDateString("en-GB")
+        : new Date().toLocaleDateString("en-GB");
+      const rawStatus = String(wo.status || "OPEN").toUpperCase();
+      const status =
+        rawStatus === "COMPLETED"
+          ? "Completed"
+          : rawStatus === "IN_PROGRESS"
+          ? "In Progress"
+          : rawStatus === "OVERDUE"
+          ? "Overdue"
+          : "Open";
+      return {
+        id: wo.id ? `WO-${String(wo.id).slice(0, 8).toUpperCase()}` : `WO-2026-${idx + 101}`,
+        relatedRequest: relatedReq?.id
+          ? `MR-${String(relatedReq.id).slice(0, 8).toUpperCase()}`
+          : wo.request_id
+          ? `MR-${String(wo.request_id).slice(0, 8).toUpperCase()}`
+          : `MR-${idx + 101}`,
+        issueType: relatedReq?.issue_type || "General Maintenance",
+        assignedTo:
+          "Facility Team",
+        status: status as any,
+        scheduledDate: schedDate,
+        notes: wo.notes || `Scheduled maintenance on ${schedDate}`,
+      };
+    });
+  }, [rawWorkOrders, requests]);
+
+  const totalItems = mappedRequests.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedRequests = mappedRequests.slice(startIndex, startIndex + rowsPerPage);
+  const showingStart = totalItems === 0 ? 0 : startIndex + 1;
+  const showingEnd = Math.min(startIndex + rowsPerPage, totalItems);
 
   const cards = useMemo(
     () => [
       {
         title: "Total Requests",
         value: requests.length,
-        footer: "From database",
+        footer: "All time records",
         icon: "Wrench",
         iconBg: "bg-blue-50",
         iconColor: "text-blue-600",
@@ -114,7 +263,7 @@ export default function MaintenanceManagementPage() {
       {
         title: "Open Requests",
         value: summary?.open_requests ?? requests.filter((r) => r.status === "OPEN" || r.status === "Open").length,
-        footer: "Current open requests",
+        footer: "Pending action",
         icon: "ClipboardCheck",
         iconBg: "bg-emerald-50",
         iconColor: "text-emerald-600",
@@ -125,7 +274,7 @@ export default function MaintenanceManagementPage() {
         value:
           summary?.in_progress_requests ??
           requests.filter((r) => r.status === "IN_PROGRESS" || r.status === "In Progress").length,
-        footer: "Work in progress",
+        footer: "Active work",
         icon: "Clock",
         iconBg: "bg-orange-50",
         iconColor: "text-orange-500",
@@ -136,7 +285,7 @@ export default function MaintenanceManagementPage() {
         value:
           summary?.resolved_requests ??
           requests.filter((r) => r.status === "RESOLVED" || r.status === "Completed").length,
-        footer: "Resolved requests",
+        footer: "Resolved issues",
         icon: "CheckCircle2",
         iconBg: "bg-purple-50",
         iconColor: "text-purple-600",
@@ -144,15 +293,15 @@ export default function MaintenanceManagementPage() {
       },
       {
         title: "Work Orders",
-        value: summary?.completed_work_orders ?? 0,
-        footer: "Completed work orders",
+        value: summary?.completed_work_orders ?? rawWorkOrders.filter((w) => String(w.status).toUpperCase() === "COMPLETED").length,
+        footer: `${rawWorkOrders.length} tracked work orders`,
         icon: "XCircle",
         iconBg: "bg-pink-50",
         iconColor: "text-pink-500",
         tint: "bg-pink-50/60",
       },
     ],
-    [requests, summary],
+    [requests, summary, rawWorkOrders],
   );
 
   return (
@@ -161,82 +310,136 @@ export default function MaintenanceManagementPage() {
         <div className="mx-auto max-w-[1400px]">
           <MaintenanceManagementPageHeader
             onRaiseRequest={() => setIsRaiseOpen(true)}
-            onWorkOrders={() => setWorkOrdersOpen(true)}
-            onMoreOptions={() => {}}
+            onWorkOrders={() => setIsWorkOrdersOpen(true)}
+            onMoreOptions={() => setIsReportOpen(true)}
           />
-          {loadError ? (
-            <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+
+          {actionError && (
+            <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+              <span>{actionError}</span>
+              <button
+                type="button"
+                onClick={() => setActionError(null)}
+                className="text-xs font-semibold text-red-700 hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {successMessage && (
+            <div role="alert" className="mb-6 flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
+              <span>{successMessage}</span>
+              <button
+                type="button"
+                onClick={() => setSuccessMessage(null)}
+                className="text-xs font-semibold text-emerald-800 hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {loadError && (
+            <div role="alert" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-sm">
               {loadError}
             </div>
-          ) : null}
+          )}
+
           {isLoading ? (
-            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
-              Loading maintenance data...
+            <div className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600 animate-pulse">
+              Loading maintenance operations data...
             </div>
-          ) : null}
-          {!isLoading && !loadError ? <MaintenanceSummaryCards cards={cards} /> : null}
+          ) : (
+            <MaintenanceSummaryCards cards={cards} />
+          )}
 
-          {!isLoading && !loadError ? (
-            <section className="rounded-lg border border-slate-200 bg-white mb-6">
-              <div className="border-b border-slate-100 px-5 py-4 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Maintenance Requests</h2>
-                <button
-                  type="button"
-                  onClick={() => setIsRaiseOpen(true)}
-                  className="text-xs font-semibold text-[#7c3aed] hover:underline"
-                >
-                  + Raise Request
-                </button>
-              </div>
-              {requests.length === 0 ? (
-                <p className="px-5 py-8 text-sm text-slate-500">No maintenance requests found.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50/80 text-xs font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-3 text-left">Request ID</th>
-                        <th className="px-4 py-3 text-left">Room ID</th>
-                        <th className="px-4 py-3 text-left">Issue</th>
-                        <th className="px-4 py-3 text-left">Priority</th>
-                        <th className="px-4 py-3 text-left">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {requests.map((row) => (
-                        <tr key={row.id} className="border-b border-slate-50">
-                          <td className="px-4 py-3 font-mono text-xs">{row.id ? String(row.id).slice(0, 8) : "-"}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{row.room_id ? String(row.room_id).slice(0, 8) : "-"}</td>
-                          <td className="px-4 py-3 font-medium text-slate-900">{row.issue_type ?? "-"}</td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                                String(row.priority).toUpperCase() === "HIGH" || String(row.priority).toUpperCase() === "URGENT"
-                                  ? "bg-red-50 text-red-700"
-                                  : "bg-slate-100 text-slate-700"
-                              }`}
-                            >
-                              {row.priority ?? "-"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700">
-                              {row.status ?? "OPEN"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          ) : null}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
+              <RecentWorkOrdersTable
+                workOrders={mappedWorkOrders}
+                onView={(wo) => setSelectedWorkOrder(wo)}
+                onViewAll={() => setIsWorkOrdersOpen(true)}
+              />
+            </div>
+            <div>
+              <MaintenanceQuickActions
+                actions={QUICK_ACTIONS}
+                onAction={handleQuickAction}
+              />
+            </div>
+          </div>
 
+          <MaintenanceRequestsTable
+            requests={paginatedRequests}
+            onView={(req) => setSelectedRequest(req)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(val) => {
+              setRowsPerPage(val);
+              setCurrentPage(1);
+            }}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => setCurrentPage(page)}
+            totalItems={totalItems}
+            showingStart={showingStart}
+            showingEnd={showingEnd}
+          />
+
+          {/* Dialogs */}
           <RaiseMaintenanceRequestDialog
             open={isRaiseOpen}
             onClose={() => setIsRaiseOpen(false)}
             onSave={handleRaiseRequest}
+            rooms={rooms}
+          />
+
+          <WorkOrdersDialog
+            open={isWorkOrdersOpen}
+            onClose={() => setIsWorkOrdersOpen(false)}
+            workOrders={mappedWorkOrders}
+            onView={(wo) => {
+              setSelectedWorkOrder(wo);
+            }}
+          />
+
+          <MaintenanceRequestDetailsDialog
+            request={selectedRequest}
+            open={Boolean(selectedRequest)}
+            onClose={() => setSelectedRequest(null)}
+          />
+
+          <WorkOrderDetailsDialog
+            workOrder={selectedWorkOrder}
+            open={Boolean(selectedWorkOrder)}
+            onClose={() => setSelectedWorkOrder(null)}
+          />
+
+          <RequestHistoryDialog
+            open={isHistoryOpen}
+            onClose={() => setIsHistoryOpen(false)}
+            requests={mappedRequests}
+            onView={(req) => setSelectedRequest(req)}
+          />
+
+          <MaintenanceStaffDialog
+            open={isStaffOpen}
+            onClose={() => setIsStaffOpen(false)}
+            staff={[
+              { name: "Campus Operations", role: "Facility Supervisor", contact: "facilities@example.com", block: "Campus Wide" },
+              { name: "John Admin", role: "Maintenance Admin", contact: "admin@example.com", block: "All Blocks" },
+              { name: "Facilities Desk", role: "Operations Support", contact: "support@example.com", block: "Block A - D" },
+            ]}
+          />
+
+          <MaintenanceInventoryDialog
+            open={isInventoryOpen}
+            onClose={() => setIsInventoryOpen(false)}
+          />
+
+          <MaintenanceReportDialog
+            open={isReportOpen}
+            onClose={() => setIsReportOpen(false)}
           />
 
           <WorkOrdersDialog

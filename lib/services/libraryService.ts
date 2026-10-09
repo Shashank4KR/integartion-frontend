@@ -113,6 +113,47 @@ export async function listFinePayments(token: string): Promise<any[]> {
   return unwrapItems(await response.json());
 }
 
+export async function createFinePayment(
+  token: string,
+  payload: { issue_id?: string | null; amount: number; status?: string },
+): Promise<any> {
+  const response = await fetch("/api/library/fine-payments", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to record fine payment.");
+  }
+
+  return await response.json();
+}
+
+export async function updateFinePayment(
+  token: string,
+  id: string,
+  payload: { amount?: number; status?: string },
+): Promise<any> {
+  const response = await fetch(`/api/library/fine-payments/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Failed to update fine payment.");
+  }
+
+  return await response.json();
+}
+
 export async function listStudentBookIssues(
   token: string,
   studentId: string,

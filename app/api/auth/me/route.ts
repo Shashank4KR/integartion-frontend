@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
-  const backendUrl = process.env.BACKEND_API_URL;
+  const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   if (!backendUrl) {
     return NextResponse.json(
@@ -18,6 +20,7 @@ export async function GET(request: Request) {
       headers: {
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
+      cache: "no-store",
     });
 
     const responseBody = await response.text();

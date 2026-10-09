@@ -7,7 +7,8 @@ import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import Header from "@/components/shared/layout/Header";
 import { getToken } from "@/lib/auth";
-import { listMessages, listNotifications, markAllNotificationsRead } from "@/lib/services/communicationService";
+import { listMessages, listNotifications, markAllNotificationsRead, markAllMessagesRead } from "@/lib/services/communicationService";
+
 
 type InboxKind = "messages" | "notifications";
 
@@ -33,10 +34,24 @@ function readText(item: unknown, fields: string[], fallback: string): string {
   return fallback;
 }
 
+function formatTimestamp(value: string) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-IN", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function InboxRow({ item, kind }: { item: unknown; kind: InboxKind }) {
   const title = readText(item, kind === "messages" ? ["subject", "title", "sender_name"] : ["title", "subject", "type"], kind === "messages" ? "Message" : "Notification");
   const body = readText(item, ["body", "content", "message", "description"], "No additional details were provided.");
-  const timestamp = readText(item, ["created_at", "sent_at", "timestamp", "date"], "");
+  const rawTimestamp = readText(item, ["sent_on", "created_at", "sent_at", "timestamp", "date"], "");
+  const timestamp = formatTimestamp(rawTimestamp);
 
   return <li className="border-b border-slate-100 px-5 py-4 last:border-0"><p className="text-sm font-semibold text-slate-900">{title}</p><p className="mt-1 text-sm text-slate-600">{body}</p>{timestamp && <p className="mt-2 text-xs text-slate-400">{timestamp}</p>}</li>;
 }
@@ -61,16 +76,27 @@ export default function AdminInboxPage({ kind }: { kind: InboxKind }) {
         try {
           localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
-          void markAllNotificationsRead(token).catch(() => {});
-        } catch {}
+          void markAllNotificationsRead(token).catch((err) => console.warn("[AdminInbox] markAllNotificationsRead error:", err));
+        } catch (err) {
+          console.warn("[AdminInbox] notifications storage event error:", err);
+        }
       } else {
         try {
           localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
-        } catch {}
+          void markAllMessagesRead(token).catch((err) => console.warn("[AdminInbox] markAllMessagesRead error:", err));
+        } catch (err) {
+          console.warn("[AdminInbox] messages storage event error:", err);
+        }
       }
 
-      setItems(await config.load(token));
+      const loaded = ((await config.load(token)) || []) as any[];
+      loaded.sort((a, b) => {
+        const dateA = new Date(a.sent_on || a.created_at || a.sent_at || 0).getTime();
+        const dateB = new Date(b.sent_on || b.created_at || b.sent_at || 0).getTime();
+        return dateB - dateA;
+      });
+      setItems(loaded);
       setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : `Failed to load ${kind}.`);

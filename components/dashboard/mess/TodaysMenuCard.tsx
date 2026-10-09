@@ -36,27 +36,35 @@ export default function TodaysMenuCard({ rows, onRowClick }: TodaysMenuCardProps
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                onClick={() => onRowClick(row)}
-                className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 cursor-pointer transition"
-              >
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`${row.iconBg} p-1.5 rounded-full flex-shrink-0`}>
-                      <span className={row.iconColor}>{mealIconMap[row.mealIcon]}</span>
-                    </div>
-                    <span className="font-semibold text-slate-900">{row.meal}</span>
-                  </div>
-                </td>
-                <td className="px-3 py-3 text-slate-700">{row.menu}</td>
-                <td className="px-3 py-3 text-slate-700">{row.time}</td>
-                <td className="px-3 py-3">
-                  <StatusBadge status={row.status} />
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-3 py-8 text-center text-sm text-slate-500">
+                  No meals scheduled for today.
                 </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <tr
+                  key={row.id}
+                  onClick={() => onRowClick(row)}
+                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 cursor-pointer transition"
+                >
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`${row.iconBg} p-1.5 rounded-full flex-shrink-0`}>
+                        <span className={row.iconColor}>{mealIconMap[row.mealIcon]}</span>
+                      </div>
+                      <span className="font-semibold text-slate-900">{row.meal}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-slate-700">{row.menu}</td>
+                  <td className="px-3 py-3 text-slate-700">{row.time}</td>
+                  <td className="px-3 py-3">
+                    <StatusBadge status={row.status} />
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

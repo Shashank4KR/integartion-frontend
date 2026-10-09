@@ -444,8 +444,6 @@ export default function ExaminationsPage() {
             onDateRangeStartChange={(value) => setFilters((f) => ({ ...f, dateRangeStart: value }))}
             onDateRangeEndChange={(value) => setFilters((f) => ({ ...f, dateRangeEnd: value }))}
             onDateRangeClear={() => setFilters((f) => ({ ...f, dateRangeStart: "", dateRangeEnd: "" }))}
-            academicYearDisabled
-            termDisabled
             classOptions={classes.map((c) => ({ id: c.id, label: `${c.class_name} — ${c.section}` }))}
             examTypeOptions={Array.from(new Set(exams.map((e) => e.exam_type)))}
           />

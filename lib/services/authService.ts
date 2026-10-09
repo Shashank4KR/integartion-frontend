@@ -1,4 +1,4 @@
-﻿export const REGISTER_ENDPOINT = "/api/auth/register";
+export const REGISTER_ENDPOINT = "/api/auth/register";
 export const LOGIN_ENDPOINT = "/api/auth/login";
 export const ME_ENDPOINT = "/api/auth/me";
 
@@ -8,7 +8,7 @@ export type LoginCredentials = {
 };
 
 export type LoginResponse = {
-  access_token: string;
+  access_token?: string;
   token_type: string;
 };
 
@@ -38,8 +38,8 @@ export async function loginRequest(
       } else if (Array.isArray(detail) && detail.length > 0) {
         message = detail.map((item) => item.msg).join(", ");
       }
-    } catch {
-      // response body was not valid JSON; keep the default message
+    } catch (err) {
+      console.warn("[authService] Login response body not valid JSON:", err);
     }
     throw new Error(message);
   }
@@ -47,11 +47,12 @@ export async function loginRequest(
   return (await response.json()) as LoginResponse;
 }
 
-export async function getCurrentUser(token: string): Promise<{
+export async function getCurrentUser(token?: string): Promise<{
   id: string;
   username: string;
   email: string;
   phone?: string | null;
+  avatar_url?: string | null;
   status: boolean;
   last_login?: string | null;
   role_id: string;
@@ -65,9 +66,9 @@ export async function getCurrentUser(token: string): Promise<{
 }> {
   const response = await fetch(ME_ENDPOINT, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: token && token !== "cookie-session"
+      ? { Authorization: `Bearer ${token}` }
+      : undefined,
   });
 
   if (!response.ok) {
@@ -80,8 +81,8 @@ export async function getCurrentUser(token: string): Promise<{
       } else if (Array.isArray(detail) && detail.length > 0) {
         message = detail.map((item) => item.msg).join(", ");
       }
-    } catch {
-      // response body was not valid JSON; keep the default message
+    } catch (err) {
+      console.warn("[authService] Profile response body not valid JSON:", err);
     }
     throw new Error(message);
   }
@@ -91,6 +92,7 @@ export async function getCurrentUser(token: string): Promise<{
     username: string;
     email: string;
     phone?: string | null;
+    avatar_url?: string | null;
     status: boolean;
     last_login?: string | null;
     role_id: string;

@@ -12,8 +12,6 @@ export default function ClassFilters({
   onSectionChange,
   teacherId,
   onTeacherIdChange,
-  classLevel,
-  onClassLevelChange,
   status,
   onStatusChange,
   academicYearOptions,
@@ -30,8 +28,6 @@ export default function ClassFilters({
   onSectionChange: (value: string) => void;
   teacherId: string;
   onTeacherIdChange: (value: string) => void;
-  classLevel: string;
-  onClassLevelChange: (value: string) => void;
   status: string;
   onStatusChange: (value: string) => void;
   academicYearOptions: string[];
@@ -40,7 +36,7 @@ export default function ClassFilters({
   classLevelOptions: string[];
   onClear: () => void;
 }) {
-  const hasFilters = search || academicYear || section || teacherId || classLevel || status;
+  const hasFilters = search || academicYear || section || teacherId || status;
 
   return (
     <Card className="mb-4">
@@ -52,7 +48,7 @@ export default function ClassFilters({
               type="text"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search by class name, section or academic year..."
+              placeholder="Search by class name, section, academic year or room..."
               className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
             />
           </div>
@@ -94,25 +90,13 @@ export default function ClassFilters({
               ))}
             </select>
             <select
-              value={classLevel}
-              onChange={(e) => onClassLevelChange(e.target.value)}
-              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
-            >
-              <option value="">Class Level</option>
-              {classLevelOptions.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-            <select
               value={status}
               onChange={(e) => onStatusChange(e.target.value)}
               className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
             >
-              <option value="">Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
             </select>
             {hasFilters && (
               <button

@@ -63,8 +63,8 @@ export default function ClassOverviewTab({
       await onAssignSubjects(selectedClass.id, selectedSubjectIds);
       setSelectedSubjectIds([]);
       setShowAssignSubjects(false);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassOverviewTab] Assign subjects error:", err);
     } finally {
       setSubmitting(false);
     }
@@ -77,8 +77,8 @@ export default function ClassOverviewTab({
       await onAssignTeacher(selectedClass.id, selectedTeacherId);
       setSelectedTeacherId("");
       setShowAssignTeacher(false);
-    } catch {
-      // handled by parent
+    } catch (err) {
+      console.warn("[ClassOverviewTab] Assign teacher error:", err);
     } finally {
       setSubmitting(false);
     }
@@ -110,6 +110,22 @@ export default function ClassOverviewTab({
               <span className="text-slate-500">Class Teacher</span>
               <span className="text-slate-900">
                 {classTeacher ? classTeacher.employee_id : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Room Number</span>
+              <span className="font-medium text-slate-900">
+                {selectedClass.room_number || "—"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Status</span>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                (selectedClass.status || "ACTIVE").toUpperCase() === "ACTIVE"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-slate-100 text-slate-600 border border-slate-200"
+              }`}>
+                {(selectedClass.status || "ACTIVE").toUpperCase() === "ACTIVE" ? "Active" : "Inactive"}
               </span>
             </div>
           </div>

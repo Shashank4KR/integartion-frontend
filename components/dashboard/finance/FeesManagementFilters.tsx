@@ -4,29 +4,16 @@ import { useState } from "react";
 import { Filter, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 
-const ACADEMIC_YEAR_OPTIONS = ["2024-25", "2025-26"];
-const CLASS_GRADE_OPTIONS = [
-  "All Classes",
-  "VIII - A",
-  "VI - B",
-  "IX - A",
-  "VIII - B",
-  "IX - B",
-  "VI - A",
-  "V - B",
-  "VIII - C",
-];
-const FEE_TYPE_OPTIONS = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Other Fees"];
-const INSTALLMENT_OPTIONS = ["All Installments", "Installment 1", "Installment 2", "Installment 3", "Full Payment"];
-const STATUS_OPTIONS = ["All Status", "Paid", "Partial", "Overdue", "Pending"];
-
 interface FeesManagementFiltersProps {
   academicYear: string;
   onAcademicYearChange: (value: string) => void;
+  academicYearOptions?: string[];
   classGrade: string;
   onClassGradeChange: (value: string) => void;
+  classOptions?: string[];
   feeType: string;
   onFeeTypeChange: (value: string) => void;
+  feeTypeOptions?: string[];
   installment: string;
   onInstallmentChange: (value: string) => void;
   status: string;
@@ -37,13 +24,20 @@ interface FeesManagementFiltersProps {
   onReset: () => void;
 }
 
+const DEFAULT_FEE_TYPE_OPTIONS = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Hostel Fee", "Other Fees"];
+const INSTALLMENT_OPTIONS = ["All Installments", "Installment 1", "Installment 2", "Installment 3", "Full Payment"];
+const STATUS_OPTIONS = ["All Status", "Paid", "Partial", "Overdue", "Pending"];
+
 export default function FeesManagementFilters({
   academicYear,
   onAcademicYearChange,
+  academicYearOptions = ["All Academic Years"],
   classGrade,
   onClassGradeChange,
+  classOptions = ["All Classes"],
   feeType,
   onFeeTypeChange,
+  feeTypeOptions = DEFAULT_FEE_TYPE_OPTIONS,
   installment,
   onInstallmentChange,
   status,
@@ -54,6 +48,7 @@ export default function FeesManagementFilters({
   onReset,
 }: FeesManagementFiltersProps) {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [dateMenuOpen, setDateMenuOpen] = useState(false);
 
   return (
     <div className="mb-6">
@@ -62,19 +57,19 @@ export default function FeesManagementFilters({
           <Dropdown
             label="Academic Year"
             value={academicYear}
-            options={ACADEMIC_YEAR_OPTIONS}
+            options={academicYearOptions}
             onChange={onAcademicYearChange}
           />
           <Dropdown
             label="Class / Grade"
             value={classGrade}
-            options={CLASS_GRADE_OPTIONS}
+            options={classOptions}
             onChange={onClassGradeChange}
           />
           <Dropdown
             label="Fee Type"
             value={feeType}
-            options={FEE_TYPE_OPTIONS}
+            options={feeTypeOptions}
             onChange={onFeeTypeChange}
           />
           <Dropdown
@@ -89,10 +84,11 @@ export default function FeesManagementFilters({
             options={STATUS_OPTIONS}
             onChange={onStatusChange}
           />
-          <div>
+          <div className="relative">
             <label className="mb-2 block text-xs font-semibold text-slate-700">Date Range</label>
             <button
-              onClick={() => {}}
+              type="button"
+              onClick={() => setDateMenuOpen((open) => !open)}
               className="flex items-center justify-between gap-2 w-full px-3 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
             >
               <div className="flex items-center gap-2">
@@ -102,10 +98,27 @@ export default function FeesManagementFilters({
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                <span>{dateRange || "12 May 2025 - 18 May 2025"}</span>
+                <span>{dateRange || "All Dates"}</span>
               </div>
               <ChevronDown className="h-4 w-4" />
             </button>
+            {dateMenuOpen && (
+              <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                {["All Dates", "This Week", "This Month", "Last 30 Days", "This Term", "Past 90 Days"].map((range) => (
+                  <button
+                    key={range}
+                    type="button"
+                    onClick={() => {
+                      onDateRangeChange(range === "All Dates" ? "" : range);
+                      setDateMenuOpen(false);
+                    }}
+                    className="block w-full px-3 py-1.5 text-left text-xs font-medium text-slate-700 hover:bg-purple-50 hover:text-[#7c3aed]"
+                  >
+                    {range}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-end">
             <button

@@ -84,23 +84,24 @@ export default function Calendar({
 
   return (
     <div className="select-none">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-1">
         <button
+          type="button"
           onClick={() => changeMonth(-1)}
-          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100"
+          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
           aria-label="Previous month"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="flex items-center gap-1.5">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-sm font-bold text-slate-800 tracking-tight">
             {MONTHS[month]}
           </span>
           <select
             value={year}
             onChange={(e) => setView(new Date(Number(e.target.value), month, 1))}
             aria-label="Select year"
-            className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-sm font-semibold text-slate-900 outline-none transition focus:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500"
+            className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50/50 px-2 py-0.5 text-xs font-semibold text-slate-700 outline-none transition hover:border-purple-300 focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
           >
             {years.map((y) => (
               <option key={y} value={y}>
@@ -110,11 +111,12 @@ export default function Calendar({
           </select>
         </div>
         <button
+          type="button"
           onClick={() => changeMonth(1)}
-          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100"
+          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
           aria-label="Next month"
         >
-          <ChevronRight className="h-5 w-5" />
+          <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
@@ -122,14 +124,14 @@ export default function Calendar({
         {WEEKDAYS.map((w) => (
           <div
             key={w}
-            className="py-1 text-center text-xs font-medium text-slate-600"
+            className="py-1 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider"
           >
             {w}
           </div>
         ))}
 
         {cells.map((day, i) => {
-          if (day === null) return <div key={`empty-${i}`} />;
+          if (day === null) return <div key={`empty-${i}`} className="h-8" />;
           const selected = isSameDay(selectedDate, day);
           const inRange = isInRange(day);
           const today = isSameDay(new Date(), day);
@@ -137,15 +139,16 @@ export default function Calendar({
           return (
             <button
               key={day}
+              type="button"
               onClick={() => onSelect?.(new Date(year, month, day))}
-              className={`relative flex h-9 items-center justify-center rounded-lg text-sm transition ${
+              className={`relative flex h-8 w-8 mx-auto cursor-pointer items-center justify-center rounded-lg text-xs font-medium transition ${
                 selected
-                  ? "bg-purple-600 font-semibold text-white"
+                  ? "bg-[#7c3aed] font-bold text-white shadow-sm shadow-purple-500/20"
                   : inRange
                   ? "bg-purple-50 text-purple-700"
                   : today
-                  ? "bg-purple-50 font-semibold text-purple-700 hover:bg-purple-100"
-                  : "text-slate-700 hover:bg-slate-100"
+                  ? "border border-purple-300 bg-purple-50/80 font-bold text-[#7c3aed] hover:bg-purple-100"
+                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
               {day}

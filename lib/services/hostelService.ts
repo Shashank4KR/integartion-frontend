@@ -232,7 +232,7 @@ export async function getStudentHostelLeaveRequests(
   token: string,
   studentId: string,
 ): Promise<any[]> {
-  const response = await fetch(`${BASE}/leave-requests?studentId=${studentId}`, {
+  const response = await fetch(`/api/students/${studentId}/leave-requests`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
@@ -246,7 +246,7 @@ export async function getStudentHostelComplaints(
   token: string,
   studentId: string,
 ): Promise<any[]> {
-  const response = await fetch(`${BASE}/complaints?studentId=${studentId}`, {
+  const response = await fetch(`/api/students/${studentId}/complaints`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
@@ -272,15 +272,15 @@ export async function getStudentHostelNotices(
 export async function getStudentHostelFees(
   token: string,
   studentId: string,
-): Promise<any> {
-  const response = await fetch(`${BASE}/fee-summary?studentId=${studentId}`, {
+): Promise<any[]> {
+  const response = await fetch(`/api/students/${studentId}/hostel-fees`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch hostel fees.");
   }
-  return (await response.json()) as any;
+  return (await response.json()) as any[];
 }
 
 export async function getHostelDashboardStats(
@@ -389,6 +389,38 @@ export async function createMaintenanceRequest(
   if (!response.ok) {
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to create maintenance request.");
+  }
+  return (await response.json()) as any;
+}
+
+export async function listWorkOrders(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch("/api/work-orders", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch work orders.");
+  }
+  return (await response.json()) as any[];
+}
+
+export async function createWorkOrder(
+  token: string,
+  payload: any,
+): Promise<any> {
+  const response = await fetch("/api/work-orders", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to create work order.");
   }
   return (await response.json()) as any;
 }
@@ -535,4 +567,74 @@ export async function listHostelBeds(
   }
   return (await response.json()) as any[];
 }
+
+export async function checkoutHostelStudent(
+  token: string,
+  allocationId: string,
+  checkoutDate: string,
+): Promise<any> {
+  const response = await fetch(`${BASE}/allocations/${allocationId}/checkout`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ checkout_date: checkoutDate }),
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to checkout student.");
+  }
+  return (await response.json()) as any;
+}
+
+export async function transferHostelStudent(
+  token: string,
+  allocationId: string,
+  payload: { bed_id: string; check_in_date: string },
+): Promise<any> {
+  const response = await fetch(`${BASE}/allocations/${allocationId}/transfer`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to transfer student.");
+  }
+  return (await response.json()) as any;
+}
+
+export async function listMessMenus(
+  token: string,
+): Promise<any[]> {
+  const response = await fetch("/api/mess-menu", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch mess menu.");
+  }
+  return (await response.json()) as any[];
+}
+
+export async function getMessMenu(
+  token: string,
+  id?: string,
+): Promise<any> {
+  const url = id ? `/api/mess-menu/${id}` : "/api/mess-menu";
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch mess menu.");
+  }
+  return (await response.json()) as any;
+}
+
+
 

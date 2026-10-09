@@ -75,8 +75,8 @@ export default function TeacherNotesPage() {
         subject_id: subjectId || selectedSubject,
       });
       setNotes(fetched);
-    } catch {
-      // Keep existing list on error
+    } catch (err) {
+      console.warn("[TeacherNotes] Failed to load chapter notes:", err);
     }
   };
 

@@ -90,11 +90,10 @@ export default function TeacherSchedulePage() {
         )}
 
         {!loading && !error && schedule.length === 0 && (
-          <Card className="border-amber-200 bg-amber-50 p-6">
-            <div className="flex items-center gap-3 text-amber-700">
-              <CalendarDays className="h-5 w-5" />
-              <p>No timetable entries assigned yet.</p>
-            </div>
+          <Card className="border-slate-200 bg-white p-8 text-center shadow-sm">
+            <CalendarDays className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-700">No current data</p>
+            <p className="text-xs text-slate-500 mt-1">No timetable entries assigned yet for your schedule.</p>
           </Card>
         )}
 

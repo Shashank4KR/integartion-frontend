@@ -22,16 +22,8 @@ const ROOM_MAP: Record<string, string[]> = {
   "Block D (Girls)": ["D-401", "D-402"],
 };
 const CLASS_OPTIONS = [
-  "XII - A",
-  "XI - B",
-  "X - A",
-  "X - B",
-  "IX - A",
-  "IX - B",
-  "VIII - A",
-  "VIII - B",
-  "VII - A",
-  "VII - B",
+  "Class 10-A",
+  "Class 10-B",
 ];
 
 export default function AddHostelStudentDialog({ open, onClose, onSave }: AddHostelStudentDialogProps) {
@@ -43,7 +35,7 @@ export default function AddHostelStudentDialog({ open, onClose, onSave }: AddHos
   const [classSection, setClassSection] = useState("XII - A");
   const [block, setBlock] = useState(BLOCK_OPTIONS[0]);
   const [roomNo, setRoomNo] = useState(ROOM_MAP[BLOCK_OPTIONS[0]][0]);
-  const [checkInDate, setCheckInDate] = useState("01/01/2025");
+  const [checkInDate, setCheckInDate] = useState("02/10/2026");
   const [guardianName, setGuardianName] = useState("");
   const [guardianContact, setGuardianContact] = useState("");
   const [studentContact, setStudentContact] = useState("");
@@ -102,7 +94,7 @@ export default function AddHostelStudentDialog({ open, onClose, onSave }: AddHos
     setClassSection("XII - A");
     setBlock(BLOCK_OPTIONS[0]);
     setRoomNo(ROOM_MAP[BLOCK_OPTIONS[0]][0]);
-    setCheckInDate("01/01/2025");
+    setCheckInDate("02/10/2026");
     setGuardianName("");
     setGuardianContact("");
     setStudentContact("");

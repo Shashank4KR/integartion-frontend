@@ -128,7 +128,13 @@ function mapInvoice(item: Record<string, unknown>, paymentTotals: Record<string,
     amount,
     paid,
     balance,
-    status: normalizeStatus(item.status),
+    status: normalizeStatus(
+      (paid >= amount && amount > 0) || (amount > 0 && balance === 0)
+        ? "Paid"
+        : paid > 0 && balance > 0
+          ? "Partial"
+          : item.status ?? "Unpaid"
+    ),
     date: text(item.invoice_date ?? item.created_at),
     dueDate: text(item.due_date),
     method: "-",

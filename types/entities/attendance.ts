@@ -93,6 +93,7 @@ export type AttendanceListParams = {
   start_date?: string;
   end_date?: string;
   status?: AttendanceStatus;
+  academic_year?: string;
 };
 
 export type StudentReportParams = {

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   AlertCircle,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Download,
   Eye,
@@ -11,6 +13,7 @@ import {
   Laptop,
   Loader2,
   RefreshCw,
+  Search,
   ShieldCheck,
   Smartphone,
   Upload,
@@ -163,55 +166,55 @@ function Toggle({
 /* ==========================================================================
    1. PERSONAL / PROFILE SETTINGS
    ========================================================================== */
-function compressImage(file: File, maxDim = 256, quality = 0.85): Promise<string> {
+export async function processImageFile(file: File, maxDim = 256, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
-    console.log("[Avatar] compressImage: reading file", file.name, file.size, file.type);
     const reader = new FileReader();
-    reader.onerror = (ev) => {
-      console.error("[Avatar] FileReader error:", ev);
-      reject(new Error("Failed to read image file."));
-    };
+    reader.onerror = () => reject(new Error("Failed to read image file."));
     reader.onload = () => {
+      const dataUrl = reader.result as string;
       const img = new Image();
-      img.onerror = (ev) => {
-        console.error("[Avatar] Image decode error:", ev);
-        reject(new Error("Invalid image format. Please select a valid JPG, PNG, or WebP image."));
-      };
       img.onload = () => {
-        console.log("[Avatar] Image decoded:", img.width, "x", img.height);
-        if (img.width === 0 || img.height === 0) {
-          console.error("[Avatar] Zero-dimension image — aborting");
-          reject(new Error("Image has zero dimensions. Please choose a different file."));
-          return;
-        }
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > maxDim) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
+        try {
+          let { width, height } = img;
+          if (!width || !height) {
+            resolve(dataUrl);
+            return;
           }
-        } else {
-          if (height > maxDim) {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
           }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } catch {
+          resolve(dataUrl);
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          console.warn("[Avatar] Canvas 2d context unavailable — using raw data URL");
-          resolve(reader.result as string);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", quality);
-        console.log("[Avatar] Compressed to", dataUrl.length, "chars (", width, "x", height, ")");
+      };
+      img.onerror = () => {
         resolve(dataUrl);
       };
-      img.src = reader.result as string;
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   });
@@ -221,93 +224,94 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
   const [name, setName] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone ?? "");
-  // Initialise from localStorage immediately so the avatar appears on first render
   const [avatarPreview, setAvatarPreview] = useState<string | null>(() => getStoredAvatar());
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [photoSuccess, setPhotoSuccess] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Callback ref: fires when the input DOM node is actually attached/detached
-  // This is StrictMode-safe and more reliable than useEffect + useRef for event listeners
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileListenerCleanupRef = useRef<(() => void) | null>(null);
-  const attachFileListener = useCallback(
-    (inputEl: HTMLInputElement | null) => {
-      // Detach phase — React passes null when the node is removed
-      if (!inputEl) {
-        fileListenerCleanupRef.current?.();
-        fileListenerCleanupRef.current = null;
-        (fileInputRef as React.MutableRefObject<HTMLInputElement | null>).current = null;
-        return;
+
+  const processAndApplyFile = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      setPhotoError("File size exceeds maximum 10 MB limit.");
+      return;
+    }
+
+    setProcessingPhoto(true);
+    setPhotoError(null);
+    setPhotoSuccess(null);
+
+    try {
+      const base64 = await processImageFile(file);
+      setAvatarLoadFailed(false);
+      setAvatarPreview(base64);
+      saveAvatar(base64);
+
+      const token = getToken();
+      if (token) {
+        try {
+          const updated = await updateProfile(token, { avatar_url: base64 });
+          if (onUserUpdate) onUserUpdate(updated);
+        } catch (apiErr: any) {
+          console.warn("[Avatar] Backend sync notice:", apiErr);
+          // Frontend preview remains active from localStorage
+        }
       }
 
-      // Keep the plain ref in sync (used by handleRemovePhoto etc.)
-      (fileInputRef as React.MutableRefObject<HTMLInputElement | null>).current = inputEl;
+      setPhotoSuccess("Profile picture updated successfully!");
+      setTimeout(() => setPhotoSuccess(null), 3500);
+    } catch (err: any) {
+      console.error("[Avatar] Upload error:", err);
+      setPhotoError(err?.message || "Failed to process photo.");
+    } finally {
+      setProcessingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
-      const handleNativeChange = async () => {
-        const file = inputEl.files?.[0];
-        console.log("[Avatar] change fired, file:", file?.name ?? "(none)");
-        if (!file) return;
-
-        if (file.size > 10 * 1024 * 1024) {
-          setPhotoError("File size exceeds maximum 10 MB limit.");
-          inputEl.value = "";
-          return;
-        }
-
-        // Show the chosen image immediately — no async wait needed
-        const objectUrl = URL.createObjectURL(file);
-        setAvatarPreview(objectUrl);
-        setProcessingPhoto(true);
-        setPhotoError(null);
-
-        try {
-          const compressed = await compressImage(file, 256, 0.85);
-          console.log("[Avatar] compressed, length:", compressed.length);
-          URL.revokeObjectURL(objectUrl);
-          setAvatarPreview(compressed);
-          saveAvatar(compressed);
-          console.log("[Avatar] saved. Key present:", !!localStorage.getItem("edtech_user_avatar"));
-          setPhotoSuccess("Profile picture updated!");
-          setTimeout(() => setPhotoSuccess(null), 3000);
-        } catch (err: any) {
-          console.error("[Avatar] failed:", err);
-          URL.revokeObjectURL(objectUrl);
-          setAvatarPreview(getStoredAvatar());
-          setPhotoError(err?.message || "Failed to process photo.");
-        } finally {
-          setProcessingPhoto(false);
-          inputEl.value = "";
-        }
-      };
-
-      inputEl.addEventListener("change", handleNativeChange);
-      fileListenerCleanupRef.current = () => inputEl.removeEventListener("change", handleNativeChange);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processAndApplyFile(file);
+  };
 
   // Sync profile fields when the user object changes
   useEffect(() => {
     setName(user.username);
     setEmail(user.email);
     setPhone(user.phone ?? "");
-    setAvatarPreview(getStoredAvatar());
+    const initialAvatar = user.avatar_url || getStoredAvatar();
+    setAvatarPreview(initialAvatar);
+    setAvatarLoadFailed(false);
   }, [user]);
 
   // Keep the avatar preview in sync with the global avatar store
   useEffect(() => {
     return subscribeAvatarChange((newAvatar) => {
       setAvatarPreview(newAvatar);
+      setAvatarLoadFailed(false);
     });
   }, []);
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
     setAvatarPreview(null);
+    setAvatarLoadFailed(false);
     removeAvatar();
+    const token = getToken();
+    if (token) {
+      await updateProfile(token, { avatar_url: null })
+        .then((updated) => {
+          if (onUserUpdate) onUserUpdate(updated);
+        })
+        .catch((err) => {
+          console.warn("[Avatar] remove sync failed:", err);
+        });
+    }
     setPhotoSuccess("Profile picture removed.");
     setTimeout(() => setPhotoSuccess(null), 3000);
   };
@@ -322,10 +326,12 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
     try {
       setSaving(true);
       setError(null);
+      const effectiveAvatar = avatarPreview || getStoredAvatar() || user.avatar_url || null;
       const updated = await updateProfile(token, {
         username: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
+        avatar_url: effectiveAvatar,
       });
       if (onUserUpdate) onUserUpdate(updated);
       setSaved(true);
@@ -342,6 +348,7 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
     setEmail(user.email);
     setPhone(user.phone ?? "");
     setAvatarPreview(getStoredAvatar());
+    setAvatarLoadFailed(false);
     setError(null);
     setPhotoError(null);
   };
@@ -359,25 +366,44 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
         title="Profile photo"
         description="This image is shown across the top navigation bar and school communication profile."
       >
-        <div className="flex flex-wrap items-center gap-4">
-          {avatarPreview ? (
-            <img
-              src={avatarPreview}
-              alt="Profile Preview"
-              className="h-16 w-16 rounded-full object-cover border-2 border-violet-500 shadow-md"
-            />
-          ) : (
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-violet-100 text-xl font-bold text-violet-700 shadow-inner">
-              {initials}
+        <div className="flex flex-wrap items-center gap-5">
+          {/* Clickable / draggable avatar circle */}
+          <label
+            htmlFor="settings-profile-avatar-input"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files?.[0];
+              if (file && file.type.startsWith("image/")) {
+                void processAndApplyFile(file);
+              }
+            }}
+            className="group relative block h-20 w-20 cursor-pointer overflow-hidden rounded-full border-2 border-violet-500 shadow-md transition hover:ring-4 hover:ring-violet-200"
+            title="Click or drag an image here to update photo"
+          >
+            {avatarPreview && !avatarLoadFailed ? (
+              <img
+                src={avatarPreview}
+                alt="Profile Preview"
+                onError={() => setAvatarLoadFailed(true)}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="grid h-full w-full place-items-center bg-violet-100 text-2xl font-bold text-violet-700">
+                {initials}
+              </div>
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40 text-white opacity-0 transition group-hover:opacity-100">
+              <Upload className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">Change</span>
             </div>
-          )}
+          </label>
+
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              {/* Native label→input association: no JS .click() needed, works in all browsers */}
               <label
-                htmlFor="avatar-file-input"
-                aria-disabled={processingPhoto}
-                className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 ${
+                htmlFor="settings-profile-avatar-input"
+                className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 ${
                   processingPhoto ? "pointer-events-none opacity-50" : ""
                 }`}
               >
@@ -387,19 +413,23 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
                   <Upload className="h-4 w-4 text-slate-500" />
                 )}
                 {processingPhoto ? "Processing…" : "Upload new photo"}
-                <input
-                  ref={attachFileListener}
-                  id="avatar-file-input"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="sr-only"
-                />
               </label>
+
+              <input
+                ref={fileInputRef}
+                id="settings-profile-avatar-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+                onChange={handleFileChange}
+                onClick={(e) => { (e.target as HTMLInputElement).value = ""; }}
+                className="sr-only"
+              />
+
               {avatarPreview && (
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
-                  className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                  className="rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 transition"
                 >
                   Remove photo
                 </button>
@@ -521,7 +551,7 @@ export function AccountSecurity(_: SectionProps) {
         if (typeof sec.two_factor_auth === "boolean") setTwoFactor(sec.two_factor_auth);
         if (typeof sec.signin_alerts === "boolean") setSignInAlerts(sec.signin_alerts);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[Settings] Failed to fetch security settings:", err));
 
     void getUserSessions(token)
       .then((res) => {
@@ -539,7 +569,7 @@ export function AccountSecurity(_: SectionProps) {
           ]);
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[Settings] Failed to load user sessions:", err))
       .finally(() => setLoadingSessions(false));
   }, []);
 
@@ -1251,7 +1281,7 @@ export function HostelConfiguration(_: SectionProps) {
         },
         {
           key: "require_visitor_approval",
-          label: "Require visitor warden approval",
+          label: "Require visitor supervisor approval",
           hint: "All guest entries must be authenticated by the hostel supervisor.",
           type: "toggle",
         },
@@ -1608,13 +1638,22 @@ export function AuditActivityLogs(_: SectionProps) {
       activity: string;
       details?: string | null;
       timestamp?: string | null;
+      activity_time?: string | null;
       created_at?: string | null;
-      user?: { username?: string } | null;
+      user_id?: string | null;
+      user?: { username?: string; email?: string | null } | null;
     }>
   >([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+
+  // Filters & Pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [actionFilter, setActionFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     const token = getToken();
@@ -1623,25 +1662,38 @@ export function AuditActivityLogs(_: SectionProps) {
       return;
     }
 
+    setFetchError(null);
     getAuditLogs(token)
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setLogs(data);
         } else {
-          setLogs([
-            {
-              id: "1",
-              activity: "System Initialized",
-              details: "Default system settings and audit logging initialized",
-              timestamp: new Date().toISOString(),
-              user: { username: "Admin" },
-            },
-          ]);
+          setLogs([]);
         }
       })
-      .catch(() => {})
+      .catch((err: any) => {
+        setFetchError(err?.message || "Failed to load audit logs.");
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const uniqueActions = Array.from(new Set(logs.map((l) => l.activity))).filter(Boolean);
+
+  const filteredLogs = logs.filter((log) => {
+    const query = searchQuery.toLowerCase();
+    const matchesSearch =
+      !searchQuery ||
+      log.activity.toLowerCase().includes(query) ||
+      (log.details && log.details.toLowerCase().includes(query)) ||
+      (log.user?.username && log.user.username.toLowerCase().includes(query));
+
+    const matchesAction = actionFilter === "ALL" || log.activity === actionFilter;
+
+    return matchesSearch && matchesAction;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  const paginatedLogs = filteredLogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleExport = async () => {
     const token = getToken();
@@ -1661,6 +1713,12 @@ export function AuditActivityLogs(_: SectionProps) {
     }
   };
 
+  // Safe details sanitizer to prevent leaking tokens or internal credentials
+  const sanitizeDetails = (details?: string | null) => {
+    if (!details) return "";
+    return details.replace(/(?:password|token|secret|key)=([^&;\s]+)/gi, "$1=[PROTECTED]");
+  };
+
   return (
     <Card
       title="Audit & activity logs"
@@ -1671,13 +1729,58 @@ export function AuditActivityLogs(_: SectionProps) {
         This audit trail is append-only and cryptographically bound. Records cannot be edited or deleted.
       </div>
 
+      {/* Filter and Search Bar */}
+      <div className="mb-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-72">
+          <input
+            type="text"
+            placeholder="Search action, user, or details..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <select
+            value={actionFilter}
+            onChange={(e) => {
+              setActionFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-700 bg-white"
+          >
+            <option value="ALL">All Actions ({logs.length})</option>
+            {uniqueActions.map((act) => (
+              <option key={act} value={act}>
+                {act}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {fetchError && (
+        <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 px-3.5 py-2 text-xs text-rose-700">
+          {fetchError}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-6 text-xs text-slate-500">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Fetching activity logs…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-violet-600" /> Fetching activity logs…
+        </div>
+      ) : paginatedLogs.length === 0 ? (
+        <div className="py-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-lg">
+          No audit activity records found.
         </div>
       ) : (
         <div className="divide-y divide-slate-100">
-          {logs.slice(0, 15).map((log, idx) => (
+          {paginatedLogs.map((log, idx) => (
             <div className="flex items-center gap-3 py-3.5" key={log.id || idx}>
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violet-100 text-violet-700">
                 <UserRound className="h-4 w-4" />
@@ -1685,20 +1788,51 @@ export function AuditActivityLogs(_: SectionProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-900">{log.activity}</p>
                 <p className="text-xs text-slate-500">
-                  {log.details ? `${log.details} · ` : ""}by{" "}
+                  {log.details ? `${sanitizeDetails(log.details)} · ` : ""}by{" "}
                   <span className="font-medium text-slate-700">
-                    {log.user?.username || "System Administrator"}
+                    {log.user?.username || (log.user_id ? "User" : "System Administrator")}
                   </span>
                 </p>
               </div>
               <span className="whitespace-nowrap text-xs text-slate-400">
                 <Clock3 className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
-                {log.timestamp || log.created_at
-                  ? new Date(log.timestamp || log.created_at!).toLocaleString()
+                {log.activity_time || log.timestamp || log.created_at
+                  ? new Date(log.activity_time || log.timestamp || log.created_at!).toLocaleString()
                   : "Recently"}
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && filteredLogs.length > pageSize && (
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+          <span>
+            Showing {(currentPage - 1) * pageSize + 1} to{" "}
+            {Math.min(currentPage * pageSize, filteredLogs.length)} of {filteredLogs.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+              aria-label="Previous Page"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+              aria-label="Next Page"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

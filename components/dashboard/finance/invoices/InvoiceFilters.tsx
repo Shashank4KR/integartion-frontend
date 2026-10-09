@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 import Dropdown from "@/components/shared/Dropdown";
 import Calendar from "@/components/shared/Calendar";
 
-const ACADEMIC_YEAR_OPTIONS = ["2024-25", "2025-26"];
+const DEFAULT_ACADEMIC_YEAR_OPTIONS = ["All Academic Years", "2026-2027", "2025-2026"];
 const INVOICE_TYPE_OPTIONS = ["All Types", "Fee Invoice", "Salary Invoice", "Expense Invoice", "Other Invoice"];
-const CLASS_GRADE_OPTIONS = ["All Classes", "VIII - A", "VI - B", "IX - A", "VIII - B", "IX - B", "VI - A", "V - B", "VIII - C"];
+const DEFAULT_CLASS_OPTIONS = ["All Classes"];
 const STATUS_OPTIONS = ["All Status", "Paid", "Partial", "Overdue", "Pending"];
 
 function formatDate(date: Date): string {
@@ -20,6 +20,7 @@ function formatDate(date: Date): string {
 interface InvoiceFiltersProps {
   academicYear: string;
   onAcademicYearChange: (value: string) => void;
+  academicYearOptions?: string[];
   invoiceType: string;
   onInvoiceTypeChange: (value: string) => void;
   classGrade: string;
@@ -38,6 +39,7 @@ interface InvoiceFiltersProps {
 export default function InvoiceFilters({
   academicYear,
   onAcademicYearChange,
+  academicYearOptions = DEFAULT_ACADEMIC_YEAR_OPTIONS,
   invoiceType,
   onInvoiceTypeChange,
   classGrade,
@@ -59,7 +61,7 @@ export default function InvoiceFilters({
   const containerRef = useRef<HTMLDivElement>(null);
   const dateContainerRef = useRef<HTMLDivElement>(null);
 
-  const availableClassOptions = classOptions && classOptions.length > 0 ? classOptions : CLASS_GRADE_OPTIONS;
+  const availableClassOptions = classOptions && classOptions.length > 0 ? classOptions : DEFAULT_CLASS_OPTIONS;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -95,7 +97,7 @@ export default function InvoiceFilters({
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex-1 min-w-[140px]">
           <label className="block text-xs font-semibold text-slate-700 mb-2">Academic Year</label>
-          <Dropdown value={academicYear} options={ACADEMIC_YEAR_OPTIONS} onChange={onAcademicYearChange} />
+          <Dropdown value={academicYear} options={academicYearOptions} onChange={onAcademicYearChange} />
         </div>
         <div className="flex-1 min-w-[140px]">
           <label className="block text-xs font-semibold text-slate-700 mb-2">Invoice Type</label>
@@ -186,7 +188,7 @@ export default function InvoiceFilters({
                 <div className="space-y-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Academic Year</label>
-                    <Dropdown value={academicYear} options={ACADEMIC_YEAR_OPTIONS} onChange={onAcademicYearChange} />
+                    <Dropdown value={academicYear} options={academicYearOptions} onChange={onAcademicYearChange} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Invoice Type</label>
@@ -194,7 +196,7 @@ export default function InvoiceFilters({
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Class / Grade</label>
-                    <Dropdown value={classGrade} options={CLASS_GRADE_OPTIONS} onChange={onClassGradeChange} />
+                    <Dropdown value={classGrade} options={availableClassOptions} onChange={onClassGradeChange} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Status</label>

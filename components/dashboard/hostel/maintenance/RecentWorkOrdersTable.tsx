@@ -44,28 +44,36 @@ export default function RecentWorkOrdersTable({ workOrders, onView, onViewAll }:
             </tr>
           </thead>
           <tbody>
-            {workOrders.map((workOrder) => (
-              <tr key={workOrder.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                <td className="px-5 py-3 text-xs font-medium text-[#7c3aed]">{workOrder.id}</td>
-                <td className="px-5 py-3 text-slate-600">{workOrder.relatedRequest}</td>
-                <td className="px-5 py-3 text-slate-600">{workOrder.issueType}</td>
-                <td className="px-5 py-3 text-slate-600">{workOrder.assignedTo}</td>
-                <td className="px-5 py-3">
-                  <StatusBadge status={workOrder.status} />
-                </td>
-                <td className="px-5 py-3 text-slate-600">{workOrder.scheduledDate}</td>
-                <td className="px-5 py-3">
-                  <button
-                    type="button"
-                    onClick={() => onView(workOrder)}
-                    aria-label={`View ${workOrder.id} details`}
-                    className="inline-flex items-center justify-center rounded-lg border border-purple-200 bg-purple-50 p-1.5 text-purple-600 hover:bg-purple-100 transition"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
+            {workOrders.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-5 py-8 text-center text-sm text-slate-500">
+                  No work orders found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              workOrders.map((workOrder) => (
+                <tr key={workOrder.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                  <td className="px-5 py-3 text-xs font-medium text-[#7c3aed]">{workOrder.id}</td>
+                  <td className="px-5 py-3 text-slate-600">{workOrder.relatedRequest}</td>
+                  <td className="px-5 py-3 text-slate-600">{workOrder.issueType}</td>
+                  <td className="px-5 py-3 text-slate-600">{workOrder.assignedTo}</td>
+                  <td className="px-5 py-3">
+                    <StatusBadge status={workOrder.status} />
+                  </td>
+                  <td className="px-5 py-3 text-slate-600">{workOrder.scheduledDate}</td>
+                  <td className="px-5 py-3">
+                    <button
+                      type="button"
+                      onClick={() => onView(workOrder)}
+                      aria-label={`View ${workOrder.id} details`}
+                      className="inline-flex items-center justify-center rounded-lg border border-purple-200 bg-purple-50 p-1.5 text-purple-600 hover:bg-purple-100 transition"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

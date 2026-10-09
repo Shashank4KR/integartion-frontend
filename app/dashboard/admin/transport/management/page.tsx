@@ -35,10 +35,14 @@ import {
   deleteDriver,
   createVehicle,
   createTransportRoute,
+  updateTransportRoute,
+  deleteTransportRoute,
   assignDriver,
 } from "@/lib/services/transportService";
 import { listStudents } from "@/lib/services/studentService";
 import type { RouteListItem } from "@/lib/fixtures/transport-management-reference-fixture";
+import type { ExtendedRouteListItem } from "@/components/dashboard/transport/RouteListCard";
+import EditRouteDialog, { type EditableRouteData } from "@/components/dashboard/transport/EditRouteDialog";
 
 interface VehicleTrip {
   id: string;
@@ -107,21 +111,31 @@ function mapRouteList(
   vehicles: Array<Record<string, unknown>>,
   drivers: Array<Record<string, unknown>>,
   studentTransports: Array<Record<string, unknown>> = []
-): RouteListItem[] {
+): ExtendedRouteListItem[] {
   return routes.map((route, index) => {
     const vehicle = vehicles[index] as Record<string, unknown> | undefined;
     const driver = drivers[index] as Record<string, unknown> | undefined;
-    const routeId = readString(route, ["route_id", "routeId", "id"], String(index + 1));
+    const rawId = readString(route, ["id", "route_id", "routeId"], String(index + 1));
+    const routeId = `R-${index + 1}`;
     const routeName = readString(route, ["route_name", "routeName", "name"], `Route ${index + 1}`);
     const studentCount = studentTransports.filter(
-      (st) => String(st.route_id) === String(routeId) || String(st.route_name) === String(routeName)
+      (st) => String(st.route_id) === String(rawId) || String(st.route_name) === String(routeName)
     ).length;
 
+    const rawStops = route.stops;
+    const stopsCount = Array.isArray(rawStops)
+      ? rawStops.length
+      : readNumber(route, ["stops_count", "stopsCount", "stops"]);
+
     return {
+      id: rawId,
       routeId,
       routeName,
       routeColor: readString(route, ["route_color", "routeColor", "color"], "#7c3aed"),
-      stops: readNumber(route, ["stops_count", "stopsCount", "stops"]),
+      stops: stopsCount,
+      stopsList: Array.isArray(rawStops) ? (rawStops as any[]) : [],
+      startPoint: readString(route, ["start_point", "startPoint"], "Campus"),
+      endPoint: readString(route, ["end_point", "endPoint"], "City"),
       students: studentCount,
       vehicle: vehicle ? readString(vehicle, ["bus_number", "registration_number", "vehicle_no", "vehicleNo", "number", "id"]) : "-",
       driver: driver ? readString(driver, ["driver_name", "name", "driverName", "full_name"]) : "-",
@@ -176,6 +190,8 @@ export default function TransportManagementPage() {
 
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
   const [addRouteOpen, setAddRouteOpen] = useState(false);
+  const [editRouteOpen, setEditRouteOpen] = useState(false);
+  const [selectedRouteForEdit, setSelectedRouteForEdit] = useState<EditableRouteData | null>(null);
   const [addDriverOpen, setAddDriverOpen] = useState(false);
   const [assignDriverOpen, setAssignDriverOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -419,7 +435,7 @@ export default function TransportManagementPage() {
     routeColor: string;
     startingPoint: string;
     destination: string;
-    stops: string;
+    stops: any[];
     assignedVehicle: string;
     assignedDriver: string;
     pickupTime: string;
@@ -436,11 +452,76 @@ export default function TransportManagementPage() {
         route_name: data.routeName,
         start_point: data.startingPoint,
         end_point: data.destination,
+        stops: data.stops,
       });
       showToast(`Route "${data.routeName}" created successfully!`);
       loadData();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to create route.");
+      throw err;
+    }
+  };
+
+  const handleEditRoute = (routeItem: ExtendedRouteListItem) => {
+    setSelectedRouteForEdit({
+      id: routeItem.id || routeItem.routeId,
+      routeName: routeItem.routeName,
+      routeColor: routeItem.routeColor,
+      startingPoint: routeItem.startPoint || "",
+      destination: routeItem.endPoint || "",
+      stops: routeItem.stopsList || [],
+      assignedVehicle: routeItem.vehicle !== "-" ? routeItem.vehicle : "",
+      assignedDriver: routeItem.driver !== "-" ? routeItem.driver : "",
+      status: routeItem.status,
+    });
+    setEditRouteOpen(true);
+  };
+
+  const handleSaveEditRoute = async (
+    id: string,
+    updatedRoute: {
+      routeName: string;
+      routeColor: string;
+      startingPoint: string;
+      destination: string;
+      stops: any[];
+      assignedVehicle: string;
+      assignedDriver: string;
+      pickupTime: string;
+      dropTime: string;
+      status: string;
+    }
+  ) => {
+    const token = getToken();
+    if (!token) {
+      showToast("Please log in first.");
+      return;
+    }
+    try {
+      await updateTransportRoute(token, id, {
+        route_name: updatedRoute.routeName,
+        start_point: updatedRoute.startingPoint,
+        end_point: updatedRoute.destination,
+        stops: updatedRoute.stops,
+      });
+      showToast(`Route "${updatedRoute.routeName}" updated successfully!`);
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to update route.");
+      throw err;
+    }
+  };
+
+  const handleDeleteRoute = async (routeId: string) => {
+    const token = getToken();
+    if (!token) return;
+    if (!confirm("Are you sure you want to delete this transport route?")) return;
+    try {
+      await deleteTransportRoute(token, routeId);
+      showToast("Route deleted successfully!");
+      loadData();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to delete route.");
     }
   };
 
@@ -726,6 +807,8 @@ export default function TransportManagementPage() {
                   message: "A full route list view will be available here in a future update.",
                 })
               }
+              onEditRoute={handleEditRoute}
+              onDeleteRoute={handleDeleteRoute}
             />
           </div>
 
@@ -748,6 +831,14 @@ export default function TransportManagementPage() {
         open={addRouteOpen}
         onClose={() => setAddRouteOpen(false)}
         onSave={handleSaveRoute}
+        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
+        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+      />
+      <EditRouteDialog
+        open={editRouteOpen}
+        onClose={() => setEditRouteOpen(false)}
+        route={selectedRouteForEdit}
+        onSave={handleSaveEditRoute}
         vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
         driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
       />
@@ -788,6 +879,7 @@ export default function TransportManagementPage() {
         open={reportOpen}
         onClose={() => setReportOpen(false)}
         routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+        routesData={routes}
       />
       <TripDetailsDialog trip={selectedTrip} open={tripDetailsOpen} onClose={() => setTripDetailsOpen(false)} />
 

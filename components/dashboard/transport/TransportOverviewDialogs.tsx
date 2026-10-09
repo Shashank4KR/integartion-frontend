@@ -10,6 +10,12 @@ interface TransportOverviewDialogsProps {
   onCloseTracking: () => void;
   onCloseSchedule: () => void;
   onCloseReport: () => void;
+  metrics?: {
+    scheduleAdherence?: string;
+    onTimeDelivery?: string;
+    activeVehicles?: number;
+    activeRoutes?: number;
+  };
 }
 
 export default function TransportOverviewDialogs({
@@ -19,6 +25,7 @@ export default function TransportOverviewDialogs({
   onCloseTracking,
   onCloseSchedule,
   onCloseReport,
+  metrics,
 }: TransportOverviewDialogsProps) {
   return (
     <>
@@ -110,19 +117,19 @@ export default function TransportOverviewDialogs({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-slate-100 bg-white p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900">83.3%</p>
+              <p className="text-2xl font-bold text-slate-900">{metrics?.scheduleAdherence ?? "100%"}</p>
               <p className="text-xs text-slate-500 mt-1">Schedule Adherence</p>
             </div>
             <div className="rounded-lg border border-slate-100 bg-white p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900">88.9%</p>
+              <p className="text-2xl font-bold text-slate-900">{metrics?.onTimeDelivery ?? "100%"}</p>
               <p className="text-xs text-slate-500 mt-1">On-Time Delivery</p>
             </div>
             <div className="rounded-lg border border-slate-100 bg-white p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900">16</p>
+              <p className="text-2xl font-bold text-slate-900">{metrics?.activeVehicles ?? 0}</p>
               <p className="text-xs text-slate-500 mt-1">Active Vehicles</p>
             </div>
             <div className="rounded-lg border border-slate-100 bg-white p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900">12</p>
+              <p className="text-2xl font-bold text-slate-900">{metrics?.activeRoutes ?? 0}</p>
               <p className="text-xs text-slate-500 mt-1">Active Routes</p>
             </div>
           </div>

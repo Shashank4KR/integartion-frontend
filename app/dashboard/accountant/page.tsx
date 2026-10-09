@@ -130,13 +130,20 @@ export default function AccountantDashboardPage() {
           },
         ]);
 
+        const invoiceMap = new Map<string, Record<string, unknown>>();
+        invoiceList.forEach((item: any) => {
+          if (item?.id) invoiceMap.set(String(item.id), item);
+        });
+
         setRecentPayments(
           paymentList.slice(0, 5).map((item, idx) => {
             const p = item as Record<string, unknown>;
             const amount = num(p.amount_paid ?? p.amount);
+            const linkedInv = p.invoice_id ? invoiceMap.get(String(p.invoice_id)) : undefined;
+            const sName = linkedInv ? studentName(linkedInv) : studentName(p);
             return {
               id: text(p.id, String(idx)),
-              title: studentName(p),
+              title: sName,
               description: `${text(p.payment_method ?? p.payment_mode, "Payment")} - ${money(amount)}`,
               meta: text(p.payment_date ?? p.created_at),
               iconBg: "bg-green-50",
@@ -150,14 +157,30 @@ export default function AccountantDashboardPage() {
           invoiceList.slice(0, 5).map((item, idx) => {
             const inv = item as Record<string, unknown>;
             const amount = num(inv.net_amount ?? inv.amount);
-            const paidAmt = num(inv.paid_amount ?? inv.amount_paid);
-            const isPaid = paidAmt >= amount && amount > 0;
+            const paidAmt = num(inv.paid ?? inv.paid_amount ?? inv.amount_paid);
+            const balance = num(inv.balance ?? Math.max(0, amount - paidAmt));
+            const rawStatus = String(inv.status ?? "").toUpperCase();
+
+            let label = "Unpaid";
+            let variant: "success" | "warning" | "error" | "info" = "warning";
+
+            if ((paidAmt >= amount && amount > 0) || rawStatus === "PAID" || (amount > 0 && balance === 0)) {
+              label = "Paid";
+              variant = "success";
+            } else if (paidAmt > 0 || rawStatus === "PARTIAL") {
+              label = "Partial";
+              variant = "info";
+            } else if (rawStatus === "OVERDUE") {
+              label = "Overdue";
+              variant = "error";
+            }
+
             return {
               id: text(inv.id, String(idx)),
               title: text(inv.invoice_number, "Invoice"),
               description: `${text(inv.fee_type ?? inv.fee_type_id, "Fee")} - ${studentName(inv)}`,
-              meta: money(amount),
-              badge: { label: isPaid ? "Paid" : "Unpaid", variant: isPaid ? ("success" as const) : ("warning" as const) },
+              meta: balance > 0 && paidAmt > 0 ? `Bal: ${money(balance)}` : money(amount),
+              badge: { label, variant },
             };
           }),
         );

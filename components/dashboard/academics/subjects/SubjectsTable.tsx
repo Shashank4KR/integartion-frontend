@@ -45,6 +45,7 @@ export default function SubjectsTable({
   onView,
   classCountBySubject,
   onManageAssignments,
+  departments = [],
 }: {
   items: SubjectResponse[];
   onEdit: (item: SubjectResponse) => void;
@@ -52,6 +53,7 @@ export default function SubjectsTable({
   onView: (item: SubjectResponse) => void;
   classCountBySubject: Record<string, number>;
   onManageAssignments: (item: SubjectResponse) => void;
+  departments?: { id: string; department_name: string }[];
 }) {
   if (items.length === 0) {
     return (
@@ -83,6 +85,7 @@ export default function SubjectsTable({
             const Icon = getSubjectIcon(item.id);
             const colorSet = getSubjectColor(item.id);
             const classCount = classCountBySubject[item.id] ?? 0;
+            const deptName = departments.find((d) => d.id === item.department_id)?.department_name;
 
             return (
               <tr
@@ -101,10 +104,32 @@ export default function SubjectsTable({
                   <span className="text-sm font-medium text-slate-800">{item.subject_name}</span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <UnavailablePill />
+                  {item.subject_type ? (
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        item.subject_type.toUpperCase() === "THEORY"
+                          ? "bg-blue-50 text-blue-700"
+                          : item.subject_type.toUpperCase() === "PRACTICAL"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : item.subject_type.toUpperCase() === "CORE"
+                          ? "bg-purple-50 text-purple-700"
+                          : "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {item.subject_type}
+                    </span>
+                  ) : (
+                    <UnavailablePill />
+                  )}
                 </td>
                 <td className="px-4 py-3.5">
-                  <UnavailablePill />
+                  {deptName ? (
+                    <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+                      {deptName}
+                    </span>
+                  ) : (
+                    <UnavailablePill />
+                  )}
                 </td>
                 <td className="px-4 py-3.5">
                   <button
@@ -116,10 +141,38 @@ export default function SubjectsTable({
                   </button>
                 </td>
                 <td className="px-4 py-3.5">
-                  <UnavailablePill />
+                  {item.credits != null || item.periods_per_week != null ? (
+                    <div className="flex flex-col text-xs">
+                      {item.credits != null && (
+                        <span className="font-medium text-slate-700">{item.credits} Credits</span>
+                      )}
+                      {item.periods_per_week != null && (
+                        <span className="text-[11px] text-slate-400">{item.periods_per_week} Periods/wk</span>
+                      )}
+                    </div>
+                  ) : (
+                    <UnavailablePill />
+                  )}
                 </td>
                 <td className="px-4 py-3.5">
-                  <UnavailablePill />
+                  {item.status ? (
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        item.status.toUpperCase() === "ACTIVE"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          item.status.toUpperCase() === "ACTIVE" ? "bg-emerald-500" : "bg-slate-400"
+                        }`}
+                      />
+                      {item.status.toUpperCase() === "ACTIVE" ? "Active" : "Inactive"}
+                    </span>
+                  ) : (
+                    <UnavailablePill />
+                  )}
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center justify-end gap-1.5">

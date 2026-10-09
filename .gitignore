@@ -31,3 +31,6 @@ next-env.d.ts
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# local audit artifacts
+audit_results.json

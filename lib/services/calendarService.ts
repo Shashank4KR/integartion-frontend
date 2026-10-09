@@ -1,9 +1,9 @@
-const BASE = "/api/calendar";
+const BASE = "/api/academic-calendar";
 
 export async function listEvents(
   token: string,
 ): Promise<any[]> {
-  const response = await fetch(`${BASE}/events`, {
+  const response = await fetch(`${BASE}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -19,7 +19,7 @@ export async function getEvent(
   token: string,
   id: string,
 ): Promise<any> {
-  const response = await fetch(`${BASE}/events/${id}`, {
+  const response = await fetch(`${BASE}/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -35,7 +35,7 @@ export async function createEvent(
   token: string,
   payload: any,
 ): Promise<any> {
-  const response = await fetch(`${BASE}/events`, {
+  const response = await fetch(`${BASE}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -57,7 +57,7 @@ export async function updateEvent(
   id: string,
   payload: any,
 ): Promise<any> {
-  const response = await fetch(`${BASE}/events/${id}`, {
+  const response = await fetch(`${BASE}/${id}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -78,7 +78,7 @@ export async function deleteEvent(
   token: string,
   id: string,
 ): Promise<void> {
-  const response = await fetch(`${BASE}/events/${id}`, {
+  const response = await fetch(`${BASE}/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });

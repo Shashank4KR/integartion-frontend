@@ -12,6 +12,9 @@ export type UserResponse = {
   username: string;
   email: string;
   phone?: string | null;
+  avatar_url?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   status: boolean;
   last_login?: string | null;
   role_id: string;

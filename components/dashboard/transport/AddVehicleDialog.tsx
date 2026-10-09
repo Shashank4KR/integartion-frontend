@@ -6,6 +6,7 @@ import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import Dropdown from "@/components/shared/Dropdown";
 import { Input } from "@/components/ui/input";
+import DatePicker from "@/components/shared/DatePicker";
 
 const VEHICLE_TYPE_OPTIONS = ["Bus", "Van", "Mini Bus", "Car"];
 const VEHICLE_STATUS_OPTIONS = ["Active", "Maintenance", "Inactive"];
@@ -138,18 +139,18 @@ export default function AddVehicleDialog({
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Insurance Expiry</label>
-            <Input
+            <DatePicker
               value={insuranceExpiry}
-              onChange={(e) => setInsuranceExpiry(e.target.value)}
-              placeholder="DD/MM/YYYY"
+              onChange={setInsuranceExpiry}
+              align="left"
             />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Registration Expiry</label>
-            <Input
+            <DatePicker
               value={registrationExpiry}
-              onChange={(e) => setRegistrationExpiry(e.target.value)}
-              placeholder="DD/MM/YYYY"
+              onChange={setRegistrationExpiry}
+              align="right"
             />
           </div>
         </div>

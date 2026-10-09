@@ -6,9 +6,14 @@ import { useRouter } from "next/navigation";
 import RoleDashboardLayout from "@/components/dashboard/role-dashboards/RoleDashboardLayout";
 import { ROLE_CONFIGS } from "@/lib/dashboard/role-dashboards/config";
 import { getToken } from "@/lib/auth";
-import { listAnnouncements, listMessages, listNotifications, markAllNotificationsRead } from "@/lib/services/communicationService";
+import { listAnnouncements, listMessages, listNotifications, markAllNotificationsRead, markAllMessagesRead } from "@/lib/services/communicationService";
 
-type Role = "student" | "teacher" | "parent" | "accountant" | "librarian" | "warden";
+
+
+
+
+
+type Role = "student" | "teacher" | "parent" | "accountant" | "librarian";
 type InboxKind = "messages" | "notifications";
 
 const inboxes: Record<InboxKind, { title: string; emptyLabel: string; icon: LucideIcon; load: (token: string) => Promise<unknown[]> }> = {
@@ -20,6 +25,19 @@ function text(item: unknown, fields: string[], fallback: string) {
   if (!item || typeof item !== "object") return fallback;
   const record = item as Record<string, unknown>;
   return fields.map((field) => record[field]).find((value): value is string => typeof value === "string" && value.trim().length > 0) ?? fallback;
+}
+
+function formatTimestamp(value: string) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-IN", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxKind }) {
@@ -39,12 +57,14 @@ export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxK
         try {
           localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
-          void markAllNotificationsRead(token).catch(() => {});
-        } catch {}
+          void markAllNotificationsRead(token).catch((err) => console.warn("[RoleInbox] markAllNotificationsRead error:", err));
+        } catch (err) {
+          console.warn("[RoleInbox] notifications storage event error:", err);
+        }
 
         const [announcements, notifications] = await Promise.all([
-          listAnnouncements(token).catch(() => []),
-          listNotifications(token).catch(() => []),
+          listAnnouncements(token).catch((err) => { console.warn("[RoleInbox] listAnnouncements error:", err); return []; }),
+          listNotifications(token).catch((err) => { console.warn("[RoleInbox] listNotifications error:", err); return []; }),
         ]);
         const combined = [...announcements, ...notifications];
         combined.sort((a, b) => {
@@ -57,9 +77,19 @@ export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxK
         try {
           localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
           window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
-        } catch {}
+          void markAllMessagesRead(token).catch((err) => console.warn("[RoleInbox] markAllMessagesRead error:", err));
+        } catch (err) {
+          console.warn("[RoleInbox] messages storage event error:", err);
+        }
 
-        setItems(await config.load(token));
+
+        const rawMessages = ((await config.load(token)) || []) as any[];
+        rawMessages.sort((a, b) => {
+          const dateA = new Date(a.sent_on || a.created_at || a.sent_at || 0).getTime();
+          const dateB = new Date(b.sent_on || b.created_at || b.sent_at || 0).getTime();
+          return dateB - dateA;
+        });
+        setItems(rawMessages);
       }
       setError(null);
     } catch (cause) {
@@ -125,7 +155,7 @@ export default function RoleInboxPage({ role, kind }: { role: Role; kind: InboxK
                     {text(item, ["body", "content", "message", "description"], "No additional details were provided.")}
                   </p>
                   <p className="mt-2 text-xs text-slate-400">
-                    {text(item, ["created_at", "sent_at", "timestamp", "date"], "")}
+                    {formatTimestamp(text(item, ["sent_on", "created_at", "sent_at", "timestamp", "date"], ""))}
                   </p>
                 </li>
               ))}

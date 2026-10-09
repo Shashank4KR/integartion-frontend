@@ -5,45 +5,40 @@ import { Filter, X } from "lucide-react";
 import Dropdown from "@/components/shared/Dropdown";
 import FinanceDateRangePicker from "@/components/dashboard/finance/FinanceDateRangePicker";
 
-const ACADEMIC_YEAR_OPTIONS = ["2024-25", "2025-26"];
-const CLASS_GRADE_OPTIONS = [
-  "All Classes",
-  "VIII - A",
-  "VI - B",
-  "IX - A",
-  "VII - C",
-  "VIII - B",
-  "IX - B",
-  "VI - A",
-  "V - B",
-];
-const FEE_TYPE_OPTIONS = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Other Fees"];
-const PAYMENT_STATUS_OPTIONS = ["All Status", "Paid", "Pending", "Failed", "Refunded"];
-
 interface FinanceFiltersProps {
   academicYear: string;
   onAcademicYearChange: (value: string) => void;
+  academicYearOptions?: string[];
   classGrade: string;
   onClassGradeChange: (value: string) => void;
+  classOptions?: string[];
   feeType: string;
   onFeeTypeChange: (value: string) => void;
+  feeTypeOptions?: string[];
   paymentStatus: string;
   onPaymentStatusChange: (value: string) => void;
+  paymentStatusOptions?: string[];
   dateRange: string;
   onDateRangeChange: (value: string) => void;
   onFilter: () => void;
   onReset: () => void;
 }
 
+const DEFAULT_PAYMENT_STATUS_OPTIONS = ["All Status", "Paid", "Pending", "Failed", "Refunded"];
+
 export default function FinanceFilters({
   academicYear,
   onAcademicYearChange,
+  academicYearOptions = ["All Academic Years"],
   classGrade,
   onClassGradeChange,
+  classOptions = ["All Classes"],
   feeType,
   onFeeTypeChange,
+  feeTypeOptions = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Hostel Fee", "Other Fees"],
   paymentStatus,
   onPaymentStatusChange,
+  paymentStatusOptions = DEFAULT_PAYMENT_STATUS_OPTIONS,
   dateRange,
   onDateRangeChange,
   onFilter,
@@ -58,25 +53,25 @@ export default function FinanceFilters({
           <Dropdown
             label="Academic Year"
             value={academicYear}
-            options={ACADEMIC_YEAR_OPTIONS}
+            options={academicYearOptions}
             onChange={onAcademicYearChange}
           />
           <Dropdown
             label="Class / Grade"
             value={classGrade}
-            options={CLASS_GRADE_OPTIONS}
+            options={classOptions}
             onChange={onClassGradeChange}
           />
           <Dropdown
             label="Fee Type"
             value={feeType}
-            options={FEE_TYPE_OPTIONS}
+            options={feeTypeOptions}
             onChange={onFeeTypeChange}
           />
           <Dropdown
             label="Payment Status"
             value={paymentStatus}
-            options={PAYMENT_STATUS_OPTIONS}
+            options={paymentStatusOptions}
             onChange={onPaymentStatusChange}
           />
           <div>

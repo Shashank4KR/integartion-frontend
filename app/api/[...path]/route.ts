@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
+const MAX_NOTE_REQUEST_SIZE = 11 * 1024 * 1024;
 
 async function handleProxy(
   request: Request,
@@ -33,15 +36,43 @@ async function handleProxy(
 
     let body: any = undefined;
     if (method !== "GET" && method !== "DELETE" && method !== "HEAD") {
-      body = await request.arrayBuffer();
+      if (method === "POST" && fullPath === "chapter-notes/upload") {
+        const contentLength = request.headers.get("content-length");
+        if (contentLength && (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_NOTE_REQUEST_SIZE)) {
+          return NextResponse.json({ detail: "Upload request exceeds the 11 MB limit" }, { status: 413 });
+        }
+        body = request.body;
+      } else {
+        body = await request.arrayBuffer();
+      }
     }
 
 
-    const response = await fetch(`${backendUrl}/${fullPath}${query}`, {
-      method,
-      headers,
-      body,
-    });
+    // FastAPI mounts its routers at the root (for example, /students and
+    // /auth/login). Adding /api/v1 here sends every catch-all request to a
+    // path that does not exist and turns otherwise valid calls into 404s.
+    const baseUrl = backendUrl.replace(/\/+$/, "");
+    let response: Response;
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        const fetchOptions: RequestInit & { duplex?: "half" } = {
+          method,
+          headers,
+          body,
+          cache: "no-store",
+        };
+        if (method === "POST" && fullPath === "chapter-notes/upload" && body) {
+          fetchOptions.duplex = "half";
+        }
+        response = await fetch(`${baseUrl}/${fullPath}${query}`, fetchOptions);
+        break;
+      } catch (error) {
+        // Retry only idempotent reads after a brief backend restart/network
+        // hiccup; never replay writes that may have reached the server.
+        if (method !== "GET" || attempt >= 1) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
 
     const backendContentType = response.headers.get("content-type") || "application/octet-stream";
 
@@ -61,11 +92,20 @@ async function handleProxy(
       ? await response.arrayBuffer()   // keep raw bytes intact
       : await response.text();         // safe for JSON / plain text
 
+    const safeHeaders = new Headers({ "Content-Type": backendContentType });
+    for (const headerName of [
+      "content-disposition",
+      "x-content-type-options",
+      "content-security-policy",
+      "cache-control",
+    ]) {
+      const value = response.headers.get(headerName);
+      if (value) safeHeaders.set(headerName, value);
+    }
+
     return new NextResponse(responseBody || null, {
       status: response.status,
-      headers: {
-        "Content-Type": backendContentType,
-      },
+      headers: safeHeaders,
     });
   } catch (err) {
     console.error("Proxy error:", err);

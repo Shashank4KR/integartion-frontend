@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const query = url.search;
 
-    const response = await fetch(`${backendUrl}/hostel/students${query}`, {
+    const response = await fetch(`${backendUrl}/hostel-allocations${query}`, {
       method: "GET",
       headers: {
         ...(authHeader ? { Authorization: authHeader } : {}),

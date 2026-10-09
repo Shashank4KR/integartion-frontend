@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { GraduationCap, ChevronRight, Headset } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { RoleConfig } from "@/lib/dashboard/role-dashboards/types";
+import { getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
+import ContactSupportModal from "@/components/shared/ContactSupportModal";
 
 interface RoleSidebarProps {
   config: RoleConfig;
@@ -11,6 +14,15 @@ interface RoleSidebarProps {
 
 export default function RoleSidebar({ config }: RoleSidebarProps) {
   const pathname = usePathname();
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
+
+  useEffect(() => {
+    setAvatar(getStoredAvatar());
+    return subscribeAvatarChange((newAvatar) => {
+      setAvatar(newAvatar);
+    });
+  }, []);
 
   const isActive = (href: string) => {
     if (href === config.basePath) return pathname === config.basePath;
@@ -22,7 +34,7 @@ export default function RoleSidebar({ config }: RoleSidebarProps) {
       {/* Logo Section */}
       <div className="p-6 border-b border-purple-700">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 text-white overflow-hidden shadow-sm">
             <GraduationCap className="w-5 h-5" />
           </div>
           <div>
@@ -70,11 +82,20 @@ export default function RoleSidebar({ config }: RoleSidebarProps) {
           <p className="text-purple-200 text-xs mt-1">
             Contact our support team
           </p>
-          <button className="w-full mt-3 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-lg py-2 text-xs font-semibold hover:from-purple-500 hover:to-purple-600 transition">
+          <button
+            type="button"
+            onClick={() => setIsSupportOpen(true)}
+            className="w-full mt-3 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-lg py-2 text-xs font-semibold hover:from-purple-500 hover:to-purple-600 transition"
+          >
             Contact Support
           </button>
         </div>
       </div>
+
+      <ContactSupportModal
+        open={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+      />
     </div>
   );
 }

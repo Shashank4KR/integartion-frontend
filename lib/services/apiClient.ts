@@ -1,4 +1,4 @@
-﻿import type { ApiErrorResponse } from "@/types/api";
+import type { ApiErrorResponse } from "@/types/api";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
@@ -30,8 +30,8 @@ export async function apiClient<T>(
       } else if (Array.isArray(detail) && detail.length > 0) {
         message = detail.map((item) => item.msg).join(", ");
       }
-    } catch {
-      // response body was not valid JSON; keep the default message
+    } catch (err) {
+      console.warn("[apiClient] Response body was not valid JSON, using default error message:", err);
     }
     throw new Error(message);
   }

@@ -23,15 +23,22 @@ export async function POST(request: Request) {
       body,
     });
 
-    const responseBody = await response.text();
+    const responseBody = await response.json();
+    const accessToken = typeof responseBody.access_token === "string" ? responseBody.access_token : null;
+    if (!response.ok || !accessToken) {
+      return NextResponse.json(responseBody, { status: response.status });
+    }
 
-    return new NextResponse(responseBody, {
-      status: response.status,
-      headers: {
-        "Content-Type":
-          response.headers.get("content-type") || "application/json",
-      },
+    const { access_token: _accessToken, ...publicBody } = responseBody;
+    const nextResponse = NextResponse.json(publicBody, { status: response.status });
+    nextResponse.cookies.set("edtech_access_token", accessToken, {
+      httpOnly: true,
+      secure: new URL(request.url).protocol === "https:",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60,
     });
+    return nextResponse;
   } catch {
     return NextResponse.json(
       { detail: "Backend is unreachable. Please try again later." },

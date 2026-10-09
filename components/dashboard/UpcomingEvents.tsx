@@ -57,7 +57,9 @@ export default function UpcomingEvents() {
 
         setEventsList(formatted);
       } catch (err) {
-        console.error("Failed to load upcoming events:", err);
+        if (!(err instanceof Error) || !err.message.toLowerCase().includes("credentials")) {
+          console.error("Failed to load upcoming events:", err);
+        }
       } finally {
         if (mounted) {
           setLoading(false);

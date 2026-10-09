@@ -7,15 +7,22 @@ import type { SubjectResponse } from "@/types/entities/subject";
 
 const DEPT_COLORS = ["#6d28d9", "#10b981", "#3b82f6", "#f97316", "#ec4899", "#14b8a6", "#6366f1", "#f59e0b"];
 
-export default function SubjectsByDepartment({ subjects }: { subjects: SubjectResponse[] }) {
+export default function SubjectsByDepartment({
+  subjects,
+  departments = [],
+}: {
+  subjects: SubjectResponse[];
+  departments?: { id: string; department_name: string }[];
+}) {
   const deptCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     subjects.forEach((s) => {
-      const dept = (s as SubjectResponse & { department_id?: string }).department_id;
-      if (dept) counts[dept] = (counts[dept] || 0) + 1;
+      const deptId = s.department_id;
+      const deptName = departments.find((d) => d.id === deptId)?.department_name || (deptId ? "Other" : null);
+      if (deptName) counts[deptName] = (counts[deptName] || 0) + 1;
     });
     return Object.entries(counts).map(([name, count]) => ({ name, count }));
-  }, [subjects]);
+  }, [subjects, departments]);
 
   const hasRealDepartments = deptCounts.length > 0;
   const total = subjects.length;

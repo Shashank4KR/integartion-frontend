@@ -6,6 +6,7 @@ import Modal from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
+import DatePicker from "@/components/shared/DatePicker";
 
 interface RouteScheduleDialogProps {
   open: boolean;
@@ -97,11 +98,10 @@ export default function RouteScheduleDialog({
           </div>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">Date</label>
-          <Input
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">Schedule Date</label>
+          <DatePicker
             value={date}
-            onChange={(e) => setDate(e.target.value)}
-            placeholder="DD/MM/YYYY"
+            onChange={setDate}
           />
         </div>
         <div className="flex items-center justify-end gap-3 pt-2">

@@ -8,21 +8,76 @@ const ROLE_DASHBOARDS: Record<string, string> = {
   PARENT: "/dashboard/parent",
   ACCOUNTANT: "/dashboard/accountant",
   LIBRARIAN: "/dashboard/librarian",
-  WARDEN: "/dashboard/warden",
 };
 
-export function proxy(request: NextRequest) {
+function hasUnexpiredToken(token: string | undefined): boolean {
+  if (!token) return false;
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return false;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(atob(normalized)) as { exp?: unknown };
+    return typeof claims.exp === "number" && claims.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function clearSessionCookies(response: NextResponse): NextResponse {
+  response.cookies.set("edtech_access_token", "", { path: "/", maxAge: 0 });
+  response.cookies.set("edtech_user_role", "", { path: "/", maxAge: 0 });
+  return response;
+}
+
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("edtech_access_token")?.value;
-  const rawRole = request.cookies.get("edtech_user_role")?.value;
-  const userRole = rawRole ? decodeURIComponent(rawRole).trim().toUpperCase() : null;
 
-  // Protect all /dashboard routes
+  if (pathname.startsWith("/api/")) {
+    const isUnsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(request.method);
+    const origin = request.headers.get("origin");
+    const fetchSite = request.headers.get("sec-fetch-site");
+    if (token && isUnsafeMethod && ((origin && origin !== request.nextUrl.origin) || fetchSite === "cross-site")) {
+      return NextResponse.json({ detail: "Cross-site request rejected" }, { status: 403 });
+    }
+    const headers = new Headers(request.headers);
+    if (token) headers.set("authorization", `Bearer ${token}`);
+    const response = NextResponse.next({ request: { headers } });
+    if (token && pathname !== "/api/auth/login") {
+      // Reissue legacy client-written session cookies as HttpOnly cookies during migration.
+      response.cookies.set("edtech_access_token", token, {
+        httpOnly: true,
+        secure: request.nextUrl.protocol === "https:",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60,
+      });
+    }
+    return response;
+  }
+
+  const tokenIsValid = hasUnexpiredToken(token);
+  const rawRole = request.cookies.get("edtech_user_role")?.value;
+  let userRole: string | null = null;
+  try {
+    userRole = rawRole ? decodeURIComponent(rawRole).trim().toUpperCase() : null;
+  } catch {
+    userRole = null;
+  }
+
+  // Keep login reachable even when a browser has a stale or server-rejected
+  // token cookie. The API is the authority for token validity.
+  if (pathname === "/login") {
+    const response = NextResponse.next();
+    return tokenIsValid ? response : token ? clearSessionCookies(response) : response;
+  }
+
+  // 2. Protect all /dashboard routes
   if (pathname.startsWith("/dashboard")) {
-    if (!token) {
+    if (!tokenIsValid) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+      return clearSessionCookies(NextResponse.redirect(loginUrl));
     }
 
     // Direct /dashboard index access -> redirect to proper role dashboard
@@ -45,7 +100,6 @@ export function proxy(request: NextRequest) {
       { prefix: "/dashboard/parent", allowedRoles: ["PARENT", "ADMIN"] },
       { prefix: "/dashboard/accountant", allowedRoles: ["ACCOUNTANT", "ADMIN"] },
       { prefix: "/dashboard/librarian", allowedRoles: ["LIBRARIAN", "ADMIN"] },
-      { prefix: "/dashboard/warden", allowedRoles: ["WARDEN", "ADMIN"] },
     ];
 
     for (const { prefix, allowedRoles } of routePrefixes) {
@@ -62,5 +116,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/login", "/api/:path*"],
 };

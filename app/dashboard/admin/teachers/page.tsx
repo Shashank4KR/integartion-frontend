@@ -11,9 +11,11 @@ import { Plus, Search, Pencil, Trash2, Loader2, Eye } from "lucide-react";
 import { listTeachers, createTeacher, updateTeacher, deleteTeacher, getTeacherClasses, getTeacherSubjects } from "@/lib/services/teacherService";
 import { listUsers, createUser } from "@/lib/services/userService";
 import { listDepartments } from "@/lib/services/departmentService";
+import { listRoles } from "@/lib/services/roleService";
 import type { TeacherResponse } from "@/types/entities/teacher";
 import type { ClassResponse } from "@/types/entities/class";
 import type { SubjectResponse } from "@/types/entities/subject";
+import type { UserResponse } from "@/types/entities/user";
 import { shortId } from "@/lib/utils/id";
 
 type TeacherUserOption = { id: string; username: string; email: string };
@@ -25,10 +27,9 @@ export default function TeachersPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [token, setToken] = useState<string>("");
-  const [users, setUsers] = useState<
-    { id: string; username: string; email: string; role_id: string; role?: { role_name: string } | null }[]
-  >([]);
+  const [users, setUsers] = useState<UserResponse[]>([]);
   const [departments, setDepartments] = useState<{ id: string; department_name: string }[]>([]);
+  const [roles, setRoles] = useState<{ id: string; role_name: string }[]>([]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -63,14 +64,16 @@ export default function TeachersPage() {
       setLoading(true);
       setError(null);
       try {
-        const [teachersData, usersData, deptsData] = await Promise.all([
+        const [teachersData, usersData, deptsData, rolesData] = await Promise.all([
           listTeachers(token),
           listUsers(token),
           listDepartments(token),
+          listRoles(token),
         ]);
         setItems(teachersData);
         setUsers(usersData);
         setDepartments(deptsData.map((d) => ({ id: d.id, department_name: d.department_name })));
+        setRoles(rolesData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load teachers.");
       } finally {
@@ -83,8 +86,8 @@ export default function TeachersPage() {
   const teacherUserIds = useMemo(() => new Set(items.map((i) => i.user_id)), [items]);
 
   const teacherRoleId = useMemo(
-    () => users.find((u) => u.role?.role_name?.trim().toUpperCase() === "TEACHER")?.role_id ?? "",
-    [users],
+    () => roles.find((r) => r.role_name.trim().toUpperCase() === "TEACHER")?.id ?? "",
+    [roles],
   );
 
   const eligibleUsers = useMemo<TeacherUserOption[]>(
@@ -113,13 +116,20 @@ export default function TeachersPage() {
 
   const openEdit = (item: TeacherResponse) => {
     setEditingItem(item);
+    const linked = users.find((u) => u.id === item.user_id);
+    const existingPhone =
+      item.phone && item.phone !== "string"
+        ? item.phone
+        : linked?.phone && linked.phone !== "string"
+          ? linked.phone
+          : item.phone || linked?.phone || "";
     setProfileForm({
       user_id: item.user_id,
       employee_id: item.employee_id,
       qualification: item.qualification ?? "",
       department_id: item.department_id ?? "",
       join_date: item.join_date ?? "",
-      phone: item.phone ?? "",
+      phone: existingPhone,
       address: item.address ?? "",
     });
     setStep("profile");
@@ -172,7 +182,11 @@ export default function TeachersPage() {
         role_id: teacherRoleId,
       });
       setCreatedUserId(user.id);
-      setProfileForm({ ...profileForm, user_id: user.id });
+      setProfileForm((prev) => ({
+        ...prev,
+        user_id: user.id,
+        phone: userForm.phone || prev.phone,
+      }));
       setStep("profile");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "User creation failed.");
@@ -258,16 +272,28 @@ export default function TeachersPage() {
   const departmentName = (id?: string | null) =>
     departments.find((d) => d.id === id)?.department_name ?? "-";
 
-  const linkedUsername = (id: string) => users.find((u) => u.id === id)?.username ?? null;
+  const linkedUser = (id: string) => users.find((u) => u.id === id);
+  const linkedUsername = (id: string) => linkedUser(id)?.username ?? null;
+  const linkedPhone = (item?: TeacherResponse | null) => {
+    if (!item) return "-";
+    const phone = item.phone && item.phone !== "string"
+      ? item.phone
+      : (linkedUser(item.user_id)?.phone && linkedUser(item.user_id)?.phone !== "string"
+          ? linkedUser(item.user_id)?.phone
+          : null);
+    return phone || "-";
+  };
 
   const filtered = items.filter((item) => {
     if (!search) return true;
     const term = search.toLowerCase();
     const username = linkedUsername(item.user_id)?.toLowerCase() ?? "";
+    const phone = linkedPhone(item).toLowerCase();
     return (
       item.employee_id.toLowerCase().includes(term) ||
       (item.qualification?.toLowerCase().includes(term) ?? false) ||
-      username.includes(term)
+      username.includes(term) ||
+      phone.includes(term)
     );
   });
 
@@ -359,7 +385,7 @@ export default function TeachersPage() {
                         <td className="px-4 py-3">{item.qualification ?? "-"}</td>
                         <td className="px-4 py-3">{departmentName(item.department_id)}</td>
                         <td className="px-4 py-3">{item.join_date ?? "-"}</td>
-                        <td className="px-4 py-3">{item.phone ?? "-"}</td>
+                        <td className="px-4 py-3">{linkedPhone(item)}</td>
                         <td className="px-4 py-3">{item.address ?? "-"}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -464,7 +490,14 @@ export default function TeachersPage() {
                       </label>
                       <select
                         value={selectedUserId}
-                        onChange={(e) => setSelectedUserId(e.target.value)}
+                        onChange={(e) => {
+                          const uid = e.target.value;
+                          setSelectedUserId(uid);
+                          const linked = users.find((u) => u.id === uid);
+                          if (linked?.phone && linked.phone !== "string" && !profileForm.phone) {
+                            setProfileForm((prev) => ({ ...prev, phone: linked.phone || "" }));
+                          }
+                        }}
                         required
                         className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
                       >
@@ -753,7 +786,7 @@ export default function TeachersPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">Phone</p>
-                    <p className="text-sm text-slate-900">{viewingItem.phone || "—"}</p>
+                    <p className="text-sm text-slate-900">{linkedPhone(viewingItem)}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">Address</p>

@@ -29,14 +29,14 @@ export default function TransportSummaryChart({
   segments = [],
   total,
   totalStudents,
-  totalCapacity = 60,
+  totalCapacity = 0,
   routes = [],
 }: TransportSummaryChartProps) {
   const [period, setPeriod] = useState("This Month");
   const [isOpen, setIsOpen] = useState(false);
 
   const displayTotal = total ?? totalStudents ?? 0;
-  const capacity = Math.max(displayTotal, totalCapacity || 60);
+  const capacity = Math.max(displayTotal, totalCapacity || 0);
   const availableSeats = Math.max(0, capacity - displayTotal);
   const occupancyRate = capacity > 0 ? ((displayTotal / capacity) * 100).toFixed(1) : "0";
 

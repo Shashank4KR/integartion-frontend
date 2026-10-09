@@ -5,49 +5,24 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Dropdown from "@/components/shared/Dropdown";
 import { Button } from "@/components/ui/button";
-const HOSTEL_BLOCK_OPTIONS = ["All Blocks", "Block A", "Block B", "Block C", "Block D"];
-
-const ROOM_OPTIONS = [
-  "All Rooms",
-  "A-101",
-  "A-102",
-  "A-103",
-  "A-104",
-  "B-201",
-  "B-202",
-  "B-203",
-  "C-301",
-  "C-302",
-  "C-303",
-];
-
+const DEFAULT_BLOCK_OPTIONS = ["All Blocks"];
+const DEFAULT_ROOM_OPTIONS = ["All Rooms"];
 const GENDER_OPTIONS = ["All", "Male", "Female"];
-
-const CLASS_SECTION_OPTIONS = [
-  "All Classes",
-  "XII - A",
-  "XI - B",
-  "X - A",
-  "X - B",
-  "IX - A",
-  "IX - B",
-  "VIII - A",
-  "VIII - B",
-  "VII - A",
-  "VII - B",
-];
-
+const DEFAULT_CLASS_OPTIONS = ["All Classes"];
 const STATUS_OPTIONS = ["All Status", "Active", "Inactive", "Checked Out"];
 
 interface HostelStudentsFiltersProps {
   block: string;
   onBlockChange: (value: string) => void;
+  blockOptions?: string[];
   room: string;
   onRoomChange: (value: string) => void;
+  roomOptions?: string[];
   gender: string;
   onGenderChange: (value: string) => void;
   classSection: string;
   onClassSectionChange: (value: string) => void;
+  classOptions?: string[];
   status: string;
   onStatusChange: (value: string) => void;
   search: string;
@@ -59,12 +34,15 @@ interface HostelStudentsFiltersProps {
 export default function HostelStudentsFilters({
   block,
   onBlockChange,
+  blockOptions = DEFAULT_BLOCK_OPTIONS,
   room,
   onRoomChange,
+  roomOptions = DEFAULT_ROOM_OPTIONS,
   gender,
   onGenderChange,
   classSection,
   onClassSectionChange,
+  classOptions = DEFAULT_CLASS_OPTIONS,
   status,
   onStatusChange,
   search,
@@ -79,15 +57,15 @@ export default function HostelStudentsFilters({
           <Dropdown
             label="Hostel Block"
             value={block}
-            options={HOSTEL_BLOCK_OPTIONS}
+            options={blockOptions}
             onChange={onBlockChange}
           />
-          <Dropdown label="Room No." value={room} options={ROOM_OPTIONS} onChange={onRoomChange} />
+          <Dropdown label="Room No." value={room} options={roomOptions} onChange={onRoomChange} />
           <Dropdown label="Gender" value={gender} options={GENDER_OPTIONS} onChange={onGenderChange} />
           <Dropdown
             label="Class / Section"
             value={classSection}
-            options={CLASS_SECTION_OPTIONS}
+            options={classOptions}
             onChange={onClassSectionChange}
           />
           <Dropdown label="Status" value={status} options={STATUS_OPTIONS} onChange={onStatusChange} />

@@ -61,6 +61,14 @@ export const MODULES: ModuleCard[] = [
     bg: "#eff6ff",
   },
   {
+    title: "Department Management",
+    description: "Manage academic departments and faculty divisions.",
+    icon: Building2,
+    href: "/dashboard/admin/departments",
+    color: "#7c3aed",
+    bg: "#f5f3ff",
+  },
+  {
     title: "Academic Management",
     description: "Manage courses, classes, sections, subjects and curriculum.",
     icon: BookOpen,
@@ -93,10 +101,10 @@ export const MODULES: ModuleCard[] = [
     bg: "#fdf2f8",
   },
   {
-    title: "Finance & Fee Management",
-    description: "Manage fee structures, collections, expenses, invoices and salaries.",
-    icon: DollarSign,
-    href: "/dashboard/admin/finance/overview",
+    title: "Fee Management",
+    description: "Manage fee structure, collections and payments.",
+    icon: Wallet,
+    href: "/dashboard/admin/finance/fees-management",
     color: "#16a34a",
     bg: "#f0fdf4",
   },
@@ -126,7 +134,7 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "Hostel Management",
-    description: "Manage hostel rooms, student allocations, mess and maintenance.",
+    description: "Manage hostel rooms, beds, mess and student accommodations.",
     icon: Building2,
     href: "/dashboard/admin/hostel",
     color: "#0e7490",
@@ -167,7 +175,7 @@ export type QuickAccess = {
 export const QUICK_ACCESS: QuickAccess[] = [
   { label: "Add Student", icon: Users, href: "/dashboard/admin/students" },
   { label: "Mark Attendance", icon: CheckCircle, href: "/dashboard/admin/academics/attendance" },
-  { label: "Create Notice", icon: MessageSquare, href: "/dashboard/admin/communication/communications-announcements" },
-  { label: "Collect Fees", icon: DollarSign, href: "/dashboard/admin/finance/fees-management" },
+  { label: "Create Notice", icon: MessageSquare, href: "/dashboard/admin/communication" },
+  { label: "Collect Fees", icon: Wallet, href: "/dashboard/admin/finance/fees-management" },
   { label: "View Reports", icon: BarChart3, href: "/dashboard/admin/reports" },
 ];

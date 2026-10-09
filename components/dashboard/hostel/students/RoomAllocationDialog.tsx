@@ -25,7 +25,7 @@ export default function RoomAllocationDialog({ open, onClose, onSave }: RoomAllo
   const [rollNo, setRollNo] = useState("");
   const [block, setBlock] = useState(BLOCK_OPTIONS[0]);
   const [room, setRoom] = useState(ROOM_MAP[BLOCK_OPTIONS[0]][0]);
-  const [checkInDate, setCheckInDate] = useState("01/01/2025");
+  const [checkInDate, setCheckInDate] = useState("02/10/2026");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const availableRooms = ROOM_MAP[block] || [];
@@ -49,7 +49,7 @@ export default function RoomAllocationDialog({ open, onClose, onSave }: RoomAllo
     setRollNo("");
     setBlock(BLOCK_OPTIONS[0]);
     setRoom(ROOM_MAP[BLOCK_OPTIONS[0]][0]);
-    setCheckInDate("01/01/2025");
+    setCheckInDate("02/10/2026");
     setErrors({});
     onClose();
   };

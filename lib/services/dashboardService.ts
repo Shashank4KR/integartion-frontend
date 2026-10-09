@@ -1,4 +1,4 @@
-import { getToken } from "@/lib/auth";
+import { clearAuth, getToken } from "@/lib/auth";
 import type { UserResponse } from "@/types/auth";
 
 export interface DashboardStats {
@@ -10,6 +10,7 @@ export interface DashboardStats {
   total_fees_invoiced: number;
   total_fees_collected: number;
   outstanding_fees: number;
+  total_fees_pending?: number;
   today_collection: number;
   monthly_collection: number;
   upcoming_events: number;
@@ -37,7 +38,6 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const response = await fetch(path, {
     ...init,
-    credentials: 'include', // ensure cookies are sent
     headers: {
       ...(init?.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -45,22 +45,23 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    // If unauthorized, clear stored auth and optionally redirect to login
-    if (response.status === 401) {
-      // Clear auth info
-      if (typeof window !== 'undefined') {
-        import('@/lib/auth').then(({ clearAuth }) => clearAuth());
-      }
-      const detail = await response.text();
-      throw new Error(detail || 'Unauthorized: Please log in');
+    const errorText = await response.text();
+    let errorMessage = `Request failed with ${response.status}`;
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.detail || errorJson.message || errorMessage;
+    } catch {
+      errorMessage = errorText || errorMessage;
     }
-    const detail = await response.text();
-    throw new Error(detail || `Request failed with ${response.status}`);
+    if (response.status === 401 && typeof window !== "undefined") {
+      clearAuth();
+      window.location.replace("/login?reason=session-expired");
+    }
+    throw new Error(errorMessage);
   }
 
   return (await response.json()) as T;
 }
-
 
 export async function getCurrentUserProfile(): Promise<UserResponse> {
   return requestJson<UserResponse>("/api/auth/me");
@@ -159,4 +160,4 @@ export async function getExams(): Promise<any[]> {
 export async function getAnnouncements(): Promise<any[]> {
   return requestJson(`/api/announcements`);
 }
-
+

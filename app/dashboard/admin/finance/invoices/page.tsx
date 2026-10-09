@@ -47,12 +47,16 @@ const formatCurrency = (value: number) =>
 function mapInvoice(item: Record<string, unknown>): InvoiceRow {
   const amount = Number(item.amount ?? item.total_amount ?? item.net_amount ?? 0);
   const paid = Number(item.paid ?? item.paid_amount ?? item.amount_paid ?? 0);
+  const balance = Number(item.balance ?? item.balance_amount ?? Math.max(0, amount - paid));
   const rawStatus = String(item.status ?? item.payment_status ?? "").toUpperCase();
-  const status =
-    rawStatus === "PAID" ? "Paid" :
-      rawStatus === "PARTIAL" ? "Partial" :
-        rawStatus === "OVERDUE" ? "Overdue" :
-          "Pending";
+  const status: "Paid" | "Partial" | "Overdue" | "Pending" =
+    rawStatus === "PAID" || (paid >= amount && amount > 0) || (amount > 0 && balance === 0)
+      ? "Paid"
+      : rawStatus === "PARTIAL" || (paid > 0 && balance > 0)
+        ? "Partial"
+        : rawStatus === "OVERDUE"
+          ? "Overdue"
+          : "Pending";
 
   const studentName = (() => {
     if (item.student_name) return String(item.student_name);
@@ -403,8 +407,8 @@ export default function InvoicesPage() {
           amount: updated.amount,
           status: updated.status.toUpperCase(),
         });
-      } catch {
-        // Optimistic update retained
+      } catch (err) {
+        console.warn("[AdminInvoices] Backend update error, retaining optimistic state:", err);
       }
     }
   };
@@ -455,8 +459,8 @@ export default function InvoicesPage() {
     if (token && invoice.id) {
       try {
         await deleteInvoice(token, invoice.id);
-      } catch {
-        // Optimistic delete retained
+      } catch (err) {
+        console.warn("[AdminInvoices] Backend delete error, retaining optimistic state:", err);
       }
     }
   };

@@ -4,12 +4,24 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Search, Filter, X } from "lucide-react";
 import Card from "@/components/shared/Card";
 
+export const SUBJECT_TYPE_OPTIONS = [
+  { value: "THEORY", label: "Theory" },
+  { value: "PRACTICAL", label: "Practical" },
+  { value: "CORE", label: "Core" },
+  { value: "ELECTIVE", label: "Elective" },
+];
+
 export default function SubjectFilters({
   search,
   onSearchChange,
   classId,
   onClassIdChange,
   classOptions,
+  departmentId = "",
+  onDepartmentChange,
+  departments = [],
+  subjectTypeFilter = "",
+  onSubjectTypeChange,
   onClear,
   academicYearFilter,
   onAcademicYearChange,
@@ -20,6 +32,11 @@ export default function SubjectFilters({
   classId: string;
   onClassIdChange: (value: string) => void;
   classOptions: { id: string; label: string }[];
+  departmentId?: string;
+  onDepartmentChange?: (value: string) => void;
+  departments?: { id: string; department_name: string }[];
+  subjectTypeFilter?: string;
+  onSubjectTypeChange?: (value: string) => void;
   onClear: () => void;
   academicYearFilter: string;
   onAcademicYearChange: (value: string) => void;
@@ -28,7 +45,7 @@ export default function SubjectFilters({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
 
-  const hasFilters = search || classId || academicYearFilter;
+  const hasFilters = search || classId || academicYearFilter || departmentId || subjectTypeFilter;
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -48,7 +65,7 @@ export default function SubjectFilters({
     };
   }, [filtersOpen]);
 
-  const activeCount = [search, classId, academicYearFilter].filter(Boolean).length;
+  const activeCount = [search, classId, academicYearFilter, departmentId, subjectTypeFilter].filter(Boolean).length;
 
   const selectClass =
     "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100 transition";
@@ -111,24 +128,34 @@ export default function SubjectFilters({
           <div className="flex flex-col min-w-[160px]">
             <label className="mb-1 block text-xs font-medium text-slate-500">Department</label>
             <select
-              disabled
+              value={departmentId}
+              onChange={(e) => onDepartmentChange?.(e.target.value)}
               aria-label="Filter by Department"
-              title="Not available in the current backend"
-              className={`${selectClass} opacity-50 cursor-not-allowed`}
+              className={selectClass}
             >
-              <option value="">Not available</option>
+              <option value="">All Departments</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.department_name}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="flex flex-col min-w-[160px]">
             <label className="mb-1 block text-xs font-medium text-slate-500">Subject Type</label>
             <select
-              disabled
+              value={subjectTypeFilter}
+              onChange={(e) => onSubjectTypeChange?.(e.target.value)}
               aria-label="Filter by Subject Type"
-              title="Not available in the current backend"
-              className={`${selectClass} opacity-50 cursor-not-allowed`}
+              className={selectClass}
             >
-              <option value="">Not available</option>
+              <option value="">All Subject Types</option>
+              {SUBJECT_TYPE_OPTIONS.map((st) => (
+                <option key={st.value} value={st.value}>
+                  {st.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -167,29 +194,35 @@ export default function SubjectFilters({
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-700">Department</label>
                     <select
-                      disabled
-                      aria-label="Filter by Department"
-                      title="Not available in the current backend"
-                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none opacity-50 cursor-not-allowed"
+                      value={departmentId}
+                      onChange={(e) => onDepartmentChange?.(e.target.value)}
+                      aria-label="Filter by Department in popover"
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9]"
                     >
                       <option value="">All Departments</option>
-                      <option value="">Not available</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.department_name}
+                        </option>
+                      ))}
                     </select>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Subjects are not linked to Departments in the current backend.</p>
                   </div>
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-slate-700">Subject Type</label>
                     <select
-                      disabled
-                      aria-label="Filter by Subject Type"
-                      title="Not available in the current backend"
-                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none opacity-50 cursor-not-allowed"
+                      value={subjectTypeFilter}
+                      onChange={(e) => onSubjectTypeChange?.(e.target.value)}
+                      aria-label="Filter by Subject Type in popover"
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9]"
                     >
-                      <option value="">All Types</option>
-                      <option value="">Not available</option>
+                      <option value="">All Subject Types</option>
+                      {SUBJECT_TYPE_OPTIONS.map((st) => (
+                        <option key={st.value} value={st.value}>
+                          {st.label}
+                        </option>
+                      ))}
                     </select>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Subject Type is not available in the current backend.</p>
                   </div>
                 </div>
 

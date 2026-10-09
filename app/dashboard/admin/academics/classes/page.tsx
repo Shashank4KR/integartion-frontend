@@ -69,10 +69,20 @@ export default function ClassesPage() {
   const [deletingItem, setDeletingItem] = useState<ClassResponse | null>(null);
 
   const [selectedClass, setSelectedClass] = useState<ClassResponse | null>(null);
+  const [detailsTab, setDetailsTab] = useState<"overview" | "students" | "subjects" | "teachers" | "attendance">("overview");
+  const [statusFilter, setStatusFilter] = useState("");
   const [directClassSubjects, setDirectClassSubjects] = useState<{ id: string; subject_name: string }[]>([]);
   const [directClassTeachers, setDirectClassTeachers] = useState<{ id: string; employee_id: string }[]>([]);
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleViewClass = (
+    item: ClassResponse,
+    tab: "overview" | "students" | "subjects" | "teachers" | "attendance" = "overview",
+  ) => {
+    setSelectedClass(item);
+    setDetailsTab(tab);
+  };
 
   useEffect(() => {
     const storedToken = localStorage.getItem("edtech_access_token");
@@ -250,17 +260,14 @@ export default function ClassesPage() {
       if (academicYear && c.academic_year !== academicYear) return false;
       if (section && c.section !== section) return false;
       if (teacherId && c.class_teacher_id !== teacherId) return false;
-      if (classLevel && extractClassLevel(c.class_name) !== classLevel) return false;
-      if (status) {
-        const active = isClassActive(c.academic_year);
-        if (status === "active" && !active) return false;
-        if (status === "inactive" && active) return false;
-      }
+      if (statusFilter && (c.status || "ACTIVE") !== statusFilter) return false;
       if (term) {
         const haystack = [
           c.class_name,
           c.section,
           c.academic_year,
+          c.room_number || "",
+          c.status || "",
           teacherLabel(c.class_teacher_id),
         ]
           .join(" ")
@@ -269,7 +276,7 @@ export default function ClassesPage() {
       }
       return true;
     });
-  }, [classes, academicYear, section, teacherId, classLevel, status, search, teacherLabel, extractClassLevel, isClassActive]);
+  }, [classes, academicYear, section, teacherId, statusFilter, search, teacherLabel]);
 
   const classSubjectCount = useMemo(() => {
     const map: Record<string, number> = {};
@@ -300,7 +307,7 @@ export default function ClassesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, academicYear, section, teacherId, classLevel, status]);
+  }, [search, academicYear, section, teacherId, statusFilter]);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -387,8 +394,7 @@ export default function ClassesPage() {
     setAcademicYear("");
     setSection("");
     setTeacherId("");
-    setClassLevel("");
-    setStatus("");
+    setStatusFilter("");
   };
 
   const refresh = async () => {
@@ -401,11 +407,11 @@ export default function ClassesPage() {
       `"${c.class_name}"`,
       c.section,
       c.academic_year,
-      teacherLabel(c.class_teacher_id),
+      `"${teacherLabel(c.class_teacher_id)}"`,
       String(classStudentCount[c.id] ?? 0),
       String(classSubjectCount[c.id] ?? 0),
-      "—",
-      isClassActive(c.academic_year) ? "Active" : "Inactive",
+      `"${c.room_number || "—"}"`,
+      c.status || "ACTIVE",
     ]);
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -496,14 +502,12 @@ export default function ClassesPage() {
             onExport={exportCSV}
             onResetFilters={clearFilters}
             onAssignSubjects={() => {
-              if (filtered.length > 0 && !selectedClass) {
-                setSelectedClass(filtered[0]);
-              }
+              const target = selectedClass || filtered[0] || classes[0];
+              if (target) handleViewClass(target, "subjects");
             }}
             onAssignTeacher={() => {
-              if (filtered.length > 0 && !selectedClass) {
-                setSelectedClass(filtered[0]);
-              }
+              const target = selectedClass || filtered[0] || classes[0];
+              if (target) handleViewClass(target, "teachers");
             }}
           />
 
@@ -533,10 +537,8 @@ export default function ClassesPage() {
               onSectionChange={setSection}
               teacherId={teacherId}
               onTeacherIdChange={setTeacherId}
-              classLevel={classLevel}
-              onClassLevelChange={setClassLevel}
-              status={status}
-              onStatusChange={setStatus}
+              status={statusFilter}
+              onStatusChange={setStatusFilter}
               academicYearOptions={academicYearOptions}
               sectionOptions={sectionOptions}
               teacherOptions={teacherOptions}
@@ -563,7 +565,7 @@ export default function ClassesPage() {
                 items={paginated}
                 onEdit={openEdit}
                 onDelete={openDelete}
-                onView={setSelectedClass}
+                onView={handleViewClass}
                 teacherLabel={teacherLabel}
                 classSubjectCount={classSubjectCount}
                 classStudentCount={classStudentCount}
@@ -612,6 +614,7 @@ export default function ClassesPage() {
 
           {selectedClass && (
             <ClassDetailsPanel
+              initialTab={detailsTab}
               selectedClass={selectedClass}
               classSubjects={selectedClassSubjects}
               subjects={allSubjects}

@@ -5,24 +5,15 @@ import { X, ChevronDown } from "lucide-react";
 import Modal from "@/components/shared/Modal";
 import Dropdown from "@/components/shared/Dropdown";
 
-const CLASS_GRADE_OPTIONS = [
-  "All Classes",
-  "VIII - A",
-  "VI - B",
-  "IX - A",
-  "VIII - B",
-  "IX - B",
-  "VI - A",
-  "V - B",
-  "VIII - C",
-];
-const FEE_TYPE_OPTIONS = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Other Fees"];
+const DEFAULT_CLASS_OPTIONS = ["All Classes"];
+const FEE_TYPE_OPTIONS = ["All Fee Types", "Tuition Fee", "Transport Fee", "Admission Fee", "Exam Fee", "Hostel Fee", "Other Fees"];
 const INSTALLMENT_OPTIONS = ["All Installments", "Installment 1", "Installment 2", "Installment 3", "Full Payment"];
 const STATUS_OPTIONS = ["All Status", "Paid", "Partial", "Overdue", "Pending"];
 
 interface AddFeeCollectionDialogProps {
   open: boolean;
   onClose: () => void;
+  classOptions?: string[];
   onSave: (fee: {
     id: string;
     studentName: string;
@@ -39,7 +30,12 @@ interface AddFeeCollectionDialogProps {
   }) => void;
 }
 
-export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFeeCollectionDialogProps) {
+export default function AddFeeCollectionDialog({
+  open,
+  onClose,
+  classOptions = DEFAULT_CLASS_OPTIONS,
+  onSave,
+}: AddFeeCollectionDialogProps) {
   const [form, setForm] = useState({
     studentName: "",
     classGrade: "All Classes",
@@ -124,7 +120,7 @@ export default function AddFeeCollectionDialog({ open, onClose, onSave }: AddFee
             <Dropdown
               label=""
               value={form.classGrade}
-              options={CLASS_GRADE_OPTIONS}
+              options={classOptions}
               onChange={(v) => setForm({ ...form, classGrade: v })}
             />
             {errors.classGrade && <p className="text-xs text-red-500 mt-1">{errors.classGrade}</p>}
