@@ -1,6 +1,7 @@
 import type { UserResponse } from "@/types/auth";
 
 const TOKEN_STORAGE_KEY = "edtech_access_token";
+const COOKIE_SESSION_MARKER = "cookie-session";
 const USER_STORAGE_KEY = "edtech_user";
 const AVATAR_STORAGE_KEY = "edtech_user_avatar";
 const ROLE_COOKIE_KEY = "edtech_user_role";
@@ -25,13 +26,19 @@ function deleteCookie(name: string): void {
 
 export function saveToken(token: string): void {
   if (!isBrowser()) return;
-  localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  setCookie(TOKEN_STORAGE_KEY, token);
+  // The bearer itself is held only in the server-managed HttpOnly cookie.
+  // Keep a non-secret marker for existing UI checks that expect a local session value.
+  localStorage.setItem(TOKEN_STORAGE_KEY, COOKIE_SESSION_MARKER);
 }
 
 export function getToken(): string | null {
   if (!isBrowser()) return null;
-  return localStorage.getItem(TOKEN_STORAGE_KEY);
+  const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+  if (stored && stored !== COOKIE_SESSION_MARKER) {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    return null;
+  }
+  return stored;
 }
 
 export function isValidAvatar(url: string | null | undefined): boolean {
@@ -177,7 +184,6 @@ export function clearAuth(): void {
   } catch (e) {
     console.error("Failed to clear local storage during logout:", e);
   }
-  deleteCookie(TOKEN_STORAGE_KEY);
   deleteCookie(ROLE_COOKIE_KEY);
 }
 

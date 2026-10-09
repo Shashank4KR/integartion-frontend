@@ -17,6 +17,7 @@ export default function ClassFilters({
   academicYearOptions,
   sectionOptions,
   teacherOptions,
+  classLevelOptions,
   onClear,
 }: {
   search: string;
@@ -32,6 +33,7 @@ export default function ClassFilters({
   academicYearOptions: string[];
   sectionOptions: string[];
   teacherOptions: { id: string; label: string }[];
+  classLevelOptions: string[];
   onClear: () => void;
 }) {
   const hasFilters = search || academicYear || section || teacherId || status;
@@ -111,3 +113,4 @@ export default function ClassFilters({
     </Card>
   );
 }
+

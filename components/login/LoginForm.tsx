@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import RoleDropdown from "./RoleDropdown";
 import { handleLogin } from "@/lib/api";
-import { getDashboardPathForRole } from "@/lib/auth";
+import { clearAuth, getDashboardPathForRole, saveToken, saveUser } from "@/lib/auth";
 import { ROLE_LABEL_TO_NAME } from "./RoleDropdown";
 
 type LoginFormProps = {
@@ -28,10 +28,21 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
     if (isLoading) return;
 
     setError(null);
+    if (!loginIdOrEmail.trim() || !password) {
+      setError("Enter your login ID or email and password.");
+      return;
+    }
+    if (!selectedRole) {
+      setError("Please select your role.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const { user } = await handleLogin(loginIdOrEmail, password);
+      const { token, user } = await handleLogin(loginIdOrEmail.trim(), password, {
+        persist: false,
+      });
 
       const backendRole = (user.role?.role_name ?? "").trim().toUpperCase();
 
@@ -46,11 +57,6 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
         return;
       }
 
-      if (!selectedRole) {
-        setError("Please select your role.");
-        return;
-      }
-
       const selectedRoleName = (ROLE_LABEL_TO_NAME[selectedRole] ?? "")
         .trim()
         .toUpperCase();
@@ -62,6 +68,9 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
         return;
       }
 
+      clearAuth();
+      saveToken(token);
+      saveUser(user);
       router.push(targetPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
@@ -79,7 +88,9 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
         <div className="relative">
           <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
-            type="email"
+            type="text"
+            autoComplete="username"
+            required
             value={loginIdOrEmail}
             onChange={(event) => setLoginIdOrEmail(event.target.value)}
             placeholder="Enter your login ID or email"
@@ -100,6 +111,8 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
           <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Enter your password"
