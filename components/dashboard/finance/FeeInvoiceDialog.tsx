@@ -33,7 +33,7 @@ export default function FeeInvoiceDialog({ student, onClose }: FeeInvoiceDialogP
         <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
             <div>
-              <p className="text-sm font-bold text-slate-800">EdTech Smart Campus</p>
+              <p className="text-sm font-bold text-slate-800">Nomera Smart Campus</p>
               <p className="text-xs text-slate-500">Official Invoice Receipt</p>
             </div>
             <div className="text-right">

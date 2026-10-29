@@ -149,7 +149,7 @@ function Solutions() {
 const resources = [
   { icon: FileText, tag: "Guide", title: "The Smart Campus Playbook", desc: "A step-by-step framework for digitizing your institution." },
   { icon: Video, tag: "Webinar", title: "Modern Classroom Series", desc: "Live sessions with education leaders on the future of learning." },
-  { icon: BookMarked, tag: "Case Study", title: "How Oakridge scaled to 5,000 students", desc: "Real results from schools transforming with EdTech." },
+  { icon: BookMarked, tag: "Case Study", title: "How Oakridge scaled to 5,000 students", desc: "Real results from schools transforming with Nomera." },
 ]
 
 function Resources() {
@@ -350,7 +350,7 @@ function Contact({ onNavigate }: { onNavigate: (id: string) => void }) {
           Ready to build your smart campus?
         </h2>
         <p className="mx-auto mt-4 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
-          Book a personalized demo and see how EdTech can transform your institution in weeks, not months.
+          Book a personalized demo and see how Nomera can transform your institution in weeks, not months.
         </p>
 
         <form

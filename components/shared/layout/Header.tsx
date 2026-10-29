@@ -143,13 +143,13 @@ export default function DashboardHeader({
       setHasUnreadMessages(false);
     };
 
-    window.addEventListener("edtech_notifications_viewed", handleNotifsViewed);
-    window.addEventListener("edtech_messages_viewed", handleMsgsViewed);
+    window.addEventListener("nomera_notifications_viewed", handleNotifsViewed);
+    window.addEventListener("nomera_messages_viewed", handleMsgsViewed);
 
     if (pathname && (pathname.includes("/notifications") || pathname.includes("/notices"))) {
       setHasUnreadNotifications(false);
       try {
-        localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
+        localStorage.setItem("nomera_notifications_viewed_at", new Date().toISOString());
       } catch (err) {
         console.warn("[Header] Storage error setting notifications viewed:", err);
       }
@@ -157,7 +157,7 @@ export default function DashboardHeader({
     if (pathname && pathname.includes("/messages")) {
       setHasUnreadMessages(false);
       try {
-        localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
+        localStorage.setItem("nomera_messages_viewed_at", new Date().toISOString());
       } catch (err) {
         console.warn("[Header] Storage error setting messages viewed:", err);
       }
@@ -179,7 +179,7 @@ export default function DashboardHeader({
         if (pathname && (pathname.includes("/notifications") || pathname.includes("/notices"))) {
           setHasUnreadNotifications(false);
         } else {
-          const lastViewedStr = typeof window !== "undefined" ? localStorage.getItem("edtech_notifications_viewed_at") : null;
+          const lastViewedStr = typeof window !== "undefined" ? localStorage.getItem("nomera_notifications_viewed_at") : null;
           const lastViewedTime = lastViewedStr ? new Date(lastViewedStr).getTime() : 0;
 
           const notifs = await listNotifications(token).catch(() => []);
@@ -196,7 +196,7 @@ export default function DashboardHeader({
         if (pathname && pathname.includes("/messages")) {
           setHasUnreadMessages(false);
         } else {
-          const lastViewedMsgStr = typeof window !== "undefined" ? localStorage.getItem("edtech_messages_viewed_at") : null;
+          const lastViewedMsgStr = typeof window !== "undefined" ? localStorage.getItem("nomera_messages_viewed_at") : null;
           const lastViewedMsgTime = lastViewedMsgStr ? new Date(lastViewedMsgStr).getTime() : 0;
 
           const msgs = await listMessages(token).catch(() => []);
@@ -222,19 +222,19 @@ export default function DashboardHeader({
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener("edtech_notifications_viewed", handleNotifsViewed);
-      window.removeEventListener("edtech_messages_viewed", handleMsgsViewed);
+      window.removeEventListener("nomera_notifications_viewed", handleNotifsViewed);
+      window.removeEventListener("nomera_messages_viewed", handleMsgsViewed);
     };
   }, [pathname]);
 
   const handleOpenNotifications = () => {
     setHasUnreadNotifications(false);
     try {
-      localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
+      localStorage.setItem("nomera_notifications_viewed_at", new Date().toISOString());
     } catch (err) {
       console.warn("[Header] Storage error setting notifications viewed:", err);
     }
-    window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
+    window.dispatchEvent(new CustomEvent("nomera_notifications_viewed"));
     const token = getToken();
     if (token) {
       void markAllNotificationsRead(token).catch((err) => console.warn("[Header] markAllNotificationsRead error:", err));
@@ -247,11 +247,11 @@ export default function DashboardHeader({
   const handleOpenMessages = () => {
     setHasUnreadMessages(false);
     try {
-      localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
+      localStorage.setItem("nomera_messages_viewed_at", new Date().toISOString());
     } catch (err) {
       console.warn("[Header] Storage error setting messages viewed:", err);
     }
-    window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
+    window.dispatchEvent(new CustomEvent("nomera_messages_viewed"));
     const token = getToken();
     if (token) {
       void markAllMessagesRead(token).catch((err) => console.warn("[Header] markAllMessagesRead error:", err));

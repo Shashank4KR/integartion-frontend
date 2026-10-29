@@ -15,7 +15,7 @@ export default function ClassAttendanceTab({ classId }: { classId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    const token = localStorage.getItem("edtech_access_token");
+    const token = localStorage.getItem("nomera_access_token");
     if (!token) {
       setLoading(false);
       return;

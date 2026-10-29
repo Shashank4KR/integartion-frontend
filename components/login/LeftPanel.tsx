@@ -52,7 +52,7 @@ export default function LeftPanel() {
           </div>
           <div>
             <h2 className="text-[1.35rem] font-semibold tracking-tight text-[#5b2ee6]">
-              EdTech
+              Nomera
             </h2>
             <p className="-mt-1 text-[11px] font-medium text-slate-600">
               Smart Campus ERP

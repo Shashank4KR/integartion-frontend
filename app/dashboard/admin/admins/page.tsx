@@ -42,7 +42,7 @@ export default function AdminsPage() {
   const [step, setStep] = useState<"user" | "profile">("user");
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("edtech_access_token");
+    const storedToken = localStorage.getItem("nomera_access_token");
     if (!storedToken) return;
     setToken(storedToken);
   }, []);

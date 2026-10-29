@@ -58,7 +58,7 @@ export function generateInvoicePdf(data: InvoicePdfData): void {
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(purple.r, purple.g, purple.b);
-  doc.text("EdTech Smart Campus", pageWidth - margin, y, { align: "right" });
+  doc.text("Nomera Smart Campus", pageWidth - margin, y, { align: "right" });
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
@@ -218,7 +218,7 @@ export function generateInvoicePdf(data: InvoicePdfData): void {
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(200, 200, 220);
-  doc.text("EdTech Smart Campus ERP  •  Fee Invoice", pageWidth / 2, pageHeight - 12, {
+  doc.text("Nomera Smart Campus ERP  •  Fee Invoice", pageWidth / 2, pageHeight - 12, {
     align: "center",
   });
 

@@ -20,7 +20,7 @@ async function handleLogout(request: Request) {
         "Content-Type": response.headers.get("content-type") || "application/json",
       },
     });
-    logoutResponse.cookies.set("edtech_access_token", "", {
+    logoutResponse.cookies.set("nomera_access_token", "", {
       httpOnly: true,
       secure: new URL(request.url).protocol === "https:",
       sameSite: "lax",
@@ -30,7 +30,7 @@ async function handleLogout(request: Request) {
     return logoutResponse;
   } catch {
     const logoutResponse = NextResponse.json({ message: "Logged out" }, { status: 200 });
-    logoutResponse.cookies.set("edtech_access_token", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
+    logoutResponse.cookies.set("nomera_access_token", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
     return logoutResponse;
   }
 }

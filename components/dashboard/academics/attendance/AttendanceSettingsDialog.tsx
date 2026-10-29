@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS: AttendanceSettings = {
   notifyParentsOnAbsence: false,
 };
 
-const STORAGE_KEY = "edtech_attendance_settings";
+const STORAGE_KEY = "nomera_attendance_settings";
 
 export function getStoredAttendanceSettings(): AttendanceSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;

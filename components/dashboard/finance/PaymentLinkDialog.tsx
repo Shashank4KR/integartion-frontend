@@ -26,7 +26,7 @@ export default function PaymentLinkDialog({
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     const token = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const link = `https://pay.edtech.edu/inv/${token}?amt=${amount || 1000}&name=${encodeURIComponent(studentName || "Student")}`;
+    const link = `https://pay.nomera.edu/inv/${token}?amt=${amount || 1000}&name=${encodeURIComponent(studentName || "Student")}`;
     setGeneratedLink(link);
   };
 

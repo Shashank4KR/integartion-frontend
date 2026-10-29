@@ -39,7 +39,7 @@ export default function StudentLayout({
     }
 
     // Check if student details are already stored
-    const storedStudent = localStorage.getItem("edtech_student");
+    const storedStudent = localStorage.getItem("nomera_student");
 
     if (storedStudent) {
       setAuthorized(true);
@@ -52,7 +52,7 @@ export default function StudentLayout({
       try {
         const student = await getCurrentStudent(token);
         if (student.user_id === user.id) {
-          localStorage.setItem("edtech_student", JSON.stringify(student));
+          localStorage.setItem("nomera_student", JSON.stringify(student));
           setAuthorized(true);
         } else {
           logout("/login");

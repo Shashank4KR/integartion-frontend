@@ -51,7 +51,7 @@ export default function ParentStudentsPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("edtech_access_token");
+    const storedToken = localStorage.getItem("nomera_access_token");
     if (!storedToken) return;
     setToken(storedToken);
   }, []);

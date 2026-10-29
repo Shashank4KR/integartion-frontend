@@ -66,7 +66,7 @@ export default function MaintenanceScreen() {
         </div>
 
         <div className="mt-8 pt-4 border-t border-slate-700/40 text-[11px] text-slate-500">
-          EdTech Smart Campus System • Maintenance Window Active
+          Nomera Smart Campus System • Maintenance Window Active
         </div>
       </div>
     </div>

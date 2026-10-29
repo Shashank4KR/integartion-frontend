@@ -34,7 +34,7 @@ export default function LoginCard() {
       </h1>
 
       <p className="mt-1 text-sm text-slate-500">
-        Login to access your EdTech account.
+        Login to access your Nomera account.
       </p>
 
       <LoginForm language={language} setLanguage={setLanguage} />

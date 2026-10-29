@@ -108,7 +108,7 @@ export default function ExaminationsPage() {
     dateRangeEnd: "",
   });
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("edtech_access_token") : null;
+  const token = typeof window !== "undefined" ? localStorage.getItem("nomera_access_token") : null;
 
   const loadData = useCallback(async () => {
     if (!token) return;

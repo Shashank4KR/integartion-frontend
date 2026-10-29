@@ -86,7 +86,7 @@ export default function GeneratePayslipDialog({
         <div id="payslip-print-area" className="border border-slate-200 rounded-xl p-5 bg-white space-y-4 shadow-sm">
           <div className="flex items-start justify-between border-b border-slate-200 pb-3">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">EdTech Smart Campus ERP</h3>
+              <h3 className="text-sm font-bold text-slate-900">Nomera Smart Campus ERP</h3>
               <p className="text-xs text-slate-500">Official Monthly Salary Slip</p>
             </div>
             <div className="text-right">

@@ -72,7 +72,7 @@ export default function SubjectsPage() {
   const [mappingResult, setMappingResult] = useState<{ success: string[]; failed: string[] } | null>(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("edtech_access_token");
+    const storedToken = localStorage.getItem("nomera_access_token");
     if (storedToken) setToken(storedToken);
   }, []);
 

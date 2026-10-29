@@ -74,16 +74,16 @@ export default function AdminInboxPage({ kind }: { kind: InboxKind }) {
     try {
       if (kind === "notifications") {
         try {
-          localStorage.setItem("edtech_notifications_viewed_at", new Date().toISOString());
-          window.dispatchEvent(new CustomEvent("edtech_notifications_viewed"));
+          localStorage.setItem("nomera_notifications_viewed_at", new Date().toISOString());
+          window.dispatchEvent(new CustomEvent("nomera_notifications_viewed"));
           void markAllNotificationsRead(token).catch((err) => console.warn("[AdminInbox] markAllNotificationsRead error:", err));
         } catch (err) {
           console.warn("[AdminInbox] notifications storage event error:", err);
         }
       } else {
         try {
-          localStorage.setItem("edtech_messages_viewed_at", new Date().toISOString());
-          window.dispatchEvent(new CustomEvent("edtech_messages_viewed"));
+          localStorage.setItem("nomera_messages_viewed_at", new Date().toISOString());
+          window.dispatchEvent(new CustomEvent("nomera_messages_viewed"));
           void markAllMessagesRead(token).catch((err) => console.warn("[AdminInbox] markAllMessagesRead error:", err));
         } catch (err) {
           console.warn("[AdminInbox] messages storage event error:", err);

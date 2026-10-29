@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'EdTech Smart Campus — Modern School ERP',
+  title: 'Nomera Smart Campus — Modern School ERP',
   description:
     'A digital ecosystem that streamlines school administration, enhances academic excellence, and empowers educators, students, and parents through seamless collaboration.',
   generator: 'v0.app',

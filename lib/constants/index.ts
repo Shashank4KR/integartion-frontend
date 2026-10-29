@@ -24,6 +24,7 @@ import {
   UtensilsCrossed,
   Wrench,
   UserCheck,
+  ArrowLeftRight,
   type LucideIcon,
 } from "lucide-react";
 
@@ -54,6 +55,7 @@ export const MENU_ITEMS: MenuItemType[] = [
       ],
     },
   { label: "Examinations", icon: ClipboardList, href: "/dashboard/admin/examinations" },
+  { label: "Marks Converter", icon: ArrowLeftRight, href: "/dashboard/admin/marks-converter" },
   { label: "Finance", icon: DollarSign, href: "/dashboard/admin/finance", children: [
     { label: "Finance Overview", icon: TrendingUp, href: "/dashboard/admin/finance/overview" },
     { label: "Fees Management", icon: CircleDollarSign, href: "/dashboard/admin/finance/fees-management" },
@@ -163,9 +165,9 @@ export const COLORS = {
 export const SIDEBAR_WIDTH = "280px";
 
 export const COMPANY_INFO = {
-  name: "EdTech",
+  name: "Nomera",
   tagline: "Smart Campus ERP",
-  copyright: "© 2026 EdTech Smart Campus ERP. All rights reserved.",
+  copyright: "© 2026 Nomera Smart Campus ERP. All rights reserved.",
   version: "1.0.0",
 };
 

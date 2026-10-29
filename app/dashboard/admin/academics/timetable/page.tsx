@@ -199,7 +199,7 @@ export default function TimetablePage() {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("edtech_access_token");
+    const stored = localStorage.getItem("nomera_access_token");
     if (stored) setToken(stored);
   }, []);
 

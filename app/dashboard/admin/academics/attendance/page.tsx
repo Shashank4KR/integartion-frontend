@@ -165,7 +165,7 @@ export default function AttendancePage() {
   const markedBy = useMemo(() => getStoredUser()?.id ?? "", []);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("edtech_access_token");
+    const storedToken = localStorage.getItem("nomera_access_token");
     if (storedToken) setToken(storedToken);
   }, []);
 

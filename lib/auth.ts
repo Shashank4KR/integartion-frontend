@@ -1,11 +1,11 @@
 import type { UserResponse } from "@/types/auth";
 
-const TOKEN_STORAGE_KEY = "edtech_access_token";
+const TOKEN_STORAGE_KEY = "nomera_access_token";
 const COOKIE_SESSION_MARKER = "cookie-session";
-const USER_STORAGE_KEY = "edtech_user";
-const AVATAR_STORAGE_KEY = "edtech_user_avatar";
-const ROLE_COOKIE_KEY = "edtech_user_role";
-export const AVATAR_CHANGE_EVENT = "edtech_avatar_changed";
+const USER_STORAGE_KEY = "nomera_user";
+const AVATAR_STORAGE_KEY = "nomera_user_avatar";
+const ROLE_COOKIE_KEY = "nomera_user_role";
+export const AVATAR_CHANGE_EVENT = "nomera_avatar_changed";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -176,10 +176,10 @@ export function clearAuth(): void {
   try {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem("edtech_student");
+    localStorage.removeItem("nomera_student");
     localStorage.removeItem(AVATAR_STORAGE_KEY);
-    localStorage.removeItem("edtech_notifications_viewed_at");
-    localStorage.removeItem("edtech_messages_viewed_at");
+    localStorage.removeItem("nomera_notifications_viewed_at");
+    localStorage.removeItem("nomera_messages_viewed_at");
     sessionStorage.clear();
   } catch (e) {
     console.error("Failed to clear local storage during logout:", e);

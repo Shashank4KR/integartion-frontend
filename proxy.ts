@@ -24,13 +24,13 @@ function hasUnexpiredToken(token: string | undefined): boolean {
 }
 
 function clearSessionCookies(response: NextResponse): NextResponse {
-  response.cookies.set("edtech_access_token", "", { path: "/", maxAge: 0 });
-  response.cookies.set("edtech_user_role", "", { path: "/", maxAge: 0 });
+  response.cookies.set("nomera_access_token", "", { path: "/", maxAge: 0 });
+  response.cookies.set("nomera_user_role", "", { path: "/", maxAge: 0 });
   return response;
 }
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("edtech_access_token")?.value;
+  const token = request.cookies.get("nomera_access_token")?.value;
 
   if (pathname.startsWith("/api/")) {
     const isUnsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(request.method);
@@ -44,7 +44,7 @@ export function proxy(request: NextRequest) {
     const response = NextResponse.next({ request: { headers } });
     if (token && pathname !== "/api/auth/login") {
       // Reissue legacy client-written session cookies as HttpOnly cookies during migration.
-      response.cookies.set("edtech_access_token", token, {
+      response.cookies.set("nomera_access_token", token, {
         httpOnly: true,
         secure: request.nextUrl.protocol === "https:",
         sameSite: "lax",
@@ -56,7 +56,7 @@ export function proxy(request: NextRequest) {
   }
 
   const tokenIsValid = hasUnexpiredToken(token);
-  const rawRole = request.cookies.get("edtech_user_role")?.value;
+  const rawRole = request.cookies.get("nomera_user_role")?.value;
   let userRole: string | null = null;
   try {
     userRole = rawRole ? decodeURIComponent(rawRole).trim().toUpperCase() : null;

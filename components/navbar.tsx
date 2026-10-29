@@ -26,12 +26,12 @@ export function Navbar({ onNavigate }: { onNavigate: (id: string) => void }) {
         <button
           onClick={() => onNavigate("home")}
           className="flex items-center gap-2.5"
-          aria-label="EdTech home"
+          aria-label="Nomera home"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-accent-purple shadow-md">
             <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
           </span>
-          <span className="text-lg font-semibold tracking-tight text-foreground">EdTech</span>
+          <span className="text-lg font-semibold tracking-tight text-foreground">Nomera</span>
         </button>
 
         {/* Center links */}

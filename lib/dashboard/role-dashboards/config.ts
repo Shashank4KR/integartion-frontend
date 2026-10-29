@@ -27,7 +27,7 @@ import type { RoleConfig } from "./types";
 export const ROLE_CONFIGS: Record<string, RoleConfig> = {
   admin: {
     key: "admin",
-    name: "EdTech",
+    name: "Nomera",
     tagline: "Smart Campus ERP",
     basePath: "/dashboard/admin",
     user: { name: "John Admin", role: "Super Admin" },
@@ -48,7 +48,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   student: {
     key: "student",
-    name: "EdTech",
+    name: "Nomera",
     tagline: "Smart Campus ERP",
     basePath: "/dashboard/student",
     user: { name: "Aarav Sharma", role: "Student · Class 10-A" },
@@ -67,7 +67,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   teacher: {
     key: "teacher",
-    name: "EdTech",
+    name: "Nomera",
     tagline: "Smart Campus ERP",
     basePath: "/dashboard/teacher",
     user: { name: "Priya Nair", role: "Teacher · Mathematics" },
@@ -85,7 +85,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   parent: {
     key: "parent",
-    name: "EdTech",
+    name: "Nomera",
     tagline: "Smart Campus ERP",
     basePath: "/dashboard/parent",
     user: { name: "Suresh Verma", role: "Parent · Aarav S." },
@@ -102,7 +102,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   accountant: {
     key: "accountant",
-    name: "EdTech",
+    name: "Nomera",
     tagline: "Smart Campus ERP",
     basePath: "/dashboard/accountant",
     user: { name: "Ramesh Gupta", role: "Accountant" },
@@ -118,7 +118,7 @@ export const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   librarian: {
     key: "librarian",
-    name: "EdTech",
+    name: "Nomera",
     tagline: "Smart Campus ERP",
     basePath: "/dashboard/librarian",
     user: { name: "Anita Roy", role: "Librarian" },

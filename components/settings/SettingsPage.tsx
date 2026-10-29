@@ -106,7 +106,7 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
 
     const refreshIdentity = () => { void loadIdentity(true); };
     const onStorage = (event: StorageEvent) => {
-      if (event.key === "edtech_access_token") refreshIdentity();
+      if (event.key === "nomera_access_token") refreshIdentity();
     };
 
     void loadIdentity();

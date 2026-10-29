@@ -4,13 +4,13 @@ test.describe("Hostel Management", () => {
   test.beforeEach(async ({ page }) => {
     // Inject mock auth token and user role in localStorage
     await page.addInitScript(() => {
-      window.localStorage.setItem("edtech_access_token", "mock-token-123");
+      window.localStorage.setItem("nomera_access_token", "mock-token-123");
       window.localStorage.setItem(
-        "edtech_user",
+        "nomera_user",
         JSON.stringify({
           role_id: "00000000-0000-0000-0000-000000000001", // ADMIN role id
           username: "admin",
-          email: "admin@edtech.com",
+          email: "admin@nomera.com",
         }),
       );
     });

@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     const { access_token: _accessToken, ...publicBody } = responseBody;
     const nextResponse = NextResponse.json(publicBody, { status: response.status });
-    nextResponse.cookies.set("edtech_access_token", accessToken, {
+    nextResponse.cookies.set("nomera_access_token", accessToken, {
       httpOnly: true,
       secure: new URL(request.url).protocol === "https:",
       sameSite: "lax",
