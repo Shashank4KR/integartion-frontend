@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Bell, BookOpen, Building2, Camera, ChevronDown, ChevronRight, ClipboardCheck, FileBarChart,
+  ArrowLeft, Bell, BookOpen, Building2, Camera, ChevronDown, ChevronRight, ClipboardCheck, FileBarChart,
   GraduationCap, KeyRound, Landmark, Menu, Palette, ShieldCheck, SlidersHorizontal,
   UserCircle, UsersRound, X, type LucideIcon,
 } from "lucide-react";
@@ -242,6 +242,15 @@ export default function SettingsPage({ currentRole }: { currentRole: SchoolRole 
     <main className="lg:ml-72">
       <header className="sticky top-0 z-20 flex h-[74px] items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-8">
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => router.push(`/dashboard/${activeRole.toLowerCase()}`)}
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            aria-label="Back to dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </button>
           <button onClick={() => setMobileOpen(true)} className="rounded-lg border border-slate-200 p-2 text-slate-600 lg:hidden" aria-label="Open settings menu"><Menu className="h-5 w-5" /></button>
           <div><p className="text-xs font-medium text-slate-500">Settings</p><h1 className="text-lg font-bold text-slate-900">{activeSection.label}</h1></div>
         </div>

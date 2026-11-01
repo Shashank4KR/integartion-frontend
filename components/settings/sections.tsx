@@ -139,7 +139,7 @@ function Toggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-5 py-3">
+    <div className="flex items-start justify-between gap-4 py-3">
       <span>
         <span className="block text-sm font-medium text-slate-800">{label}</span>
         {hint && <span className="mt-0.5 block text-xs text-slate-500">{hint}</span>}
@@ -147,19 +147,17 @@ function Toggle({
       <button
         type="button"
         role="switch"
+        aria-label={label}
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition ${
-          checked ? "bg-violet-600" : "bg-slate-200"
-        }`}
+        className="relative h-11 w-14 shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
       >
         <span
-          className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition ${
-            checked ? "left-6" : "left-1"
-          }`}
+          className={`absolute left-1.5 right-1.5 top-1/2 h-6 -translate-y-1/2 rounded-full transition ${checked ? "bg-violet-600" : "bg-slate-200"}`}
         />
+        <span className={`pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow transition ${checked ? "left-[30px]" : "left-[10px]"}`} />
       </button>
-    </label>
+    </div>
   );
 }
 

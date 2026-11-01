@@ -23,6 +23,7 @@ import CalendarPicker from "@/components/shared/Calendar";
 import { MENU_ITEMS } from "@/lib/constants";
 import { MODULES, QUICK_ACCESS } from "@/lib/modules";
 import { listNotifications, listMessages, markAllNotificationsRead, markAllMessagesRead } from "@/lib/services/communicationService";
+import { useMobileNavigation } from "@/components/shared/layout/MobileNavigationContext";
 
 
 interface DashboardHeaderProps {
@@ -50,6 +51,7 @@ export default function DashboardHeader({
   userName,
   userRole,
 }: DashboardHeaderProps = {}) {
+  const mobileNavigation = useMobileNavigation();
   const [name, setName] = useState(userName ?? "");
   const [role, setRole] = useState(userRole ?? "");
   const router = useRouter();
@@ -412,7 +414,13 @@ export default function DashboardHeader({
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left */}
         <div className="flex items-center gap-4">
-          <button className="lg:hidden p-2 hover:bg-slate-100 rounded-lg">
+          <button
+            type="button"
+            onClick={mobileNavigation.toggle}
+            aria-label={mobileNavigation.open ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileNavigation.open}
+            className="lg:hidden p-2 hover:bg-slate-100 rounded-lg"
+          >
             <Menu className="w-5 h-5 text-slate-600" />
           </button>
 

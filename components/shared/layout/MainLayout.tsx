@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { clearAuth, logout, getStoredUser, getToken } from "@/lib/auth";
+import { MobileNavigationContext } from "@/components/shared/layout/MobileNavigationContext";
 
 interface MainLayoutProps {
   sidebar: ReactNode;
@@ -19,8 +20,15 @@ export default function MainLayout({
 }: MainLayoutProps) {
   const router = useRouter();
   const [maintenanceActive, setMaintenanceActive] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const user = getStoredUser();
   const isAdmin = (user?.role?.role_name || (user as any)?.role_name || "").toUpperCase() === "ADMIN";
+
+  const mobileNavigation = {
+    open: mobileMenuOpen,
+    toggle: () => setMobileMenuOpen((open) => !open),
+    close: () => setMobileMenuOpen(false),
+  };
 
   useEffect(() => {
     const token = getToken();
@@ -41,6 +49,7 @@ export default function MainLayout({
   }, [router]);
 
   return (
+    <MobileNavigationContext.Provider value={mobileNavigation}>
     <div className="flex min-h-screen bg-slate-50">
       {sidebar}
 
@@ -69,5 +78,6 @@ export default function MainLayout({
         </main>
       </div>
     </div>
+    </MobileNavigationContext.Provider>
   );
 }

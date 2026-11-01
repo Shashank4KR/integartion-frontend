@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GraduationCap, ChevronRight, ChevronDown, Headset } from "lucide-react";
+import { GraduationCap, ChevronRight, ChevronDown, Headset, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MENU_ITEMS, COMPANY_INFO, type MenuItemType } from "@/lib/constants";
 import { getStoredAvatar, subscribeAvatarChange } from "@/lib/auth";
 import ContactSupportModal from "@/components/shared/ContactSupportModal";
+import { useMobileNavigation } from "@/components/shared/layout/MobileNavigationContext";
 
 export default function Sidebar() {
+  const mobileNavigation = useMobileNavigation();
+  const { open: mobileOpen, close: onClose } = mobileNavigation;
   const pathname = usePathname();
   const router = useRouter();
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -27,9 +30,18 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="hidden lg:flex w-[280px] bg-[#2a1f4d] flex-col h-screen fixed left-0 top-0 z-50 overflow-x-hidden">
+    <>
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={onClose}
+          className="fixed inset-0 z-[60] bg-slate-950/50 lg:hidden"
+        />
+      )}
+      <div className={`${mobileOpen ? "fixed inset-y-0 left-0 z-[61] flex w-[280px]" : "hidden lg:flex w-[280px]"} bg-[#2a1f4d] flex-col h-screen lg:fixed lg:left-0 lg:top-0 lg:z-50 overflow-x-hidden`}>
       {/* Logo Section */}
-      <div className="p-6 border-b border-purple-700">
+      <div className="flex items-center justify-between p-6 border-b border-purple-700">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 text-white overflow-hidden shadow-sm">
             <GraduationCap className="w-5 h-5" />
@@ -41,6 +53,9 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
+        <button type="button" onClick={onClose} className="rounded-lg p-2 text-purple-100 hover:bg-purple-700/40 lg:hidden" aria-label="Close navigation menu">
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Menu Items */}
@@ -52,6 +67,7 @@ export default function Sidebar() {
             pathname={pathname}
             isActive={isActive}
             router={router}
+            onNavigate={onClose}
           />
         ))}
       </div>
@@ -80,7 +96,8 @@ export default function Sidebar() {
         open={isSupportOpen}
         onClose={() => setIsSupportOpen(false)}
       />
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -89,11 +106,13 @@ function SidebarMenuItem({
   pathname,
   isActive,
   router,
+  onNavigate,
 }: {
   item: MenuItemType;
   pathname: string;
   isActive: (href: string) => boolean;
   router: ReturnType<typeof useRouter>;
+  onNavigate?: () => void;
 }) {
   const hasChildren = item.children && item.children.length > 0;
   const parentActive = item.href ? isActive(item.href) : false;
@@ -116,12 +135,15 @@ function SidebarMenuItem({
             setExpanded((e) => !e);
             if (isComm && pathname !== "/dashboard/admin/communication") {
               router.push("/dashboard/admin/communication");
+              onNavigate?.();
             }
             if (isTransport && pathname !== "/dashboard/admin/transport") {
               router.push("/dashboard/admin/transport");
+              onNavigate?.();
             }
             if (isHostel && pathname !== "/dashboard/admin/hostel") {
               router.push("/dashboard/admin/hostel");
+              onNavigate?.();
             }
           }}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
@@ -143,6 +165,7 @@ function SidebarMenuItem({
       ) : (
         <Link
           href={item.href ?? "#"}
+          onClick={onNavigate}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
             active
               ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
@@ -165,6 +188,7 @@ function SidebarMenuItem({
               <Link
                 key={child.label}
                 href={child.href ?? "#"}
+                onClick={onNavigate}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                   childActive
                     ? "bg-purple-500/40 text-white"

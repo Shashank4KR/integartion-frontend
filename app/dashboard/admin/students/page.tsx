@@ -334,8 +334,17 @@ export default function StudentsPage() {
               {search ? "No students found." : "No students found."}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <>
+              <p className="px-4 pb-2 text-xs text-slate-500 sm:hidden">
+                Swipe left or right to see all student details.
+              </p>
+              <div
+                className="max-w-full overflow-x-auto overscroll-x-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500"
+                role="region"
+                aria-label="Student records table. Swipe left or right to see all columns."
+                tabIndex={0}
+              >
+                <table className="w-full min-w-[1100px] text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs font-semibold text-slate-500 uppercase">
                     <th className="px-4 py-3">Student ID</th>
@@ -419,8 +428,9 @@ export default function StudentsPage() {
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+            </>
           )}
         </Card>
 
