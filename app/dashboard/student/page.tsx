@@ -22,6 +22,7 @@ import {
 } from "@/lib/services/studentService";
 import { listAnnouncements } from "@/lib/services/communicationService";
 import { BookOpen, GraduationCap, Wallet, Calendar, AlertCircle } from "lucide-react";
+import StudyTimeReminder from "@/components/dashboard/student/StudyTimeReminder";
 
 export default function StudentDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -177,6 +178,10 @@ export default function StudentDashboardPage() {
 
       <div className="mb-8">
         <QuickActions actions={studentQuickActions} />
+      </div>
+
+      <div className="mb-8">
+        <StudyTimeReminder />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
