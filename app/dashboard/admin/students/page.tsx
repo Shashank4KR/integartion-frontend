@@ -344,19 +344,16 @@ export default function StudentsPage() {
                 aria-label="Student records table. Swipe left or right to see all columns."
                 tabIndex={0}
               >
-                <table className="w-full min-w-[1100px] text-sm">
+                <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs font-semibold text-slate-500 uppercase">
-                    <th className="px-4 py-3">Student ID</th>
                     <th className="px-4 py-3">Admission No</th>
+                    <th className="px-4 py-3">Roll No</th>
                     <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">User ID</th>
+                    <th className="px-4 py-3">Class</th>
                     <th className="px-4 py-3">Linked User</th>
                     <th className="px-4 py-3">Gender</th>
                     <th className="px-4 py-3">Blood Group</th>
-                    <th className="px-4 py-3">Class ID</th>
-                    <th className="px-4 py-3">Class</th>
-                    <th className="px-4 py-3">Roll No</th>
                     <th className="px-4 py-3">Joining Date</th>
                     <th className="px-4 py-3">Photo</th>
                     <th className="px-4 py-3 text-right">Actions</th>
@@ -371,25 +368,16 @@ export default function StudentsPage() {
                         key={item.id}
                         className="border-b border-slate-50 hover:bg-slate-50/50 transition"
                       >
-                        <td className="px-4 py-3 font-mono text-xs" title={item.id}>
-                          {shortId(item.id)}
-                        </td>
                         <td className="px-4 py-3 font-medium">{item.admission_no}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 font-mono text-xs">{item.roll_no ?? "-"}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900">
                           {[item.first_name, item.last_name].filter(Boolean).join(" ") || "-"}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs" title={item.user_id}>
-                          {shortId(item.user_id)}
-                        </td>
-                        <td className="px-4 py-3">{username ?? "-"}</td>
+                        <td className="px-4 py-3">{className(item.class_id)}</td>
+                        <td className="px-4 py-3 text-slate-600">{username ?? "-"}</td>
                         <td className="px-4 py-3">{item.gender ?? "-"}</td>
                         <td className="px-4 py-3">{item.blood_group ?? "-"}</td>
-                        <td className="px-4 py-3 font-mono text-xs" title={item.class_id ?? ""}>
-                          {item.class_id ? shortId(item.class_id) : "-"}
-                        </td>
-                        <td className="px-4 py-3">{className(item.class_id)}</td>
-                        <td className="px-4 py-3">{item.roll_no ?? "-"}</td>
-                        <td className="px-4 py-3">{item.joining_date ?? "-"}</td>
+                        <td className="px-4 py-3 text-xs text-slate-500">{item.joining_date ?? "-"}</td>
                         <td className="px-4 py-3">
                           {item.photo ? (
                             <img

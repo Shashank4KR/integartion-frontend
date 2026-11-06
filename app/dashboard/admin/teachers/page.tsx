@@ -354,9 +354,7 @@ export default function TeachersPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs font-semibold text-slate-500 uppercase">
-                    <th className="px-4 py-3">Teacher ID</th>
                     <th className="px-4 py-3">Employee ID</th>
-                    <th className="px-4 py-3">User ID</th>
                     <th className="px-4 py-3">Linked User</th>
                     <th className="px-4 py-3">Qualification</th>
                     <th className="px-4 py-3">Department</th>
@@ -374,13 +372,7 @@ export default function TeachersPage() {
                         key={item.id}
                         className="border-b border-slate-50 hover:bg-slate-50/50 transition"
                       >
-                        <td className="px-4 py-3 font-mono text-xs" title={item.id}>
-                          {shortId(item.id)}
-                        </td>
-                        <td className="px-4 py-3 font-medium">{item.employee_id}</td>
-                        <td className="px-4 py-3 font-mono text-xs" title={item.user_id}>
-                          {shortId(item.user_id)}
-                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-900">{item.employee_id}</td>
                         <td className="px-4 py-3">{username ?? "-"}</td>
                         <td className="px-4 py-3">{item.qualification ?? "-"}</td>
                         <td className="px-4 py-3">{departmentName(item.department_id)}</td>
