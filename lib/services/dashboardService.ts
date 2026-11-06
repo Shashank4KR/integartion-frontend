@@ -53,7 +53,12 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       errorMessage = errorText || errorMessage;
     }
-    if (response.status === 401 && typeof window !== "undefined") {
+    if (
+      response.status === 401 &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/superadmin") &&
+      !window.location.pathname.startsWith("/login")
+    ) {
       clearAuth();
       window.location.replace("/login?reason=session-expired");
     }

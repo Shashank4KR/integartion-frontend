@@ -212,6 +212,8 @@ export function logout(redirectPath = "/login"): void {
 }
 
 export const ROLE_DASHBOARD_PATHS: Record<string, string> = {
+  SUPER_ADMIN: "/superadmin/dashboard",
+  SUPERADMIN: "/superadmin/dashboard",
   ADMIN: "/dashboard/admin",
   TEACHER: "/dashboard/teacher",
   STUDENT: "/dashboard/student",
