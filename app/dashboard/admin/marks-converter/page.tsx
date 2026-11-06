@@ -144,8 +144,18 @@ export default function MarksConverterPage() {
     refreshRules().catch((loadError: unknown) => setAdminError(loadError instanceof Error ? loadError.message : "Could not load conversion rules."));
   }, [isAdmin, refreshRules]);
 
-  const sourceBoard = direction === "CBSE_TO_STATE" ? "CBSE" : `${form.state} State Board`;
-  const targetBoard = direction === "CBSE_TO_STATE" ? `${form.state} State Board` : "CBSE";
+  const getBoardNames = (dir: BoardDirection, state: string) => {
+    switch (dir) {
+      case "CBSE_TO_STATE": return { source: "CBSE", target: `${state} State Board` };
+      case "STATE_TO_CBSE": return { source: `${state} State Board`, target: "CBSE" };
+      case "ICSE_TO_CBSE": return { source: "ICSE / ISC", target: "CBSE" };
+      case "CBSE_TO_ICSE": return { source: "CBSE", target: "ICSE / ISC" };
+      case "ICSE_TO_STATE": return { source: "ICSE / ISC", target: `${state} State Board` };
+      case "STATE_TO_ICSE": return { source: `${state} State Board`, target: "ICSE / ISC" };
+      default: return { source: "CBSE", target: `${state} State Board` };
+    }
+  };
+  const { source: sourceBoard, target: targetBoard } = getBoardNames(direction, form.state);
   const matchingRule = useMemo(() => {
     const applicable = rules.filter((rule) =>
       rule.is_active && rule.is_official &&
@@ -259,7 +269,7 @@ export default function MarksConverterPage() {
           <div>
             <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700"><Calculator className="h-3.5 w-3.5" /> Academic tools</p>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Marks Converter</h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-500">Compare CBSE and State Board marks using verified rules when available, or a clearly labeled proportional estimate.</p>
+            <p className="mt-1 max-w-2xl text-sm text-slate-500">Cross-board academic equivalence calculator supporting CBSE, ICSE / ISC, and State Boards with proportional and 80/20 assessment weighting.</p>
           </div>
           <button type="button" onClick={() => window.print()} disabled={!result} className="print:hidden inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><Printer className="h-4 w-4" /> Print result</button>
         </header>
@@ -272,6 +282,10 @@ export default function MarksConverterPage() {
             <div className="mb-5 flex flex-wrap gap-2 rounded-xl bg-slate-100 p-1.5 sm:inline-flex">
               <DirectionButton active={direction === "CBSE_TO_STATE"} onClick={() => { setDirection("CBSE_TO_STATE"); setResult(null); }} label="CBSE → State Board" />
               <DirectionButton active={direction === "STATE_TO_CBSE"} onClick={() => { setDirection("STATE_TO_CBSE"); setResult(null); }} label="State Board → CBSE" />
+              <DirectionButton active={direction === "ICSE_TO_CBSE"} onClick={() => { setDirection("ICSE_TO_CBSE"); setResult(null); }} label="ICSE → CBSE" />
+              <DirectionButton active={direction === "CBSE_TO_ICSE"} onClick={() => { setDirection("CBSE_TO_ICSE"); setResult(null); }} label="CBSE → ICSE" />
+              <DirectionButton active={direction === "ICSE_TO_STATE"} onClick={() => { setDirection("ICSE_TO_STATE"); setResult(null); }} label="ICSE → State Board" />
+              <DirectionButton active={direction === "STATE_TO_ICSE"} onClick={() => { setDirection("STATE_TO_ICSE"); setResult(null); }} label="State Board → ICSE" />
             </div>
             <div className="grid gap-3 rounded-xl bg-gradient-to-r from-violet-50 via-white to-sky-50 p-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
               <BoardCard label="Source board" value={sourceBoard} />

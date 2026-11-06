@@ -1,4 +1,10 @@
-export type BoardDirection = "CBSE_TO_STATE" | "STATE_TO_CBSE";
+export type BoardDirection =
+  | "CBSE_TO_STATE"
+  | "STATE_TO_CBSE"
+  | "ICSE_TO_CBSE"
+  | "CBSE_TO_ICSE"
+  | "ICSE_TO_STATE"
+  | "STATE_TO_ICSE";
 
 export interface MarksConverterOptions {
   states: string[];
