@@ -25,6 +25,8 @@ import {
   Wrench,
   UserCheck,
   ArrowLeftRight,
+  Award,
+  Calendar,
   type LucideIcon,
 } from "lucide-react";
 
@@ -56,6 +58,9 @@ export const MENU_ITEMS: MenuItemType[] = [
     },
   { label: "Examinations", icon: ClipboardList, href: "/dashboard/admin/examinations" },
   { label: "Marks Converter", icon: ArrowLeftRight, href: "/dashboard/admin/marks-converter" },
+  { label: "Certificates", icon: Award, href: "/dashboard/admin/certificates" },
+  { label: "Events & Activities", icon: Calendar, href: "/dashboard/admin/events" },
+  { label: "Campuses & Branches", icon: Building2, href: "/dashboard/admin/branches" },
   { label: "Finance", icon: DollarSign, href: "/dashboard/admin/finance", children: [
     { label: "Finance Overview", icon: TrendingUp, href: "/dashboard/admin/finance/overview" },
     { label: "Fees Management", icon: CircleDollarSign, href: "/dashboard/admin/finance/fees-management" },

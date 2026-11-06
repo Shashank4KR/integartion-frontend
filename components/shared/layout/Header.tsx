@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   Menu,
   Search,
@@ -9,6 +11,7 @@ import {
   ChevronDown,
   LogOut,
   Settings,
+  Building2,
   Camera,
   Loader2,
   type LucideIcon,
@@ -21,6 +24,7 @@ import { updateProfile } from "@/lib/services/settingsService";
 import { getInitials } from "@/lib/utils/formatters";
 import CalendarPicker from "@/components/shared/Calendar";
 import { MENU_ITEMS } from "@/lib/constants";
+import { getActiveCampusId, getSubBranches } from "@/lib/services/branchService";
 import { MODULES, QUICK_ACCESS } from "@/lib/modules";
 import { listNotifications, listMessages, markAllNotificationsRead, markAllMessagesRead } from "@/lib/services/communicationService";
 import { useMobileNavigation } from "@/components/shared/layout/MobileNavigationContext";
@@ -53,6 +57,21 @@ export default function DashboardHeader({
 }: DashboardHeaderProps = {}) {
   const mobileNavigation = useMobileNavigation();
   const [name, setName] = useState(userName ?? "");
+  const [activeCampusName, setActiveCampusName] = useState("Nomera Main Campus");
+
+  useEffect(() => {
+    const updateCampus = () => {
+      try {
+        const id = getActiveCampusId();
+        const branches = getSubBranches();
+        const found = branches.find((b) => b.id === id);
+        if (found) setActiveCampusName(found.name);
+      } catch {}
+    };
+    updateCampus();
+    window.addEventListener("nomera_campus_changed", updateCampus);
+    return () => window.removeEventListener("nomera_campus_changed", updateCampus);
+  }, []);
   const [role, setRole] = useState(userRole ?? "");
   const router = useRouter();
   const pathname = usePathname();
@@ -482,7 +501,16 @@ export default function DashboardHeader({
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Active Campus Switcher */}
+          <Link
+            href="/dashboard/admin/branches"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200/80 text-xs font-semibold transition"
+            title="Switch or manage campuses & sub-branches"
+          >
+            <Building2 className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+            <span className="truncate max-w-[140px]">{activeCampusName}</span>
+          </Link>
           {actions?.notifications && (
             <button
               type="button"

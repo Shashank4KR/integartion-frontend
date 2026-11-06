@@ -16,6 +16,8 @@ import {
   ShieldCheck,
   UserCheck,
   Link2,
+  Award,
+  Calendar,
 } from "lucide-react";
 
 export type ModuleCard = {
@@ -157,6 +159,22 @@ export const MODULES: ModuleCard[] = [
     bg: "#ecfeff",
   },
   {
+    title: "Certificates & Credentials",
+    description: "Issue customizable TC, Bonafide, Merit, Conduct, and Scholarship verification certificates.",
+    icon: Award,
+    href: "/dashboard/admin/certificates",
+    color: "#d97706",
+    bg: "#fffbeb",
+  },
+  {
+    title: "Events & Activities",
+    description: "Manage school competitions, celebrations, sports meets, and targeted class/parent events.",
+    icon: Calendar,
+    href: "/dashboard/admin/events",
+    color: "#ec4899",
+    bg: "#fdf2f8",
+  },
+  {
     title: "System Settings",
     description: "Configure school profile, academic sessions and system preferences.",
     icon: Settings,
@@ -178,4 +196,6 @@ export const QUICK_ACCESS: QuickAccess[] = [
   { label: "Create Notice", icon: MessageSquare, href: "/dashboard/admin/communication" },
   { label: "Collect Fees", icon: Wallet, href: "/dashboard/admin/finance/fees-management" },
   { label: "View Reports", icon: BarChart3, href: "/dashboard/admin/reports" },
+  { label: "Issue Certificate", icon: Award, href: "/dashboard/admin/certificates" },
+  { label: "Create Event", icon: Calendar, href: "/dashboard/admin/events" },
 ];
