@@ -11,7 +11,7 @@ export default function DashboardSuperAdminRedirect() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 text-xs font-mono">
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-slate-500 text-xs font-mono">
       Redirecting to Super Admin Console...
     </div>
   );
