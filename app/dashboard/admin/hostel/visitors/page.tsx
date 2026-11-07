@@ -461,13 +461,21 @@ export default function HostelVisitorsPage() {
 
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Phone Number *
+                      Phone Number (Numbers only) *
                     </label>
                     <input
                       type="tel"
-                      placeholder="e.g. +1 555-0199"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={15}
+                      placeholder="e.g. 9876543210"
                       value={formData.phone}
-                      onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+                      onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
+                      onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value.replace(/\D/g, '').slice(0, 15) }))}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
                       required
                     />

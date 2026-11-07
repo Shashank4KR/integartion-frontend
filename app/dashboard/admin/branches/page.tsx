@@ -503,13 +503,21 @@ export default function CampusesBranchesPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">
-                      Head Phone
+                      Head Phone (Numbers only)
                     </label>
                     <input
-                      type="text"
-                      placeholder="+91 98765 00000"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={15}
+                      placeholder="e.g. 9876500000"
                       value={formData.headPhone}
-                      onChange={(e) => setFormData({ ...formData, headPhone: e.target.value })}
+                      onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
+                      onChange={(e) => setFormData({ ...formData, headPhone: e.target.value.replace(/\D/g, '').slice(0, 15) })}
                       className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>

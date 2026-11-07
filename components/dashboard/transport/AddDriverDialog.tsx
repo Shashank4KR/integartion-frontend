@@ -120,12 +120,21 @@ export default function AddDriverDialog({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-xs font-semibold text-slate-700">
-              Phone Number
+              Phone Number (Numbers only)
             </label>
             <Input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={15}
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="e.g. +91 98765 43210"
+              onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 15))}
+              placeholder="e.g. 9876543210"
               className="w-full text-sm"
             />
           </div>

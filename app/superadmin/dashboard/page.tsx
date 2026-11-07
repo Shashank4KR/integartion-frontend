@@ -805,7 +805,7 @@ export default function SuperAdminDashboardPage() {
                     3. Institute Administrator Account
                   </h4>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                       <label className="font-semibold text-slate-300 block mb-1">Admin Full Name</label>
                       <input
@@ -828,6 +828,27 @@ export default function SuperAdminDashboardPage() {
                         onChange={(e) => setFormState({ ...formState, adminEmail: e.target.value })}
                         placeholder="director@apexcollege.edu"
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white outline-none font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-semibold text-slate-300 block mb-1">
+                        Admin Phone (Numbers only)
+                      </label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={15}
+                        placeholder="e.g. 9876543210"
+                        value={formState.adminPhone}
+                        onKeyDown={(e) => {
+                          if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+                            e.preventDefault();
+                          }
+                        }}
+                        onChange={(e) => setFormState({ ...formState, adminPhone: e.target.value.replace(/\D/g, '').slice(0, 15) })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white outline-none"
                       />
                     </div>
                   </div>

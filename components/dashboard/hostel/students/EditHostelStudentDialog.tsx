@@ -234,11 +234,20 @@ export default function EditHostelStudentDialog({
             )}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-700">Guardian Contact</label>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-700">Guardian Contact (Numbers only)</label>
             <Input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={15}
               value={guardianContact}
-              onChange={(e) => setGuardianContact(e.target.value)}
-              placeholder="Guardian Contact"
+              onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
+              onChange={(e) => setGuardianContact(e.target.value.replace(/\D/g, '').slice(0, 15))}
+              placeholder="e.g. 9876543210"
               className={errors.guardianContact ? "border-red-300" : ""}
             />
             {errors.guardianContact && (
@@ -249,11 +258,20 @@ export default function EditHostelStudentDialog({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-700">Student Contact</label>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-700">Student Contact (Numbers only)</label>
             <Input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={15}
               value={studentContact}
-              onChange={(e) => setStudentContact(e.target.value)}
-              placeholder="Student Contact"
+              onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
+              onChange={(e) => setStudentContact(e.target.value.replace(/\D/g, '').slice(0, 15))}
+              placeholder="e.g. 9876543210"
             />
           </div>
           <div>

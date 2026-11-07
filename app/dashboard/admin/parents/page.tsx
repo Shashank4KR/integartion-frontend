@@ -489,11 +489,20 @@ export default function ParentsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">Phone</label>
+                    <label className="mb-1 block text-xs font-semibold text-slate-700">Phone (Numbers only)</label>
                     <input
-                      type="text"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={15}
+                      placeholder="e.g. 9876543210"
                       value={userForm.phone}
-                      onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+                      onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
+                      onChange={(e) => setUserForm({ ...userForm, phone: e.target.value.replace(/\D/g, '').slice(0, 15) })}
                       className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
                     />
                   </div>
@@ -662,11 +671,20 @@ export default function ParentsPage() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-700">Phone</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-700">Phone (Numbers only)</label>
           <input
-            type="text"
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={15}
+            placeholder="e.g. 9876543210"
             value={profileForm.phone}
-            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+            onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
+            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value.replace(/\D/g, '').slice(0, 15) })}
             className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
           />
         </div>

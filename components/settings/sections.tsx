@@ -479,11 +479,21 @@ export function ProfileSettings({ user, onUserUpdate }: SectionProps) {
             />
           </label>
           <label className="text-sm font-medium text-slate-700">
-            Phone number
+            Phone number (Numbers only)
             <input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={15}
+              placeholder="e.g. 9876543210"
               value={phone}
+              onKeyDown={(e) => {
+  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+  }
+}}
               onChange={(e) => {
-                setPhone(e.target.value);
+                setPhone(e.target.value.replace(/\D/g, '').slice(0, 15));
                 setSaved(false);
               }}
               className={inputClass}
