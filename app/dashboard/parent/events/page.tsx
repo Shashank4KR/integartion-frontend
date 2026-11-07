@@ -54,9 +54,24 @@ export default function ParentEventsPage() {
       }
 
       try {
-        const data = await listEvents(token);
+        const [calData, eventsData] = await Promise.all([
+          listEvents(token).catch(() => []),
+          fetch("/api/events/upcoming", { headers: { Authorization: `Bearer ${token}` } })
+            .then((r) => (r.ok ? r.json() : []))
+            .catch(() => []),
+        ]);
         if (!mounted) return;
-        const formatted = (data ?? []).map(mapEvent);
+        const toArr = (v: any) => Array.isArray(v) ? v : Array.isArray(v?.items) ? v.items : Array.isArray(v?.data) ? v.data : [];
+        const combined = [...toArr(calData), ...toArr(eventsData)];
+        // Deduplicate by title + start date if identical
+        const seen = new Set<string>();
+        const unique = combined.filter((item) => {
+          const key = `${item.title || item.event_name}-${item.start_date || item.start}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        const formatted = unique.map(mapEvent);
         formatted.sort((a, b) => new Date(a.start ?? 0).getTime() - new Date(b.start ?? 0).getTime());
         setEvents(formatted);
       } catch (err) {

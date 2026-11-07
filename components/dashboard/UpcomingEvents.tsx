@@ -56,7 +56,7 @@ export default function UpcomingEvents() {
 
           return {
             id: String(e.id),
-            title: e.event_name,
+            title: e.event_name || e.title || "School Event",
             month: monthStr,
             day: dayNum,
             time: timeStr,

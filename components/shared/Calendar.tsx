@@ -162,8 +162,8 @@ export default function Calendar({
 
       {showEventDots && events.length > 0 && (
         <div className="mt-4 space-y-1 border-t border-slate-100 pt-3">
-          {events.map((e) => (
-            <div key={e.day} className="flex items-center gap-2 text-xs">
+          {events.map((e, idx) => (
+            <div key={`${e.day}-${e.title}-${idx}`} className="flex items-center gap-2 text-xs">
               <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
               <span className="font-medium text-slate-700">
                 {MONTHS[month]} {e.day}:

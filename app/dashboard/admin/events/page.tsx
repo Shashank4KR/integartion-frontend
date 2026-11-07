@@ -8,9 +8,11 @@ import Card from "@/components/shared/Card";
 import type { EventGenre, EventItem, EventStatus, TargetAudienceRole } from "@/types/events";
 import {
   deleteEventItem,
+  deleteLiveEvent,
   getStoredEvents,
   INITIAL_EVENTS,
   saveEventItem,
+  saveLiveEvent,
   fetchLiveEvents,
 } from "@/lib/services/eventManagementService";
 import { listClasses } from "@/lib/services/classService";
@@ -50,6 +52,7 @@ const ALL_GENRES: { label: string; value: EventGenre; icon: any; color: string }
   { label: "Cultural Arts", value: "CULTURAL", icon: Compass, color: "bg-indigo-100 text-indigo-800 border-indigo-300" },
   { label: "Holidays & Trips", value: "HOLIDAY", icon: CalendarDays, color: "bg-orange-100 text-orange-800 border-orange-300" },
   { label: "Workshops", value: "WORKSHOP", icon: Layers, color: "bg-teal-100 text-teal-800 border-teal-300" },
+  { label: "Examinations", value: "EXAMINATION", icon: Layers, color: "bg-rose-100 text-rose-800 border-rose-300" },
 ];
 
 const TARGET_ROLES: { label: string; value: TargetAudienceRole }[] = [
@@ -128,6 +131,8 @@ export default function AdminEventsPage() {
       const matchAudience = filterAudience === "ALL" || e.targetAudience === filterAudience;
       const matchClass =
         filterClass === "ALL" ||
+        !e.targetClasses ||
+        e.targetClasses.length === 0 ||
         e.targetClasses.includes("All Classes") ||
         e.targetClasses.includes(filterClass);
       const matchStatus = filterStatus === "ALL" || e.status === filterStatus;
@@ -169,7 +174,7 @@ export default function AdminEventsPage() {
   };
 
   // Save Event
-  const handleSaveEvent = (e: React.FormEvent) => {
+  const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formState.title.trim()) {
       alert("Event title is required");
@@ -183,15 +188,17 @@ export default function AdminEventsPage() {
       createdAt: editingEvent?.createdAt || new Date().toISOString(),
     };
 
-    const updated = saveEventItem(eventToSave);
+    const token = getToken();
+    const updated = await saveLiveEvent(eventToSave, token);
     setEvents(updated);
     setIsModalOpen(false);
   };
 
   // Delete Event
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = async (id: string) => {
     if (confirm("Are you sure you want to delete this event?")) {
-      const updated = deleteEventItem(id);
+      const token = getToken();
+      const updated = await deleteLiveEvent(id, token);
       setEvents(updated);
       if (selectedDetailEvent?.id === id) setSelectedDetailEvent(null);
     }

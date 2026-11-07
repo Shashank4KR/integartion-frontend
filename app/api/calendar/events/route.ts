@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const backendUrl = process.env.BACKEND_API_URL;
+  const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   if (!backendUrl) {
     return NextResponse.json(
@@ -14,8 +14,9 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get("authorization");
     const url = new URL(request.url);
     const query = url.search;
+    const baseUrl = backendUrl.replace(/\/+$/, "");
 
-    const response = await fetch(`${backendUrl}/events${query}`, {
+    const response = await fetch(`${baseUrl}/api/v1/events${query}`, {
       method: "GET",
       headers: {
         ...(authHeader ? { Authorization: authHeader } : {}),
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const backendUrl = process.env.BACKEND_API_URL;
+  const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   if (!backendUrl) {
     return NextResponse.json(
@@ -54,8 +55,9 @@ export async function POST(request: Request) {
     const contentType =
       request.headers.get("content-type") || "application/json";
     const authHeader = request.headers.get("authorization");
+    const baseUrl = backendUrl.replace(/\/+$/, "");
 
-    const response = await fetch(`${backendUrl}/events`, {
+    const response = await fetch(`${baseUrl}/api/v1/events`, {
       method: "POST",
       headers: {
         "Content-Type": contentType,

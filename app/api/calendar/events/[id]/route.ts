@@ -4,7 +4,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const backendUrl = process.env.BACKEND_API_URL;
+  const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   if (!backendUrl) {
     return NextResponse.json(
@@ -16,9 +16,10 @@ export async function GET(
   try {
     const { id } = await params;
     const authHeader = request.headers.get("authorization");
+    const baseUrl = backendUrl.replace(/\/+$/, "");
 
     const response = await fetch(
-      `${backendUrl}/events/${encodeURIComponent(id)}`,
+      `${baseUrl}/api/v1/events/${encodeURIComponent(id)}`,
       {
         method: "GET",
         headers: { ...(authHeader ? { Authorization: authHeader } : {}) },
@@ -46,7 +47,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const backendUrl = process.env.BACKEND_API_URL;
+  const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   if (!backendUrl) {
     return NextResponse.json(
@@ -61,9 +62,10 @@ export async function PUT(
     const contentType =
       request.headers.get("content-type") || "application/json";
     const authHeader = request.headers.get("authorization");
+    const baseUrl = backendUrl.replace(/\/+$/, "");
 
     const response = await fetch(
-      `${backendUrl}/events/${encodeURIComponent(id)}`,
+      `${baseUrl}/api/v1/events/${encodeURIComponent(id)}`,
       {
         method: "PUT",
         headers: {
@@ -95,7 +97,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const backendUrl = process.env.BACKEND_API_URL;
+  const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   if (!backendUrl) {
     return NextResponse.json(
@@ -107,9 +109,10 @@ export async function DELETE(
   try {
     const { id } = await params;
     const authHeader = request.headers.get("authorization");
+    const baseUrl = backendUrl.replace(/\/+$/, "");
 
     const response = await fetch(
-      `${backendUrl}/events/${encodeURIComponent(id)}`,
+      `${baseUrl}/api/v1/events/${encodeURIComponent(id)}`,
       {
         method: "DELETE",
         headers: { ...(authHeader ? { Authorization: authHeader } : {}) },

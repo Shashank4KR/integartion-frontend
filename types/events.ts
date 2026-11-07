@@ -7,6 +7,7 @@ export type EventGenre =
   | "MEETING"
   | "HOLIDAY"
   | "WORKSHOP"
+  | "EXAMINATION"
   | "OTHER";
 
 export type TargetAudienceRole =

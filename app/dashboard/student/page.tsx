@@ -23,6 +23,7 @@ import {
 import { listAnnouncements } from "@/lib/services/communicationService";
 import { BookOpen, GraduationCap, Wallet, Calendar, AlertCircle } from "lucide-react";
 import StudyTimeReminder from "@/components/dashboard/student/StudyTimeReminder";
+import UpcomingEvents from "@/components/dashboard/UpcomingEvents";
 
 export default function StudentDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -270,6 +271,10 @@ export default function StudentDashboardPage() {
             <InfoList items={noticeItems} />
           )}
         </DashboardCard>
+      </div>
+
+      <div className="mb-8">
+        <UpcomingEvents />
       </div>
 
       <footer className="flex items-center justify-between py-4 px-6 text-xs text-slate-500 border-t border-slate-200">

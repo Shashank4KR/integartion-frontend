@@ -16,6 +16,7 @@ import { getStudentFeedback, type StudentFeedback } from "@/lib/services/academi
 import { getToken } from "@/lib/auth";
 import type { InfoRow } from "@/lib/dashboard/role-dashboards/types";
 import { BookOpen, GraduationCap, Wallet, Bell, MessageSquare, Award, CheckCircle2 } from "lucide-react";
+import UpcomingEvents from "@/components/dashboard/UpcomingEvents";
 
 export default function ParentDashboardPage() {
   const [children, setChildren] = useState<any[]>([]);
@@ -172,7 +173,8 @@ export default function ParentDashboardPage() {
         </DashboardCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <UpcomingEvents />
         <DashboardCard title="School Notices & Updates">
           {notices.length > 0 ? <InfoList items={notices} /> : <p className="text-sm text-slate-500 py-4">No new notices.</p>}
         </DashboardCard>

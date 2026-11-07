@@ -52,6 +52,7 @@ export const studentStats: RoleStat[] = [
 import { FolderOpen } from "lucide-react";
 
 export const studentQuickActions: RoleQuickAction[] = [
+  { id: "events", label: "School Events", icon: CalendarClock, href: "/dashboard/student/events" },
   { id: "timetable", label: "View Timetable", icon: CalendarClock, href: "/dashboard/student/timetable" },
   { id: "notes", label: "Chapter Notes", icon: FolderOpen, href: "/dashboard/student/notes" },
   { id: "assignment", label: "Submit Assignment", icon: ClipboardList, href: "/dashboard/student/assignments" },
