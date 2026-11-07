@@ -1,5 +1,13 @@
 "use client";
 
+// TODO(ARCH-DECOMPOSE-1000L): This monolithic component exceeds 1900 lines and implements multiple complex settings panels.
+// Decompose into modular standalone components under components/settings/sections/:
+//   1. ProfileSection.tsx         - Personal info, avatar upload, and user identity
+//   2. SecuritySection.tsx        - Password change, MFA TOTP setup, active sessions, and revoke
+//   3. PreferencesSection.tsx     - Theme, notifications, and language settings
+//   4. InstitutionSection.tsx     - School metadata, branding, and academic configuration
+//   5. DataPrivacySection.tsx     - Audit export, data retention, and privacy preferences
+
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
