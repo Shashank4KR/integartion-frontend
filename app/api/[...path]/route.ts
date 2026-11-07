@@ -10,9 +10,24 @@ async function handleProxy(
   { params }: { params: Promise<{ path: string[] }> },
   method: string,
 ) {
+  const reqId = request.headers.get("x-request-id") || "";
+
   if (!backendUrl) {
     return NextResponse.json(
-      { detail: "Server configuration error: BACKEND_API_URL is not set." },
+      {
+        success: false,
+        data: null,
+        error: {
+          message: "Server configuration error: BACKEND_API_URL is not set.",
+          code: 500,
+          details: [],
+        },
+        detail: "Server configuration error: BACKEND_API_URL is not set.",
+        meta: {
+          timestamp: new Date().toISOString(),
+          requestId: reqId,
+        },
+      },
       { status: 500 },
     );
   }
@@ -28,6 +43,16 @@ async function handleProxy(
     if (authHeader) {
       headers.set("Authorization", authHeader);
     }
+    if (reqId) {
+      headers.set("X-Request-ID", reqId);
+    }
+
+    const idempotencyKey =
+      request.headers.get("idempotency-key") ||
+      request.headers.get("x-idempotency-key");
+    if (idempotencyKey) {
+      headers.set("Idempotency-Key", idempotencyKey);
+    }
 
     const contentType = request.headers.get("content-type");
     if (contentType) {
@@ -39,14 +64,29 @@ async function handleProxy(
       if (method === "POST" && fullPath === "chapter-notes/upload") {
         const contentLength = request.headers.get("content-length");
         if (contentLength && (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_NOTE_REQUEST_SIZE)) {
-          return NextResponse.json({ detail: "Upload request exceeds the 11 MB limit" }, { status: 413 });
+          return NextResponse.json(
+            {
+              success: false,
+              data: null,
+              error: {
+                message: "Upload request exceeds the 11 MB limit",
+                code: 413,
+                details: [],
+              },
+              detail: "Upload request exceeds the 11 MB limit",
+              meta: {
+                timestamp: new Date().toISOString(),
+                requestId: reqId,
+              },
+            },
+            { status: 413 },
+          );
         }
         body = request.body;
       } else {
         body = await request.arrayBuffer();
       }
     }
-
 
     // FastAPI mounts its routers at the root (for example, /students and
     // /auth/login). Adding /api/v1 here sends every catch-all request to a
@@ -98,6 +138,9 @@ async function handleProxy(
       "x-content-type-options",
       "content-security-policy",
       "cache-control",
+      "x-request-id",
+      "x-cache",
+      "idempotent-replayed",
     ]) {
       const value = response.headers.get(headerName);
       if (value) safeHeaders.set(headerName, value);
@@ -110,7 +153,20 @@ async function handleProxy(
   } catch (err) {
     console.error("Proxy error:", err);
     return NextResponse.json(
-      { detail: "Backend is unreachable. Please try again later." },
+      {
+        success: false,
+        data: null,
+        error: {
+          message: "Backend is unreachable. Please try again later.",
+          code: 502,
+          details: [],
+        },
+        detail: "Backend is unreachable. Please try again later.",
+        meta: {
+          timestamp: new Date().toISOString(),
+          requestId: reqId,
+        },
+      },
       { status: 502 },
     );
   }

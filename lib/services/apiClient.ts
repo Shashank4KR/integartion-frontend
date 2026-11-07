@@ -24,11 +24,17 @@ export async function apiClient<T>(
     let message = "Request failed. Please try again.";
     try {
       const data = (await response.json()) as ApiErrorResponse;
-      const { detail } = data;
-      if (typeof detail === "string") {
-        message = detail;
-      } else if (Array.isArray(detail) && detail.length > 0) {
-        message = detail.map((item) => item.msg).join(", ");
+      if (data?.error?.message) {
+        message = data.error.message;
+      } else {
+        const { detail } = data;
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          message = detail.map((item) => (typeof item === "string" ? item : item.msg)).join(", ");
+        } else if (data?.message) {
+          message = data.message;
+        }
       }
     } catch (err) {
       console.warn("[apiClient] Response body was not valid JSON, using default error message:", err);
@@ -42,4 +48,3 @@ export async function apiClient<T>(
 
   return (await response.json()) as T;
 }
-
