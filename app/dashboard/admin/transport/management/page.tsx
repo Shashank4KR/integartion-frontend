@@ -568,10 +568,10 @@ export default function TransportManagementPage() {
       return;
     }
     try {
-      const matchedDriver = rawDrivers.find(
+      const matchedDriver = (Array.isArray(rawDrivers) ? rawDrivers : []).find(
         (d) => d.driver_name === data.driver || d.id === data.driver
       );
-      const matchedVehicle = rawVehicles.find(
+      const matchedVehicle = (Array.isArray(rawVehicles) ? rawVehicles : []).find(
         (v) => v.bus_number === data.vehicle || v.id === data.vehicle
       );
 
@@ -622,7 +622,7 @@ export default function TransportManagementPage() {
 
     try {
       // Find matching student
-      const matchedStudent = rawStudents.find((s) => {
+      const matchedStudent = (Array.isArray(rawStudents) ? rawStudents : []).find((s) => {
         const fullName = `${s.first_name || ""} ${s.last_name || ""}`.trim().toLowerCase();
         const target = data.student.toLowerCase();
         return (
@@ -638,7 +638,7 @@ export default function TransportManagementPage() {
       }
 
       // Find matching route
-      const matchedRoute = rawRoutes.find(
+      const matchedRoute = (Array.isArray(rawRoutes) ? rawRoutes : []).find(
         (r) => r.id === data.route || r.route_name === data.route
       ) || rawRoutes[0];
 
@@ -647,7 +647,7 @@ export default function TransportManagementPage() {
       }
 
       // Find matching vehicle
-      const matchedVehicle = rawVehicles.find(
+      const matchedVehicle = (Array.isArray(rawVehicles) ? rawVehicles : []).find(
         (v) => v.id === data.vehicle || v.bus_number === data.vehicle
       ) || rawVehicles[0];
 
@@ -737,9 +737,9 @@ export default function TransportManagementPage() {
             onToDateChange={setToDate}
             onFilter={handleFilter}
             onReset={handleReset}
-            routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
-            vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
-            driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+            routeOptions={(Array.isArray(rawRoutes) ? rawRoutes : []).map((r) => r.route_name || r.name).filter(Boolean)}
+            vehicleOptions={(Array.isArray(rawVehicles) ? rawVehicles : []).map((v) => v.bus_number || v.number).filter(Boolean)}
+            driverOptions={(Array.isArray(rawDrivers) ? rawDrivers : []).map((d) => d.driver_name || d.name).filter(Boolean)}
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
@@ -824,23 +824,23 @@ export default function TransportManagementPage() {
         open={addVehicleOpen}
         onClose={() => setAddVehicleOpen(false)}
         onSave={handleSaveVehicle}
-        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
-        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+        driverOptions={(Array.isArray(rawDrivers) ? rawDrivers : []).map((d) => d.driver_name || d.name).filter(Boolean)}
+        routeOptions={(Array.isArray(rawRoutes) ? rawRoutes : []).map((r) => r.route_name || r.name).filter(Boolean)}
       />
       <AddRouteDialog
         open={addRouteOpen}
         onClose={() => setAddRouteOpen(false)}
         onSave={handleSaveRoute}
-        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
-        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+        vehicleOptions={(Array.isArray(rawVehicles) ? rawVehicles : []).map((v) => v.bus_number || v.number).filter(Boolean)}
+        driverOptions={(Array.isArray(rawDrivers) ? rawDrivers : []).map((d) => d.driver_name || d.name).filter(Boolean)}
       />
       <EditRouteDialog
         open={editRouteOpen}
         onClose={() => setEditRouteOpen(false)}
         route={selectedRouteForEdit}
         onSave={handleSaveEditRoute}
-        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
-        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+        vehicleOptions={(Array.isArray(rawVehicles) ? rawVehicles : []).map((v) => v.bus_number || v.number).filter(Boolean)}
+        driverOptions={(Array.isArray(rawDrivers) ? rawDrivers : []).map((d) => d.driver_name || d.name).filter(Boolean)}
       />
       <AddDriverDialog
         open={addDriverOpen}
@@ -852,24 +852,24 @@ export default function TransportManagementPage() {
         open={assignDriverOpen}
         onClose={() => setAssignDriverOpen(false)}
         onSave={handleAssignDriver}
-        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.id).filter(Boolean)}
-        driverOptions={rawDrivers.map((d) => d.driver_name || d.id).filter(Boolean)}
-        routeOptions={rawRoutes.map((r) => r.route_name || r.id).filter(Boolean)}
+        vehicleOptions={(Array.isArray(rawVehicles) ? rawVehicles : []).map((v) => v.bus_number || v.id).filter(Boolean)}
+        driverOptions={(Array.isArray(rawDrivers) ? rawDrivers : []).map((d) => d.driver_name || d.id).filter(Boolean)}
+        routeOptions={(Array.isArray(rawRoutes) ? rawRoutes : []).map((r) => r.route_name || r.id).filter(Boolean)}
       />
       <RouteScheduleDialog
         open={scheduleOpen}
         onClose={() => setScheduleOpen(false)}
         onSave={handleSaveSchedule}
-        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
-        driverOptions={rawDrivers.map((d) => d.driver_name || d.name).filter(Boolean)}
+        routeOptions={(Array.isArray(rawRoutes) ? rawRoutes : []).map((r) => r.route_name || r.name).filter(Boolean)}
+        driverOptions={(Array.isArray(rawDrivers) ? rawDrivers : []).map((d) => d.driver_name || d.name).filter(Boolean)}
       />
       <TransportFeeDialog
         open={feeOpen}
         onClose={() => setFeeOpen(false)}
         onSave={handleSaveFee}
-        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
-        vehicleOptions={rawVehicles.map((v) => v.bus_number || v.number).filter(Boolean)}
-        studentOptions={rawStudents.map((s) => ({
+        routeOptions={(Array.isArray(rawRoutes) ? rawRoutes : []).map((r) => r.route_name || r.name).filter(Boolean)}
+        vehicleOptions={(Array.isArray(rawVehicles) ? rawVehicles : []).map((v) => v.bus_number || v.number).filter(Boolean)}
+        studentOptions={(Array.isArray(rawStudents) ? rawStudents : []).map((s) => ({
           id: s.id,
           name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || s.name || "Student",
           admission_no: s.admission_no,
@@ -878,7 +878,7 @@ export default function TransportManagementPage() {
       <TransportReportDialog
         open={reportOpen}
         onClose={() => setReportOpen(false)}
-        routeOptions={rawRoutes.map((r) => r.route_name || r.name).filter(Boolean)}
+        routeOptions={(Array.isArray(rawRoutes) ? rawRoutes : []).map((r) => r.route_name || r.name).filter(Boolean)}
         routesData={routes}
       />
       <TripDetailsDialog trip={selectedTrip} open={tripDetailsOpen} onClose={() => setTripDetailsOpen(false)} />

@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 export type RoleResponse = {
   id: string;
   role_name: string;
@@ -20,7 +21,8 @@ export async function listRoles(token: string): Promise<RoleResponse[]> {
     throw new Error(data.detail ?? "Failed to fetch roles.");
   }
 
-  return (await response.json()) as RoleResponse[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function listPermissions(token: string): Promise<PermissionResponse[]> {
@@ -33,5 +35,6 @@ export async function listPermissions(token: string): Promise<PermissionResponse
     throw new Error(data.detail ?? "Failed to fetch permissions.");
   }
 
-  return (await response.json()) as PermissionResponse[];
+  const data = await response.json();
+  return unwrapArray(data);
 }

@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapData } from "@/lib/utils/unwrap";
 import type {
   CertificateFormData,
   CertificateType,
@@ -256,7 +257,8 @@ export async function listCertificates(token: string): Promise<any[]> {
     });
     if (response.ok) {
       const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      const arr = unwrapArray(data);
+      if (arr.length > 0) return arr;
     }
   } catch {
     // Fallback to local store

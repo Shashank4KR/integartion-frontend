@@ -252,7 +252,7 @@ export default function MessManagementPage() {
   // Map today's menu
   const todaysMenuRows: MealRow[] = useMemo(() => {
     const todayStr = new Date().toISOString().split("T")[0];
-    const todays = menus.filter((m) => {
+    const todays = (Array.isArray(menus) ? menus : []).filter((m) => {
       const d = typeof m.menu_date === "string" ? m.menu_date.split("T")[0] : "";
       return d === todayStr;
     });
@@ -275,7 +275,7 @@ export default function MessManagementPage() {
 
   // Map collections
   const mappedCollections: CollectionRow[] = useMemo(() => {
-    return collections.map((c, idx) => ({
+    return (Array.isArray(collections) ? collections : []).map((c, idx) => ({
       id: String(c.id || idx),
       date: c.collection_date ? new Date(c.collection_date).toLocaleDateString("en-GB") : new Date().toLocaleDateString("en-GB"),
       receivedFrom: c.student_name || "Hostel Resident",
@@ -287,7 +287,7 @@ export default function MessManagementPage() {
 
   // Map expenses
   const mappedExpenses: ExpenseRow[] = useMemo(() => {
-    return expenses.map((e, idx) => ({
+    return (Array.isArray(expenses) ? expenses : []).map((e, idx) => ({
       id: String(e.id || idx),
       date: e.expense_date ? new Date(e.expense_date).toLocaleDateString("en-GB") : new Date().toLocaleDateString("en-GB"),
       particulars: e.description || e.particulars || e.category || "Mess Procurement",
@@ -301,7 +301,7 @@ export default function MessManagementPage() {
   const dynamicExpenseHeads = useMemo(() => {
     if (expenses.length === 0) return [];
     const catMap: Record<string, number> = {};
-    expenses.forEach((e) => {
+    (Array.isArray(expenses) ? expenses : []).forEach((e) => {
       const cat = e.category || "Other";
       catMap[cat] = (catMap[cat] || 0) + (Number(e.amount) || 0);
     });
@@ -340,7 +340,7 @@ export default function MessManagementPage() {
       },
       {
         title: "Total Expenses",
-        value: formatCurrency(summary?.total_expenses ?? expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0)),
+        value: formatCurrency(summary?.total_expenses ?? (Array.isArray(expenses) ? expenses : []).reduce((s, e) => s + (Number(e.amount) || 0), 0)),
         footer: `${expenses.length} expense entries`,
         icon: "IndianRupee",
         iconBg: "bg-pink-50",
@@ -349,7 +349,7 @@ export default function MessManagementPage() {
       },
       {
         title: "Total Collection",
-        value: formatCurrency(summary?.total_collections ?? collections.reduce((s, c) => s + (Number(c.amount) || 0), 0)),
+        value: formatCurrency(summary?.total_collections ?? (Array.isArray(collections) ? collections : []).reduce((s, c) => s + (Number(c.amount) || 0), 0)),
         footer: `${collections.length} collection entries`,
         icon: "Wallet",
         iconBg: "bg-blue-50",
@@ -373,7 +373,7 @@ export default function MessManagementPage() {
     const daysMap: Record<string, any> = {};
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    menus.forEach((m, idx) => {
+    (Array.isArray(menus) ? menus : []).forEach((m, idx) => {
       const dateStr = m.menu_date || new Date().toISOString().split("T")[0];
       const d = new Date(dateStr);
       const dayName = Number.isNaN(d.getTime()) ? `Day ${idx + 1}` : dayNames[d.getDay()];
@@ -405,7 +405,7 @@ export default function MessManagementPage() {
     let lunchCount = 0;
     let dinnerCount = 0;
 
-    attendance.forEach((att) => {
+    (Array.isArray(attendance) ? attendance : []).forEach((att) => {
       const m = (att.meal_type || "").toLowerCase();
       if (m.includes("breakfast")) breakfastCount++;
       else if (m.includes("lunch")) lunchCount++;

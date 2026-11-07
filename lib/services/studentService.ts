@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapPaginated } from "@/lib/utils/unwrap";
 import type { StudentCreate, StudentResponse } from "@/types/entities/student";
 
 const BASE = "/api/students";
@@ -18,9 +19,7 @@ export async function listStudents(
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data as StudentResponse[];
-  if (data && Array.isArray(data.items)) return data.items as StudentResponse[];
-  return [];
+  return unwrapArray(data);
 }
 
 export async function listStudentsPaginated(
@@ -39,13 +38,7 @@ export async function listStudentsPaginated(
   }
 
   const data = await response.json();
-  if (data && Array.isArray(data.items)) {
-    return { items: data.items, total: data.total ?? data.items.length };
-  }
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  return { items: [], total: 0 };
+  return unwrapPaginated(data);
 }
 
 export async function getStudent(
@@ -145,7 +138,7 @@ export async function getStudentExamResults(
     throw new Error(data.detail ?? "Failed to fetch student exam results.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getCurrentStudentExamResults(token: string): Promise<any[]> {
@@ -158,7 +151,7 @@ export async function getCurrentStudentExamResults(token: string): Promise<any[]
     throw new Error(data.detail ?? "Failed to fetch your exam results.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getStudentReportCards(
@@ -174,7 +167,7 @@ export async function getStudentReportCards(
     throw new Error(data.detail ?? "Failed to fetch student report cards.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getStudentPerformance(
@@ -198,7 +191,7 @@ export async function getCurrentStudentSubjects(token: string): Promise<any[]> {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) return [];
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getCurrentStudentTimetable(token: string): Promise<any[]> {
@@ -206,7 +199,7 @@ export async function getCurrentStudentTimetable(token: string): Promise<any[]> 
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) return [];
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getCurrentStudentAssignments(token: string): Promise<any[]> {
@@ -214,7 +207,7 @@ export async function getCurrentStudentAssignments(token: string): Promise<any[]
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) return [];
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getCurrentStudentAttendance(token: string): Promise<any> {

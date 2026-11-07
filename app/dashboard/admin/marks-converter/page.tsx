@@ -113,12 +113,22 @@ export default function MarksConverterPage() {
   const [savingRule, setSavingRule] = useState(false);
 
   const refreshHistory = useCallback(async () => {
-    setHistory(await getConversionHistory());
+    try {
+      const res = await getConversionHistory();
+      setHistory(Array.isArray(res) ? res : []);
+    } catch {
+      setHistory([]);
+    }
   }, []);
 
   const refreshRules = useCallback(async () => {
     if (!isAdmin) return;
-    setRules(await getConversionRules());
+    try {
+      const res = await getConversionRules();
+      setRules(Array.isArray(res) ? res : []);
+    } catch {
+      setRules([]);
+    }
   }, [isAdmin]);
 
   useEffect(() => {
@@ -157,14 +167,21 @@ export default function MarksConverterPage() {
   };
   const { source: sourceBoard, target: targetBoard } = getBoardNames(direction, form.state);
   const matchingRule = useMemo(() => {
-    const applicable = rules.filter((rule) =>
+    const safeRules: MarksConversionRule[] = Array.isArray(rules)
+      ? rules
+      : Array.isArray((rules as any)?.items)
+        ? (rules as any).items
+        : Array.isArray((rules as any)?.data)
+          ? (rules as any).data
+          : [];
+    const applicable = safeRules.filter((rule: MarksConversionRule) =>
       rule.is_active && rule.is_official &&
       rule.board_direction === direction && rule.state === form.state &&
       rule.class_grade === form.class_grade && rule.exam_type === form.exam_type &&
       rule.academic_year === form.academic_year &&
       (!rule.subject || rule.subject.toLowerCase() === form.subject.trim().toLowerCase())
     );
-    return applicable.find((rule) => rule.subject) ?? applicable[0];
+    return applicable.find((rule: MarksConversionRule) => rule.subject) ?? applicable[0];
   }, [rules, direction, form]);
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -331,7 +348,7 @@ export default function MarksConverterPage() {
 
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4"><History className="h-5 w-5 text-violet-600" /><div><h2 className="font-semibold text-slate-900">Your conversion history</h2><p className="text-xs text-slate-500">Only your recent conversions are shown.</p></div></div>
-          {loading ? <div className="p-8 text-center text-sm text-slate-500"><LoaderCircle className="mx-auto mb-2 h-5 w-5 animate-spin" />Loading history…</div> : history.length === 0 ? <p className="p-8 text-center text-sm text-slate-500">Your conversions will appear here.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Date</th><th className="px-5 py-3">Direction</th><th className="px-5 py-3">Class / subject</th><th className="px-5 py-3">Before</th><th className="px-5 py-3">Equivalent</th><th className="px-5 py-3">Method</th></tr></thead><tbody className="divide-y divide-slate-100">{history.map((entry) => <tr key={entry.id}><td className="px-5 py-3 text-slate-500">{new Date(entry.created_at).toLocaleDateString()}</td><td className="px-5 py-3 font-medium text-slate-700">{entry.board_direction === "CBSE_TO_STATE" ? "CBSE → State" : "State → CBSE"}</td><td className="px-5 py-3 text-slate-600">{entry.class_grade}{entry.subject ? ` · ${entry.subject}` : ""}</td><td className="px-5 py-3 tabular-nums">{entry.marks_obtained}/{entry.source_max_marks}</td><td className="px-5 py-3 font-semibold tabular-nums">{entry.target_marks}/{entry.target_max_marks}</td><td className="px-5 py-3">{entry.is_official ? <span className="text-emerald-700">Official rule</span> : <span className="text-amber-700">Estimate</span>}</td></tr>)}</tbody></table></div>}
+          {loading ? <div className="p-8 text-center text-sm text-slate-500"><LoaderCircle className="mx-auto mb-2 h-5 w-5 animate-spin" />Loading history…</div> : (Array.isArray(history) ? history : []).length === 0 ? <p className="p-8 text-center text-sm text-slate-500">Your conversions will appear here.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Date</th><th className="px-5 py-3">Direction</th><th className="px-5 py-3">Class / subject</th><th className="px-5 py-3">Before</th><th className="px-5 py-3">Equivalent</th><th className="px-5 py-3">Method</th></tr></thead><tbody className="divide-y divide-slate-100">{(Array.isArray(history) ? history : []).map((entry) => <tr key={entry.id}><td className="px-5 py-3 text-slate-500">{new Date(entry.created_at).toLocaleDateString()}</td><td className="px-5 py-3 font-medium text-slate-700">{entry.board_direction === "CBSE_TO_STATE" ? "CBSE → State" : "State → CBSE"}</td><td className="px-5 py-3 text-slate-600">{entry.class_grade}{entry.subject ? ` · ${entry.subject}` : ""}</td><td className="px-5 py-3 tabular-nums">{entry.marks_obtained}/{entry.source_max_marks}</td><td className="px-5 py-3 font-semibold tabular-nums">{entry.target_marks}/{entry.target_max_marks}</td><td className="px-5 py-3">{entry.is_official ? <span className="text-emerald-700">Official rule</span> : <span className="text-amber-700">Estimate</span>}</td></tr>)}</tbody></table></div>}
         </section>
 
         {isAdmin && <AdminRulePanel rules={rules} options={options} ruleForm={ruleForm} setRuleForm={setRuleForm} editingRuleId={editingRuleId} savingRule={savingRule} error={adminError} onSave={saveRule} onEdit={beginRuleEdit} onToggle={toggleRule} onCancel={() => { setEditingRuleId(null); setRuleForm(INITIAL_RULE); }} />}
@@ -411,7 +428,7 @@ function AdminRulePanel({ rules, options, ruleForm, setRuleForm, editingRuleId, 
         <label className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm text-slate-700"><input type="checkbox" checked={ruleForm.is_official} onChange={(e) => set("is_official", e.target.checked)} className="h-4 w-4 accent-violet-600" /><span><span className="block font-semibold">Verified official rule</span><span className="text-xs text-slate-500">I checked the cited board document.</span></span></label>
         <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-4"><button disabled={savingRule} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{savingRule ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}{editingRuleId ? "Save rule" : "Add rule"}</button>{editingRuleId && <button type="button" onClick={onCancel} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600">Cancel edit</button>}</div>
       </form>
-      <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="w-full min-w-[880px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Board / state</th><th className="px-4 py-3">Class / subject</th><th className="px-4 py-3">Exam / year</th><th className="px-4 py-3">Scale</th><th className="px-4 py-3">Verification</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{rules.length === 0 ? <tr><td colSpan={7} className="px-4 py-7 text-center text-slate-500">No conversion rules have been added.</td></tr> : rules.map((rule) => <tr key={rule.id}><td className="px-4 py-3">{rule.board_direction === "CBSE_TO_STATE" ? "CBSE → State" : "State → CBSE"}<span className="block text-xs text-slate-500">{rule.state}</span></td><td className="px-4 py-3">{rule.class_grade}<span className="block text-xs text-slate-500">{rule.subject || "All subjects"}</span></td><td className="px-4 py-3">{rule.exam_type}<span className="block text-xs text-slate-500">{rule.academic_year}</span></td><td className="px-4 py-3 tabular-nums">{rule.source_max_marks} → {rule.target_max_marks}</td><td className="px-4 py-3">{rule.is_official ? <a className="inline-flex items-center gap-1 text-emerald-700 underline" href={rule.reference_url ?? undefined} target="_blank" rel="noreferrer"><FileCheck2 className="h-3.5 w-3.5" />Verified source</a> : <span className="text-amber-700">Estimate only</span>}</td><td className="px-4 py-3">{rule.is_active ? "Active" : "Inactive"}</td><td className="px-4 py-3"><div className="flex gap-2"><button type="button" onClick={() => onEdit(rule)} aria-label="Edit rule" className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"><Pencil className="h-4 w-4" /></button><button type="button" onClick={() => onToggle(rule)} aria-label={rule.is_active ? "Deactivate rule" : "Activate rule"} className="rounded-lg border border-slate-200 p-2 text-violet-700 hover:bg-violet-50">{rule.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}</button></div></td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="w-full min-w-[880px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Board / state</th><th className="px-4 py-3">Class / subject</th><th className="px-4 py-3">Exam / year</th><th className="px-4 py-3">Scale</th><th className="px-4 py-3">Verification</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{(Array.isArray(rules) ? rules : []).length === 0 ? <tr><td colSpan={7} className="px-4 py-7 text-center text-slate-500">No conversion rules have been added.</td></tr> : (Array.isArray(rules) ? rules : []).map((rule) => <tr key={rule.id}><td className="px-4 py-3">{rule.board_direction === "CBSE_TO_STATE" ? "CBSE → State" : "State → CBSE"}<span className="block text-xs text-slate-500">{rule.state}</span></td><td className="px-4 py-3">{rule.class_grade}<span className="block text-xs text-slate-500">{rule.subject || "All subjects"}</span></td><td className="px-4 py-3">{rule.exam_type}<span className="block text-xs text-slate-500">{rule.academic_year}</span></td><td className="px-4 py-3 tabular-nums">{rule.source_max_marks} → {rule.target_max_marks}</td><td className="px-4 py-3">{rule.is_official ? <a className="inline-flex items-center gap-1 text-emerald-700 underline" href={rule.reference_url ?? undefined} target="_blank" rel="noreferrer"><FileCheck2 className="h-3.5 w-3.5" />Verified source</a> : <span className="text-amber-700">Estimate only</span>}</td><td className="px-4 py-3">{rule.is_active ? "Active" : "Inactive"}</td><td className="px-4 py-3"><div className="flex gap-2"><button type="button" onClick={() => onEdit(rule)} aria-label="Edit rule" className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"><Pencil className="h-4 w-4" /></button><button type="button" onClick={() => onToggle(rule)} aria-label={rule.is_active ? "Deactivate rule" : "Activate rule"} className="rounded-lg border border-slate-200 p-2 text-violet-700 hover:bg-violet-50">{rule.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}</button></div></td></tr>)}</tbody></table></div>
     </div>
   </section>;
 }

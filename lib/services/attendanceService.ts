@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapData } from "@/lib/utils/unwrap";
 import { formatApiError } from "@/lib/services/apiError";
 import type {
   AttendanceCreate,
@@ -75,10 +76,11 @@ export async function getAllAttendance(
   params: AttendanceListParams = {},
 ): Promise<AttendanceResponse[]> {
   const queryString = buildQueryString(params);
-  return request<AttendanceResponse[]>(queryString, {
+  const res = await request<any>(queryString, {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  return unwrapArray<AttendanceResponse>(res);
 }
 
 export async function getAttendanceById(
@@ -106,11 +108,12 @@ export async function createBulkAttendance(
   token: string,
   payload: BulkAttendanceCreate,
 ): Promise<AttendanceResponse[]> {
-  return request<AttendanceResponse[]>("/bulk", {
+  const res = await request<any>("/bulk", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(payload),
   });
+  return unwrapArray<AttendanceResponse>(res);
 }
 
 export async function updateAttendance(
@@ -139,10 +142,11 @@ export async function getAttendanceByStudent(
   token: string,
   studentId: string,
 ): Promise<AttendanceResponse[]> {
-  return request<AttendanceResponse[]>(`/student/${studentId}`, {
+  const res = await request<any>(`/student/${studentId}`, {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  return unwrapArray<AttendanceResponse>(res);
 }
 
 export async function getStudentAttendanceReport(
@@ -189,10 +193,11 @@ export async function getAttendanceByTeacher(
   token: string,
   teacherId: string,
 ): Promise<AttendanceResponse[]> {
-  return request<AttendanceResponse[]>(`/teacher/${teacherId}`, {
+  const res = await request<any>(`/teacher/${teacherId}`, {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  return unwrapArray<AttendanceResponse>(res);
 }
 
 export async function getTeacherAttendanceSummary(
@@ -209,20 +214,22 @@ export async function getAttendanceByClass(
   token: string,
   classId: string,
 ): Promise<AttendanceResponse[]> {
-  return request<AttendanceResponse[]>(`/class/${classId}`, {
+  const res = await request<any>(`/class/${classId}`, {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  return unwrapArray<AttendanceResponse>(res);
 }
 
 export async function getAttendanceByDate(
   token: string,
   attendanceDate: string,
 ): Promise<AttendanceResponse[]> {
-  return request<AttendanceResponse[]>(`/date/${attendanceDate}`, {
+  const res = await request<any>(`/date/${attendanceDate}`, {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  return unwrapArray<AttendanceResponse>(res);
 }
 
 export async function getClassAttendanceSummary(

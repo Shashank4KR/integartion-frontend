@@ -284,25 +284,25 @@ export default function TimetablePage() {
 
   const userById = useMemo(() => {
     const m = new Map<string, UserResponse>();
-    users.forEach((u) => m.set(u.id, u));
+    (Array.isArray(users) ? users : []).forEach((u) => m.set(u.id, u));
     return m;
   }, [users]);
 
   const subjectById = useMemo(() => {
     const m = new Map<string, SubjectResponse>();
-    subjects.forEach((s) => m.set(s.id, s));
+    (Array.isArray(subjects) ? subjects : []).forEach((s) => m.set(s.id, s));
     return m;
   }, [subjects]);
 
   const teacherById = useMemo(() => {
     const m = new Map<string, TeacherResponse>();
-    teachers.forEach((t) => m.set(t.id, t));
+    (Array.isArray(teachers) ? teachers : []).forEach((t) => m.set(t.id, t));
     return m;
   }, [teachers]);
 
   const classById = useMemo(() => {
     const m = new Map<string, ClassResponse>();
-    classes.forEach((c) => m.set(c.id, c));
+    (Array.isArray(classes) ? classes : []).forEach((c) => m.set(c.id, c));
     return m;
   }, [classes]);
 
@@ -409,18 +409,18 @@ export default function TimetablePage() {
   );
 
   const modalSubjectOptions: TimetableOption[] = useMemo(() => {
-    return subjects.map((s) => ({ id: s.id, label: `${s.subject_code} — ${s.subject_name}` }));
+    return (Array.isArray(subjects) ? subjects : []).map((s) => ({ id: s.id, label: `${s.subject_code} — ${s.subject_name}` }));
   }, [subjects]);
 
   const modalTeacherOptions: TimetableOption[] = useMemo(() => {
-    return teachers.map((t) => ({
+    return (Array.isArray(teachers) ? teachers : []).map((t) => ({
       id: t.id,
       label: teacherLabel(t.id),
     }));
   }, [teachers, teacherLabel]);
 
   const academicYearOptions = useMemo(
-    () => [ALL_ACADEMIC_YEARS, ...Array.from(new Set(classes.map((c) => c.academic_year))).sort()],
+    () => [ALL_ACADEMIC_YEARS, ...Array.from(new Set((Array.isArray(classes) ? classes : []).map((c) => c.academic_year))).sort()],
     [classes],
   );
 
@@ -430,7 +430,7 @@ export default function TimetablePage() {
   );
 
   const sectionOptions = useMemo(
-    () => [ALL_SECTIONS, ...Array.from(new Set(classes.map((c) => c.section))).sort()],
+    () => [ALL_SECTIONS, ...Array.from(new Set((Array.isArray(classes) ? classes : []).map((c) => c.section))).sort()],
     [classes],
   );
 
@@ -443,7 +443,7 @@ export default function TimetablePage() {
   }, [filters, classOptions]);
 
   const selectedClassObject = useMemo(
-    () => classes.find((c) => c.id === selectedClassId) ?? null,
+    () => (Array.isArray(classes) ? classes : []).find((c) => c.id === selectedClassId) ?? null,
     [classes, selectedClassId],
   );
 
@@ -512,8 +512,8 @@ export default function TimetablePage() {
 
   const summaryValues: TimetableSummaryValues = useMemo(() => {
     const total = classes.length;
-    const classSet = new Set(timetables.map((t) => t.class_id));
-    const teacherSet = new Set(timetables.map((t) => t.teacher_id));
+    const classSet = new Set((Array.isArray(timetables) ? timetables : []).map((t) => t.class_id));
+    const teacherSet = new Set((Array.isArray(timetables) ? timetables : []).map((t) => t.teacher_id));
     const distinctPeriodKeys = new Set(
       timetables.map((t) => `${normalizeDay(t.day_of_week) ?? "Monday"}|${resolvePeriodLabel(t.period_no, t.start_time)}`),
     );
@@ -531,7 +531,7 @@ export default function TimetablePage() {
 
   const overviewSegments: PreviewDonutSegment[] = useMemo(() => {
     const counts: Record<string, number> = {};
-    timetables.forEach((t) => {
+    (Array.isArray(timetables) ? timetables : []).forEach((t) => {
       const cls = classById.get(t.class_id);
       const level = classLevelOf(cls?.class_name);
       counts[level] = (counts[level] ?? 0) + 1;
@@ -545,7 +545,7 @@ export default function TimetablePage() {
 
   const distributionSegments: PreviewDonutSegment[] = useMemo(() => {
     const counts: Record<string, number> = {};
-    timetables.forEach((t) => {
+    (Array.isArray(timetables) ? timetables : []).forEach((t) => {
       const subj = subjectById.get(t.subject_id);
       const cat = subjectCategoryOf(subj);
       counts[cat] = (counts[cat] ?? 0) + 1;
@@ -648,7 +648,7 @@ export default function TimetablePage() {
       return;
     }
 
-    const classSubjectIds = new Set(classSubjects.map((cs) => cs.id));
+    const classSubjectIds = new Set((Array.isArray(classSubjects) ? classSubjects : []).map((cs) => cs.id));
     if (selectedClassId && classSubjects.length > 0 && !classSubjectIds.has(payload.subject_id)) {
       setFormError("The selected Subject is not assigned to the selected Class.");
       return;

@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 ﻿import type { TeacherSubjectCreate, TeacherSubjectResponse } from "@/types/entities/teacher-subject";
 
 const BASE = "/api/teacher-subjects";
@@ -45,7 +46,12 @@ export async function listTeacherSubjects(token: string): Promise<TeacherSubject
   }
 
   const text = await response.text();
-  return text ? (JSON.parse(text) as TeacherSubjectResponse[]) : [];
+  if (!text) return [];
+  try {
+    return unwrapArray(JSON.parse(text));
+  } catch {
+    return [];
+  }
 }
 
 export async function getTeacherSubject(

@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 ﻿import type { UserCreate, UserResponse } from "@/types/entities/user";
 
 const BASE = "/api/users";
@@ -12,7 +13,8 @@ export async function listUsers(token: string): Promise<UserResponse[]> {
     throw new Error(data.detail ?? "Failed to fetch users.");
   }
 
-  return (await response.json()) as UserResponse[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function getUser(token: string, id: string): Promise<UserResponse> {

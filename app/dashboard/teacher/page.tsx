@@ -122,12 +122,15 @@ export default function TeacherDashboardPage() {
 
         if (!mounted) return;
 
+        const toArr = (val: any) => Array.isArray(val) ? val : Array.isArray(val?.items) ? val.items : Array.isArray(val?.data) ? val.data : [];
+        const safeClassData = toArr(assignedClassData);
+
         // Try getting accurate student count from assigned classes if summary student count is missing
         let computedStudents = resolvedSummary?.total_students ?? 0;
-        if (!computedStudents && assignedClassData.length > 0) {
+        if (!computedStudents && safeClassData.length > 0) {
           try {
             const studentLists = await Promise.all(
-              assignedClassData.slice(0, 5).map((cls) => getClassStudents(token, cls.id).catch(() => []))
+              safeClassData.slice(0, 5).map((cls: any) => getClassStudents(token, cls.id).catch(() => []))
             );
             const uniqueStudentIds = new Set<string>();
             studentLists.flat().forEach((stu: any) => {
@@ -149,8 +152,14 @@ export default function TeacherDashboardPage() {
           setTeacherName(resolvedSummary.teacher_name);
         }
 
+        const safeTimetable = toArr(timetable);
+        const safeSubmissions = toArr(submissions);
+        const safePerformance = toArr(performance);
+        const safeMessages = toArr(messages);
+        const safeEvents = toArr(events);
+
         setClassRows(
-          (assignedClassData || []).map((item) => ({
+          safeClassData.map((item: any) => ({
             id: item.id,
             title: item.class_name,
             description: item.section ? `Section ${item.section}` : "Main Section",
@@ -162,7 +171,7 @@ export default function TeacherDashboardPage() {
         );
 
         setScheduleRows(
-          (timetable || []).slice(0, 6).map((item) => ({
+          safeTimetable.slice(0, 6).map((item: any) => ({
             id: item.id,
             title: item.class_name ? `${item.class_name} · ${item.subject_name || "Assigned Subject"}` : (item.subject_name ?? "Subject Period"),
             description: [item.day_of_week, item.room_no ? `Room ${item.room_no}` : null].filter(Boolean).join(" · "),
@@ -171,7 +180,7 @@ export default function TeacherDashboardPage() {
         );
 
         setReviewRows(
-          (submissions || []).slice(0, 6).map((item) => ({
+          safeSubmissions.slice(0, 6).map((item: any) => ({
             id: item.id,
             title: item.assignment_title,
             description: `${item.student_name}${item.class_name ? ` · ${item.class_name}` : ""}`,
@@ -183,7 +192,7 @@ export default function TeacherDashboardPage() {
         );
 
         setPerformanceRows(
-          (performance || []).slice(0, 6).map((item) => ({
+          safePerformance.slice(0, 6).map((item: any) => ({
             id: item.class_id,
             title: item.class_name,
             description: "Average marks",
@@ -192,7 +201,7 @@ export default function TeacherDashboardPage() {
         );
 
         setMessageRows(
-          (messages || []).slice(0, 6).map((item) => ({
+          safeMessages.slice(0, 6).map((item: any) => ({
             id: item.id,
             title: item.sender_name,
             description: item.message,
@@ -204,7 +213,7 @@ export default function TeacherDashboardPage() {
         );
 
         setEventRows(
-          (events || []).slice(0, 6).map((item) => ({
+          safeEvents.slice(0, 6).map((item: any) => ({
             id: item.id,
             title: item.event_name,
             description: item.description ?? undefined,

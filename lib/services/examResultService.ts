@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapData } from "@/lib/utils/unwrap";
 ﻿import { formatApiError } from "@/lib/services/apiError";
 import type {
   ExamResultCreate,
@@ -49,10 +50,11 @@ async function request<T>(
 export async function getAllExamResults(
   token: string,
 ): Promise<ExamResultResponse[]> {
-  return request<ExamResultResponse[]>("", {
+  const res = await request<any>("", {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  return unwrapArray<ExamResultResponse>(res);
 }
 
 export async function getExamResultById(

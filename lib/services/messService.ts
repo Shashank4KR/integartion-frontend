@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const BASE = "/api/mess";
 
 export async function listMenus(
@@ -12,7 +13,7 @@ export async function listMenus(
     throw new Error(data.detail ?? "Failed to fetch mess menus.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getMenu(
@@ -122,7 +123,7 @@ export async function listCollections(
     throw new Error(data.detail ?? "Failed to fetch mess collections.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function recordCollection(
@@ -158,7 +159,7 @@ export async function listExpenses(
     throw new Error(data.detail ?? "Failed to fetch mess expenses.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function addExpense(
@@ -194,5 +195,5 @@ export async function listMealAttendance(
     throw new Error(data.detail ?? "Failed to fetch meal attendance.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }

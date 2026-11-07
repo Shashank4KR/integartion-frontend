@@ -112,16 +112,18 @@ export default function ClassesPage() {
         listSubjects(token),
       ]);
 
-      if (classData.status === "fulfilled") setClasses(classData.value);
-      if (teacherData.status === "fulfilled") setTeachers(teacherData.value);
-      if (userData.status === "fulfilled") setUsers(userData.value);
-      if (mappingData.status === "fulfilled") setClassSubjects(mappingData.value);
+      const toArr = <T = any>(val: any): T[] => Array.isArray(val) ? val : Array.isArray(val?.items) ? val.items : Array.isArray(val?.data) ? val.data : [];
+
+      if (classData.status === "fulfilled") setClasses(toArr(classData.value));
+      if (teacherData.status === "fulfilled") setTeachers(toArr(teacherData.value));
+      if (userData.status === "fulfilled") setUsers(toArr(userData.value));
+      if (mappingData.status === "fulfilled") setClassSubjects(toArr(mappingData.value));
       else setClassSubjects([]);
-      if (teacherMappingData.status === "fulfilled") setTeacherSubjects(teacherMappingData.value);
+      if (teacherMappingData.status === "fulfilled") setTeacherSubjects(toArr(teacherMappingData.value));
       else setTeacherSubjects([]);
       if (studentData.status === "fulfilled") {
         setStudents(
-          studentData.value.map((s) => ({
+          toArr(studentData.value).map((s: any) => ({
             id: s.id,
             admission_no: s.admission_no,
             first_name: s.first_name ?? null,
@@ -131,10 +133,10 @@ export default function ClassesPage() {
           })),
         );
       }
-      if (timetableData.status === "fulfilled") setTimetables(timetableData.value);
+      if (timetableData.status === "fulfilled") setTimetables(toArr(timetableData.value));
       else setTimetables([]);
       if (subjectData.status === "fulfilled") {
-        setAllSubjects(subjectData.value);
+        setAllSubjects(toArr(subjectData.value));
       }
 
       const hasAnyFailure =
@@ -189,13 +191,13 @@ export default function ClassesPage() {
 
   const userEmailById = useMemo(() => {
     const map = new Map<string, string>();
-    users.forEach((u) => map.set(u.id, u.email));
+    (Array.isArray(users) ? users : []).forEach((u) => map.set(u.id, u.email));
     return map;
   }, [users]);
 
   const teacherById = useMemo(() => {
     const map = new Map<string, TeacherResponse>();
-    teachers.forEach((t) => map.set(t.id, t));
+    (Array.isArray(teachers) ? teachers : []).forEach((t) => map.set(t.id, t));
     return map;
   }, [teachers]);
 
@@ -212,7 +214,7 @@ export default function ClassesPage() {
 
   const teacherOptions = useMemo(
     () =>
-      teachers.map((t) => ({
+      (Array.isArray(teachers) ? teachers : []).map((t) => ({
         id: t.id,
         label: (() => {
           const email = userEmailById.get(t.user_id);
@@ -223,12 +225,12 @@ export default function ClassesPage() {
   );
 
   const academicYearOptions = useMemo(
-    () => Array.from(new Set(classes.map((c) => c.academic_year))).sort(),
+    () => Array.from(new Set((Array.isArray(classes) ? classes : []).map((c) => c.academic_year))).sort(),
     [classes],
   );
 
   const sectionOptions = useMemo(
-    () => Array.from(new Set(classes.map((c) => c.section))).sort(),
+    () => Array.from(new Set((Array.isArray(classes) ? classes : []).map((c) => c.section))).sort(),
     [classes],
   );
 
@@ -239,7 +241,7 @@ export default function ClassesPage() {
   }, []);
 
   const classLevelOptions = useMemo(() => {
-    const levels = Array.from(new Set(classes.map((c) => extractClassLevel(c.class_name))));
+    const levels = Array.from(new Set((Array.isArray(classes) ? classes : []).map((c) => extractClassLevel(c.class_name))));
     return levels.sort((a, b) => {
       const na = parseInt(a, 10);
       const nb = parseInt(b, 10);
@@ -256,7 +258,7 @@ export default function ClassesPage() {
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return classes.filter((c) => {
+    return (Array.isArray(classes) ? classes : []).filter((c) => {
       if (academicYear && c.academic_year !== academicYear) return false;
       if (section && c.section !== section) return false;
       if (teacherId && c.class_teacher_id !== teacherId) return false;
@@ -280,7 +282,7 @@ export default function ClassesPage() {
 
   const classSubjectCount = useMemo(() => {
     const map: Record<string, number> = {};
-    classSubjects.forEach((cs) => {
+    (Array.isArray(classSubjects) ? classSubjects : []).forEach((cs) => {
       map[cs.class_id] = (map[cs.class_id] || 0) + 1;
     });
     return map;
@@ -288,7 +290,7 @@ export default function ClassesPage() {
 
   const classStudentCount = useMemo(() => {
     const map: Record<string, number> = {};
-    students.forEach((s) => {
+    (Array.isArray(students) ? students : []).forEach((s) => {
       if (s.class_id) {
         map[s.class_id] = (map[s.class_id] || 0) + 1;
       }
@@ -327,7 +329,7 @@ export default function ClassesPage() {
   };
 
   const openDelete = (id: string) => {
-    const found = classes.find((c) => c.id === id) ?? null;
+    const found = (Array.isArray(classes) ? classes : []).find((c) => c.id === id) ?? null;
     setDeletingItem(found);
     setFormError(null);
     setIsDeleteOpen(true);
@@ -459,28 +461,28 @@ export default function ClassesPage() {
   };
 
   const selectedClassSubjects = useMemo(
-    () => classSubjects.filter((cs) => cs.class_id === selectedClass?.id),
+    () => (Array.isArray(classSubjects) ? classSubjects : []).filter((cs) => cs.class_id === selectedClass?.id),
     [classSubjects, selectedClass],
   );
 
   const selectedClassTeacherSubjects = useMemo(
-    () => teacherSubjects.filter((ts) => ts.class_id === selectedClass?.id),
+    () => (Array.isArray(teacherSubjects) ? teacherSubjects : []).filter((ts) => ts.class_id === selectedClass?.id),
     [teacherSubjects, selectedClass],
   );
 
   const selectedClassStudents = useMemo(
-    () => students.filter((s) => s.class_id === selectedClass?.id),
+    () => (Array.isArray(students) ? students : []).filter((s) => s.class_id === selectedClass?.id),
     [students, selectedClass],
   );
 
   const selectedClassTimetables = useMemo(
-    () => timetables.filter((t) => t.class_id === selectedClass?.id),
+    () => (Array.isArray(timetables) ? timetables : []).filter((t) => t.class_id === selectedClass?.id),
     [timetables, selectedClass],
   );
 
   const subjectOptions = useMemo(
     () =>
-      allSubjects.map((s) => ({
+      (Array.isArray(allSubjects) ? allSubjects : []).map((s) => ({
         id: s.id,
         label: `${s.subject_code} — ${s.subject_name}`,
       })),
@@ -488,7 +490,7 @@ export default function ClassesPage() {
   );
 
   const classOptions = useMemo(
-    () => classes.map((c) => ({ id: c.id, label: `${c.class_name} — ${c.section}` })),
+    () => (Array.isArray(classes) ? classes : []).map((c) => ({ id: c.id, label: `${c.class_name} — ${c.section}` })),
     [classes],
   );
 
@@ -618,7 +620,7 @@ export default function ClassesPage() {
               selectedClass={selectedClass}
               classSubjects={selectedClassSubjects}
               subjects={allSubjects}
-              teachers={teachers.map((t) => ({ id: t.id, employee_id: t.employee_id, user_id: t.user_id }))}
+              teachers={(Array.isArray(teachers) ? teachers : []).map((t) => ({ id: t.id, employee_id: t.employee_id, user_id: t.user_id }))}
               teacherSubjects={selectedClassTeacherSubjects}
               students={selectedClassStudents}
               classOptions={classOptions}

@@ -30,10 +30,18 @@ export default function UpcomingEvents() {
 
     async function loadEvents() {
       try {
-        const rawEvents = await getUpcomingEvents();
+        const rawEvents = await getUpcomingEvents().catch(() => []);
         if (!mounted) return;
 
-        const formatted = (rawEvents || []).map((e: any) => {
+        const safeEvents = Array.isArray(rawEvents)
+          ? rawEvents
+          : Array.isArray((rawEvents as any)?.items)
+            ? (rawEvents as any).items
+            : Array.isArray((rawEvents as any)?.data)
+              ? (rawEvents as any).data
+              : [];
+
+        const formatted = safeEvents.map((e: any) => {
           const startDateObj = new Date(e.start_date);
           const monthStr = MONTHS[startDateObj.getMonth()] || "EVENT";
           const dayNum = startDateObj.getDate();

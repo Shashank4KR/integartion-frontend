@@ -44,13 +44,13 @@ export default function RolesPage() {
     load();
   }, [token]);
 
-  const filteredRoles = roles.filter((r) => {
+  const filteredRoles = (Array.isArray(roles) ? roles : []).filter((r) => {
     if (!search) return true;
     const term = search.toLowerCase();
     return r.role_name.toLowerCase().includes(term) || r.description?.toLowerCase().includes(term);
   });
 
-  const filteredPermissions = permissions.filter((p) => {
+  const filteredPermissions = (Array.isArray(permissions) ? permissions : []).filter((p) => {
     if (!search) return true;
     const term = search.toLowerCase();
     return p.name.toLowerCase().includes(term) || p.description?.toLowerCase().includes(term);

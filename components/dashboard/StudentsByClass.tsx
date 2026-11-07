@@ -32,21 +32,33 @@ export default function StudentsByClass() {
 
     async function loadData() {
       try {
-        const [classesList, studentsList] = await Promise.all([
+        const [classesRes, studentsRes] = await Promise.all([
           getClasses().catch(() => []),
           getStudents().catch(() => []),
         ]);
 
         if (!mounted) return;
 
-        const mappedClasses = (classesList || []).map((cls: any, index: number) => {
-          const count = (studentsList || []).filter(
+        const classesList = Array.isArray(classesRes)
+          ? classesRes
+          : Array.isArray((classesRes as any)?.items)
+            ? (classesRes as any).items
+            : [];
+
+        const studentsList = Array.isArray(studentsRes)
+          ? studentsRes
+          : Array.isArray((studentsRes as any)?.items)
+            ? (studentsRes as any).items
+            : [];
+
+        const mappedClasses = classesList.map((cls: any, index: number) => {
+          const count = studentsList.filter(
             (s: any) => String(s.class_id) === String(cls.id)
           ).length;
 
           return {
             id: String(cls.id),
-            name: `${cls.class_name}-${cls.section}`,
+            name: `${cls.class_name || "Class"}${cls.section ? `-${cls.section}` : ""}`,
             count,
             color: COLORS[index % COLORS.length],
           };
@@ -58,7 +70,7 @@ export default function StudentsByClass() {
           .slice(0, 10); // Limit to top 10 for clean layout
 
         setClassesStats(sortedClasses);
-        setTotalStudentsCount(studentsList?.length || 0);
+        setTotalStudentsCount(studentsList.length);
       } catch (err) {
         console.error("Failed to load class distribution stats:", err);
       } finally {

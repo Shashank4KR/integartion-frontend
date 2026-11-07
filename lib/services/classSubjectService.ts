@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 import type { ClassSubjectResponse } from "@/types/entities/class-subject";
 
 const BASE = "/api/class-subjects";
@@ -12,7 +13,8 @@ export async function listClassSubjects(token: string): Promise<ClassSubjectResp
     throw new Error(data.detail ?? "Failed to fetch class-subject mappings.");
   }
 
-  return (await response.json()) as ClassSubjectResponse[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function createClassSubject(

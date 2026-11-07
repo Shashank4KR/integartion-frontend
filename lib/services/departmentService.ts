@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapPaginated } from "@/lib/utils/unwrap";
 ﻿import type { DepartmentCreate, DepartmentResponse } from "@/types/entities/department";
 
 const BASE = "/api/departments";
@@ -18,9 +19,7 @@ export async function listDepartments(
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data as DepartmentResponse[];
-  if (data && Array.isArray(data.items)) return data.items as DepartmentResponse[];
-  return [];
+  return unwrapArray(data);
 }
 
 export async function listDepartmentsPaginated(
@@ -39,13 +38,7 @@ export async function listDepartmentsPaginated(
   }
 
   const data = await response.json();
-  if (data && Array.isArray(data.items)) {
-    return { items: data.items, total: data.total ?? data.items.length };
-  }
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  return { items: [], total: 0 };
+  return unwrapPaginated(data);
 }
 
 export async function getDepartment(

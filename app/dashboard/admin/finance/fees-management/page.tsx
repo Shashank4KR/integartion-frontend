@@ -541,11 +541,11 @@ export default function FeesManagementPage() {
 
   const classOptions = useMemo(() => {
     const set = new Set<string>();
-    classesList.forEach((c) => {
+    (Array.isArray(classesList) ? classesList : []).forEach((c) => {
       const name = `${c.class_name || ""}${c.section ? ` - ${c.section}` : ""}`.trim();
       if (name) set.add(name);
     });
-    studentFeeRecords.forEach((r) => {
+    (Array.isArray(studentFeeRecords) ? studentFeeRecords : []).forEach((r) => {
       if (r.classGrade) set.add(r.classGrade);
     });
     return ["All Classes", ...Array.from(set).sort()];
@@ -553,13 +553,13 @@ export default function FeesManagementPage() {
 
   const academicYearOptions = useMemo(() => {
     const set = new Set<string>();
-    classesList.forEach((c) => {
+    (Array.isArray(classesList) ? classesList : []).forEach((c) => {
       if (c.academic_year) set.add(c.academic_year);
     });
     return ["All Academic Years", ...Array.from(set).sort()];
   }, [classesList]);
 
-  const filteredFeeRecords = studentFeeRecords.filter((r) => {
+  const filteredFeeRecords = (Array.isArray(studentFeeRecords) ? studentFeeRecords : []).filter((r) => {
     if (classGrade !== "All Classes" && !r.classGrade.toLowerCase().includes(classGrade.toLowerCase())) {
       return false;
     }

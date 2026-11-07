@@ -87,7 +87,7 @@ export default function StudentsPage() {
     load();
   }, [token]);
 
-  const studentUserIds = useMemo(() => new Set(items.map((i) => i.user_id)), [items]);
+  const studentUserIds = useMemo(() => new Set((Array.isArray(items) ? items : []).map((i) => i.user_id)), [items]);
 
   const studentRoleId = useMemo(
     () => roles.find((r) => r.role_name.trim().toUpperCase() === "STUDENT")?.id ?? "",
@@ -265,10 +265,10 @@ export default function StudentsPage() {
     }
   };
 
-  const className = (id?: string | null) => classes.find((c) => c.id === id)?.class_name ?? "-";
+  const className = (id?: string | null) => (Array.isArray(classes) ? classes : []).find((c) => c.id === id)?.class_name ?? "-";
   const linkedUsername = (id: string) => users.find((u) => u.id === id)?.username ?? null;
 
-  const filtered = items.filter((item) => {
+  const filtered = (Array.isArray(items) ? items : []).filter((item) => {
     if (!search) return true;
     const term = search.toLowerCase();
     const username = linkedUsername(item.user_id)?.toLowerCase() ?? "";
@@ -823,7 +823,7 @@ export default function StudentsPage() {
             className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6d28d9] focus:ring-2 focus:ring-purple-100"
           >
             <option value="">Select class...</option>
-            {classes.map((c) => (
+            {(Array.isArray(classes) ? classes : []).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.class_name} {c.section ? `(${c.section})` : ""}
               </option>

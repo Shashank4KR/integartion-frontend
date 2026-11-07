@@ -78,10 +78,18 @@ export default function RecentActivities() {
 
     async function loadActivities() {
       try {
-        const rawLogs = await getRecentActivities();
+        const rawLogs = await getRecentActivities().catch(() => []);
         if (!mounted) return;
 
-        const formatted = (rawLogs || []).map((log: any) => {
+        const safeLogs = Array.isArray(rawLogs)
+          ? rawLogs
+          : Array.isArray((rawLogs as any)?.items)
+            ? (rawLogs as any).items
+            : Array.isArray((rawLogs as any)?.data)
+              ? (rawLogs as any).data
+              : [];
+
+        const formatted = safeLogs.map((log: any) => {
           const style = getStyleForActivity(log.activity);
           return {
             id: String(log.id),

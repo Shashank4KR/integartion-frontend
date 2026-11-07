@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const BASE = "/api/hostel";
 
 export async function listHostelBlocks(
@@ -12,7 +13,7 @@ export async function listHostelBlocks(
     throw new Error(data.detail ?? "Failed to fetch hostel blocks.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelBlock(
@@ -101,7 +102,7 @@ export async function listRooms(
     throw new Error(data.detail ?? "Failed to fetch rooms.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getRoom(
@@ -211,7 +212,7 @@ export async function listHostelStudents(
     throw new Error(data.detail ?? "Failed to fetch hostel students.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getStudentHostelAllocation(
@@ -239,7 +240,7 @@ export async function getStudentHostelLeaveRequests(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch leave requests.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getStudentHostelComplaints(
@@ -253,7 +254,7 @@ export async function getStudentHostelComplaints(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch complaints.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getStudentHostelNotices(
@@ -266,7 +267,7 @@ export async function getStudentHostelNotices(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch notices.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getStudentHostelFees(
@@ -280,7 +281,7 @@ export async function getStudentHostelFees(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch hostel fees.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelDashboardStats(
@@ -306,7 +307,7 @@ export async function getHostelComplaints(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch complaints.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getComplaintSummary(
@@ -332,7 +333,7 @@ export async function getHostelLeaveRequests(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch leave requests.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getLeaveSummary(
@@ -371,7 +372,7 @@ export async function listMaintenanceRequests(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch maintenance requests.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function createMaintenanceRequest(
@@ -403,7 +404,7 @@ export async function listWorkOrders(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch work orders.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function createWorkOrder(
@@ -448,7 +449,7 @@ export async function listPublishedHostelNotices(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch notices.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelNotices(
@@ -461,7 +462,7 @@ export async function getHostelNotices(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch notices.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelFeeSummary(
@@ -487,7 +488,7 @@ export async function getHostelBlocks(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch blocks.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelRooms(
@@ -500,7 +501,7 @@ export async function getHostelRooms(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch rooms.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelBeds(
@@ -513,7 +514,7 @@ export async function getHostelBeds(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch beds.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelAllocations(
@@ -526,7 +527,7 @@ export async function getHostelAllocations(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch allocations.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getHostelVisitors(
@@ -539,7 +540,7 @@ export async function getHostelVisitors(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch visitors.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function listAvailableBeds(
@@ -552,7 +553,7 @@ export async function listAvailableBeds(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch available beds.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function listHostelBeds(
@@ -565,7 +566,7 @@ export async function listHostelBeds(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch hostel beds.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function checkoutHostelStudent(
@@ -618,7 +619,7 @@ export async function listMessMenus(
     const data = (await response.json()) as { detail?: string };
     throw new Error(data.detail ?? "Failed to fetch mess menu.");
   }
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getMessMenu(

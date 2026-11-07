@@ -216,13 +216,13 @@ export default function AttendancePage() {
   }, [token]);
 
   const academicYearOptions = useMemo(() => {
-    const years = new Set(classes.map((c) => c.academic_year).filter(Boolean));
+    const years = new Set((Array.isArray(classes) ? classes : []).map((c) => c.academic_year).filter(Boolean));
     return Array.from(years).sort().reverse();
   }, [classes]);
 
   const filteredClasses = useMemo(() => {
     if (!selectedAcademicYear) return classes;
-    return classes.filter((c) => c.academic_year === selectedAcademicYear);
+    return (Array.isArray(classes) ? classes : []).filter((c) => c.academic_year === selectedAcademicYear);
   }, [classes, selectedAcademicYear]);
 
   const classOptions = useMemo(() => {
@@ -234,7 +234,7 @@ export default function AttendancePage() {
 
   const effectiveSubjects = useMemo(() => {
     if (classSubjects.length > 0) return classSubjects;
-    return allSubjects.map((s) => ({ id: s.id, subject_name: s.subject_name }));
+    return (Array.isArray(allSubjects) ? allSubjects : []).map((s) => ({ id: s.id, subject_name: s.subject_name }));
   }, [classSubjects, allSubjects]);
 
   const subjectOptions = useMemo(() => {
@@ -246,14 +246,14 @@ export default function AttendancePage() {
   }, [effectiveSubjects]);
 
   const teacherOptions = useMemo(() => {
-    return classTeachers.map((t) => ({
+    return (Array.isArray(classTeachers) ? classTeachers : []).map((t) => ({
       value: t.id,
       label: t.employee_id,
     }));
   }, [classTeachers]);
 
   const selectedClass = useMemo(
-    () => classes.find((c) => c.id === selectedClassId) ?? null,
+    () => (Array.isArray(classes) ? classes : []).find((c) => c.id === selectedClassId) ?? null,
     [classes, selectedClassId],
   );
 
@@ -411,13 +411,13 @@ export default function AttendancePage() {
 
   const studentMap = useMemo(() => {
     const map = new Map<string, StudentResponse>();
-    students.forEach((s) => map.set(s.id, s));
+    (Array.isArray(students) ? students : []).forEach((s) => map.set(s.id, s));
     return map;
   }, [students]);
 
   const tableRows = useMemo<AttendanceTableRow[]>(() => {
     const grouped = new Map<string, AttendanceResponse[]>();
-    attendanceRecords.forEach((record) => {
+    (Array.isArray(attendanceRecords) ? attendanceRecords : []).forEach((record) => {
       const existing = grouped.get(record.student_id) || [];
       existing.push(record);
       grouped.set(record.student_id, existing);
@@ -504,9 +504,9 @@ export default function AttendancePage() {
       return { average: null, present: null, absent: null, late: null };
     }
     const total = attendanceRecords.length;
-    const presentCount = attendanceRecords.filter((r) => r.status === "PRESENT").length;
-    const absentCount = attendanceRecords.filter((r) => r.status === "ABSENT").length;
-    const lateCount = attendanceRecords.filter((r) => r.status === "LATE").length;
+    const presentCount = (Array.isArray(attendanceRecords) ? attendanceRecords : []).filter((r) => r.status === "PRESENT").length;
+    const absentCount = (Array.isArray(attendanceRecords) ? attendanceRecords : []).filter((r) => r.status === "ABSENT").length;
+    const lateCount = (Array.isArray(attendanceRecords) ? attendanceRecords : []).filter((r) => r.status === "LATE").length;
 
     const presentPct = Math.round((presentCount / total) * 100);
     const absentPct = Math.round((absentCount / total) * 100);
@@ -574,7 +574,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     if (!selectedAcademicYear || selectedClassId) return;
-    const inYear = classes.filter((c) => c.academic_year === selectedAcademicYear);
+    const inYear = (Array.isArray(classes) ? classes : []).filter((c) => c.academic_year === selectedAcademicYear);
     if (inYear.length > 0) {
       setSelectedClassId(inYear[0].id);
     }

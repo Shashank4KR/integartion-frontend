@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapPaginated } from "@/lib/utils/unwrap";
 ﻿import type {
   TimetableCreate,
   TimetableResponse,
@@ -22,9 +23,7 @@ export async function listTimetables(
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data as TimetableResponse[];
-  if (data && Array.isArray(data.items)) return data.items as TimetableResponse[];
-  return [];
+  return unwrapArray(data);
 }
 
 export async function listTimetablesPaginated(
@@ -43,13 +42,7 @@ export async function listTimetablesPaginated(
   }
 
   const data = await response.json();
-  if (data && Array.isArray(data.items)) {
-    return { items: data.items, total: data.total ?? data.items.length };
-  }
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  return { items: [], total: 0 };
+  return unwrapPaginated(data);
 }
 
 export async function getTimetable(
@@ -126,7 +119,11 @@ export async function getClassTimetable(
 
   const text = await response.text();
   if (!text) return [];
-  return JSON.parse(text) as TimetableResponse[];
+  try {
+    return unwrapArray(JSON.parse(text));
+  } catch {
+    return [];
+  }
 }
 
 export type StudentTimetableResponse = TimetableResponse & {
@@ -148,7 +145,11 @@ export async function getCurrentStudentTimetable(
 
   const text = await response.text();
   if (!text) return [];
-  return JSON.parse(text) as StudentTimetableResponse[];
+  try {
+    return unwrapArray(JSON.parse(text));
+  } catch {
+    return [];
+  }
 }
 
 export async function deleteTimetable(

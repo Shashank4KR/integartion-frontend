@@ -40,11 +40,16 @@ export default function ParentDashboardPage() {
 
         if (!mounted) return;
 
-        setChildren(childrenData || []);
-        setFeedbacks(fbList || []);
+        const toArr = (val: any) => Array.isArray(val) ? val : Array.isArray(val?.items) ? val.items : Array.isArray(val?.data) ? val.data : [];
+        const safeChildren = toArr(childrenData);
+        const safeAnn = toArr(annList);
+        const safeFb = toArr(fbList);
+
+        setChildren(safeChildren);
+        setFeedbacks(safeFb);
 
         setNotices(
-          annList.slice(0, 5).map((ann: any) => ({
+          safeAnn.slice(0, 5).map((ann: any) => ({
             id: ann.id,
             title: ann.title,
             description: ann.content,

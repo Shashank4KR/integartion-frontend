@@ -176,6 +176,7 @@ export function clearAuth(): void {
   try {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem("nomera_token");
     localStorage.removeItem("nomera_student");
     localStorage.removeItem(AVATAR_STORAGE_KEY);
     localStorage.removeItem("nomera_notifications_viewed_at");
@@ -185,6 +186,8 @@ export function clearAuth(): void {
     console.error("Failed to clear local storage during logout:", e);
   }
   deleteCookie(ROLE_COOKIE_KEY);
+  deleteCookie(TOKEN_STORAGE_KEY);
+  deleteCookie("nomera_token");
 }
 
 export function logout(redirectPath = "/login"): void {

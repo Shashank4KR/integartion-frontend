@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapPaginated } from "@/lib/utils/unwrap";
 import type { ClassCreate, ClassResponse, ClassUpdate } from "@/types/entities/class";
 import type { ClassSubjectSummary } from "@/types/entities/class-subject-summary";
 import type { ClassTeacherSummary } from "@/types/entities/class-teacher-summary";
@@ -20,9 +21,7 @@ export async function listClasses(
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data as ClassResponse[];
-  if (data && Array.isArray(data.items)) return data.items as ClassResponse[];
-  return [];
+  return unwrapArray(data);
 }
 
 export async function listClassesPaginated(
@@ -41,13 +40,7 @@ export async function listClassesPaginated(
   }
 
   const data = await response.json();
-  if (data && Array.isArray(data.items)) {
-    return { items: data.items, total: data.total ?? data.items.length };
-  }
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  return { items: [], total: 0 };
+  return unwrapPaginated(data);
 }
 
 export async function getClass(
@@ -134,7 +127,8 @@ export async function getClassSubjects(
     throw new Error(data.detail ?? "Failed to fetch class subjects.");
   }
 
-  return (await response.json()) as ClassSubjectSummary[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function getClassTeachers(
@@ -150,7 +144,8 @@ export async function getClassTeachers(
     throw new Error(data.detail ?? "Failed to fetch class teachers.");
   }
 
-  return (await response.json()) as ClassTeacherSummary[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function getClassStudents(
@@ -166,7 +161,8 @@ export async function getClassStudents(
     throw new Error(data.detail ?? "Failed to fetch class students.");
   }
 
-  return (await response.json()) as any[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 

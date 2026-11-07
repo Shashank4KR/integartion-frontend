@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const LEAVE_REQUESTS_BASE = "/api/leave-requests";
 const LEAVE_TYPES_BASE = "/api/leave-types";
 
@@ -15,7 +16,7 @@ export async function listLeaveRequests(
     throw new Error(data.detail ?? "Failed to fetch leave requests.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getLeaveRequest(
@@ -130,7 +131,7 @@ export async function getPendingLeaveRequests(
     throw new Error(data.detail ?? "Failed to fetch pending leave requests.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getLeaveSummary(
@@ -178,7 +179,7 @@ export async function listLeaveTypes(
     throw new Error(data.detail ?? "Failed to fetch leave types.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getLeaveType(

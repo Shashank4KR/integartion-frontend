@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 ﻿const BASE = "/api/students";
 
 export async function listStudentInvoices(
@@ -13,7 +14,7 @@ export async function listStudentInvoices(
     throw new Error(data.detail ?? "Failed to fetch fee invoices.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function listStudentPayments(
@@ -29,7 +30,7 @@ export async function listStudentPayments(
     throw new Error(data.detail ?? "Failed to fetch payments.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getStudentFeeSummary(

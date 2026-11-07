@@ -1,3 +1,4 @@
+import { toSafeArray } from "@/lib/utils/unwrap";
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -95,11 +96,11 @@ export default function SubjectsPage() {
         setSubjects(subjectData.value);
       }
       if (deptData.status === "fulfilled") {
-        setDepartments(deptData.value.map((d) => ({ id: d.id, department_name: d.department_name })));
+        setDepartments(toSafeArray(deptData.value).map((d: any) => ({ id: d.id, department_name: d.department_name })));
       }
       if (classData.status === "fulfilled") {
         setClasses(
-          classData.value.map((c) => ({
+          toSafeArray(classData.value).map((c: any) => ({
             id: c.id,
             class_name: c.class_name,
             section: c.section,
@@ -107,21 +108,23 @@ export default function SubjectsPage() {
           })),
         );
       }
+      
+
       if (mappingData.status === "fulfilled") {
-        setClassSubjects(mappingData.value);
+        setClassSubjects(toSafeArray(mappingData.value));
       } else {
         setClassSubjects([]);
       }
       if (userData.status === "fulfilled") {
-        setUsers(userData.value);
+        setUsers(toSafeArray(userData.value));
       }
       if (teacherData.status === "fulfilled") {
         const emailById = new Map<string, string>();
         if (userData.status === "fulfilled") {
-          userData.value.forEach((u) => emailById.set(u.id, u.email));
+          toSafeArray(userData.value).forEach((u: any) => emailById.set(u.id, u.email));
         }
         setTeachers(
-          teacherData.value.map((t) => ({
+          toSafeArray(teacherData.value).map((t: any) => ({
             id: t.id,
             employee_id: t.employee_id,
             user_id: t.user_id,
@@ -130,7 +133,7 @@ export default function SubjectsPage() {
         );
       }
       if (teacherMappingData.status === "fulfilled") {
-        setTeacherSubjects(teacherMappingData.value);
+        setTeacherSubjects(toSafeArray(teacherMappingData.value));
       } else {
         setTeacherSubjects([]);
       }
@@ -155,7 +158,7 @@ export default function SubjectsPage() {
 
   const classCountBySubject = useMemo(() => {
     const map: Record<string, number> = {};
-    classSubjects.forEach((cs) => {
+    (Array.isArray(classSubjects) ? classSubjects : []).forEach((cs) => {
       map[cs.subject_id] = (map[cs.subject_id] || 0) + 1;
     });
     return map;
@@ -163,25 +166,25 @@ export default function SubjectsPage() {
 
   const teacherCountBySubject = useMemo(() => {
     const map: Record<string, number> = {};
-    teacherSubjects.forEach((ts) => {
+    (Array.isArray(teacherSubjects) ? teacherSubjects : []).forEach((ts) => {
       map[ts.subject_id] = (map[ts.subject_id] || 0) + 1;
     });
     return map;
   }, [teacherSubjects]);
 
   const classOptions = useMemo(
-    () => classes.map((c) => ({ id: c.id, label: `${c.class_name} — ${c.section}` })),
+    () => (Array.isArray(classes) ? classes : []).map((c) => ({ id: c.id, label: `${c.class_name} — ${c.section}` })),
     [classes],
   );
 
   const uniqueAcademicYears = useMemo(() => {
-    const years = new Set(classes.map((c) => c.academic_year).filter(Boolean));
+    const years = new Set((Array.isArray(classes) ? classes : []).map((c) => c.academic_year).filter(Boolean));
     return Array.from(years).sort().reverse();
   }, [classes]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return subjects.filter((s) => {
+    return (Array.isArray(subjects) ? subjects : []).filter((s) => {
       if (term) {
         const haystack = `${s.subject_code} ${s.subject_name}`.toLowerCase();
         if (!haystack.includes(term)) return false;
@@ -195,7 +198,7 @@ export default function SubjectsPage() {
       if (academicYearFilter) {
         const hasMapping = classSubjects.some((cs) => {
           if (cs.subject_id !== s.id) return false;
-          const cls = classes.find((c) => c.id === cs.class_id);
+          const cls = (Array.isArray(classes) ? classes : []).find((c) => c.id === cs.class_id);
           return cls?.academic_year === academicYearFilter;
         });
         if (!hasMapping) return false;
@@ -241,7 +244,7 @@ export default function SubjectsPage() {
   };
 
   const openDelete = (id: string) => {
-    const found = subjects.find((s) => s.id === id) ?? null;
+    const found = (Array.isArray(subjects) ? subjects : []).find((s) => s.id === id) ?? null;
     setDeletingItem(found);
     setFormError(null);
     setIsDeleteOpen(true);
@@ -358,7 +361,7 @@ export default function SubjectsPage() {
   const exportCSV = () => {
     const headers = ["Subject Code", "Subject Name", "Subject Type", "Department", "Classes", "Credits / Periods", "Status"];
     const rows = paginated.map((s) => {
-      const deptName = departments.find((d) => d.id === s.department_id)?.department_name || "—";
+      const deptName = (Array.isArray(departments) ? departments : []).find((d) => d.id === s.department_id)?.department_name || "—";
       const creditsStr = s.credits != null ? `${s.credits} Credits` : "—";
       return [
         s.subject_code,
@@ -387,7 +390,7 @@ export default function SubjectsPage() {
     return classSubjects
       .filter((cs) => cs.subject_id === viewingItem.id)
       .map((cs) => {
-        const cls = classes.find((c) => c.id === cs.class_id);
+        const cls = (Array.isArray(classes) ? classes : []).find((c) => c.id === cs.class_id);
         return cls
           ? { id: cls.id, class_name: cls.class_name, section: cls.section, academic_year: cls.academic_year }
           : null;

@@ -27,23 +27,6 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
     event.preventDefault();
     if (isLoading) return;
 
-    // Safety check: if an account is already logged in on this browser, redirect to its dashboard
-    const activeToken = getToken();
-    const activeUser = getStoredUser();
-    if (activeToken && activeUser) {
-      const activeRole = (
-        activeUser.role?.role_name ||
-        (activeUser as any)?.role_name ||
-        activeUser.role_id ||
-        ""
-      )
-        .trim()
-        .toUpperCase();
-      const target = getDashboardPathForRole(activeRole) || "/dashboard";
-      router.replace(target);
-      return;
-    }
-
     setError(null);
     if (!loginIdOrEmail.trim() || !password) {
       setError("Enter your login ID or email and password.");
@@ -88,7 +71,7 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
       clearAuth();
       saveToken(token);
       saveUser(user);
-      router.push(targetPath);
+      window.location.href = targetPath;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
     } finally {

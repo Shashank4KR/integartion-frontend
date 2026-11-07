@@ -145,14 +145,14 @@ export default function ExaminationsPage() {
 
   const classMap = useMemo(() => {
     const map = new Map<string, string>();
-    classes.forEach((c) => {
+    (Array.isArray(classes) ? classes : []).forEach((c) => {
       map.set(c.id, `${c.class_name} — ${c.section}`);
     });
     return map;
   }, [classes]);
 
   const rows = useMemo<ExaminationRow[]>(() => {
-    return exams.map((exam) => {
+    return (Array.isArray(exams) ? exams : []).map((exam) => {
       const now = new Date();
       const start = new Date(exam.start_date);
       const end = new Date(exam.end_date);
@@ -443,8 +443,8 @@ export default function ExaminationsPage() {
             onDateRangeStartChange={(value) => setFilters((f) => ({ ...f, dateRangeStart: value }))}
             onDateRangeEndChange={(value) => setFilters((f) => ({ ...f, dateRangeEnd: value }))}
             onDateRangeClear={() => setFilters((f) => ({ ...f, dateRangeStart: "", dateRangeEnd: "" }))}
-            classOptions={classes.map((c) => ({ id: c.id, label: `${c.class_name} — ${c.section}` }))}
-            examTypeOptions={Array.from(new Set(exams.map((e) => e.exam_type)))}
+            classOptions={(Array.isArray(classes) ? classes : []).map((c) => ({ id: c.id, label: `${c.class_name} — ${c.section}` }))}
+            examTypeOptions={Array.from(new Set((Array.isArray(exams) ? exams : []).map((e) => e.exam_type)))}
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

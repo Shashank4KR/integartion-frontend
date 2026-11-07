@@ -107,7 +107,7 @@ export default function HostelStudentsPage() {
 
   const studentMap = useMemo(() => {
     const map = new Map<string, { name: string; roll: string; classLabel?: string }>();
-    students.forEach((s) => {
+    (Array.isArray(students) ? students : []).forEach((s) => {
       const directName = [s.first_name, s.last_name].filter(Boolean).join(" ").trim();
       const userName = s.user?.full_name || [s.user?.first_name, s.user?.last_name].filter(Boolean).join(" ").trim();
       const name = directName || userName || s.user?.email || `Student ${s.admission_no ?? s.id?.slice(0, 8)}`;
@@ -121,7 +121,7 @@ export default function HostelStudentsPage() {
 
   const bedMap = useMemo(() => {
     const map = new Map<string, string>();
-    beds.forEach((b) => {
+    (Array.isArray(beds) ? beds : []).forEach((b) => {
       if (b.id) {
         map.set(b.id, b.bed_no ? `Bed ${b.bed_no}` : `Bed ${String(b.id).slice(0, 8)}`);
       }
@@ -215,7 +215,7 @@ export default function HostelStudentsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {allocations.map((row) => {
+                      {(Array.isArray(allocations) ? allocations : []).map((row) => {
                         const studentInfo = studentMap.get(row.student_id);
                         const bedLabel = row.bed?.bed_no ? `Bed ${row.bed.bed_no}` : (bedMap.get(row.bed_id) ?? (row.bed_id ? `Bed ${String(row.bed_id).slice(0, 8)}` : "-"));
                         return (

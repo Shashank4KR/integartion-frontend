@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapData } from "@/lib/utils/unwrap";
 ﻿import { formatApiError } from "@/lib/services/apiError";
 import type {
   ExamCreate,
@@ -50,10 +51,11 @@ async function request<T>(
 export async function getAllExams(
   token: string,
 ): Promise<ExamResponse[]> {
-  return request<ExamResponse[]>("", {
+  const res = await request<any>("", {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
+  return unwrapArray<ExamResponse>(res);
 }
 
 export async function getExamById(
@@ -103,12 +105,13 @@ export async function getExamToppers(
   token: string,
   examId: string,
 ): Promise<ExamTopper[]> {
-  return request<ExamTopper[]>(
+  const res = await request<any>(
     `/${encodeURIComponent(examId)}/toppers`,
     {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     },
   );
+  return unwrapArray<ExamTopper>(res);
 }
 

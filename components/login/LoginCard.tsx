@@ -2,12 +2,10 @@
 
 import { Globe2, ShieldCheck, ChevronDown, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import LoginForm from "./LoginForm";
-import { getToken, getStoredUser, getDashboardPathForRole } from "@/lib/auth";
+import { getToken, getStoredUser, getDashboardPathForRole, clearAuth } from "@/lib/auth";
 
 export default function LoginCard() {
-  const router = useRouter();
   const [language, setLanguage] = useState("English");
   const [existingSession, setExistingSession] = useState<{
     username: string;
@@ -16,39 +14,53 @@ export default function LoginCard() {
   } | null>(null);
 
   useEffect(() => {
-    const checkActiveSession = () => {
-      const token = getToken();
-      const user = getStoredUser();
-      if (token && user) {
-        const role = (
-          user.role?.role_name ||
-          (user as any)?.role_name ||
-          user.role_id ||
-          ""
-        )
-          .trim()
-          .toUpperCase();
-        const targetPath = getDashboardPathForRole(role) || "/dashboard";
-        setExistingSession({
-          username: user.username || "Active User",
-          role: user.role?.role_name || role,
-          path: targetPath,
+    if (typeof window === "undefined") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectParam = searchParams.get("redirect");
+    const reasonParam = searchParams.get("reason");
+
+    // If redirected to login, the server rejected the session -> clear stale local data immediately
+    if (redirectParam || reasonParam) {
+      clearAuth();
+      setExistingSession(null);
+      return;
+    }
+
+    const token = getToken();
+    const user = getStoredUser();
+
+    if (token && user) {
+      // Validate that the session is genuinely active with the backend before auto-redirecting
+      fetch("/api/auth/me")
+        .then((res) => {
+          if (!res.ok) {
+            clearAuth();
+            setExistingSession(null);
+          } else {
+            const role = (
+              user.role?.role_name ||
+              (user as any)?.role_name ||
+              user.role_id ||
+              ""
+            )
+              .trim()
+              .toUpperCase();
+            const targetPath = getDashboardPathForRole(role) || "/dashboard";
+            setExistingSession({
+              username: user.username || "Active User",
+              role: user.role?.role_name || role,
+              path: targetPath,
+            });
+            window.location.href = targetPath;
+          }
+        })
+        .catch(() => {
+          clearAuth();
+          setExistingSession(null);
         });
-        router.replace(targetPath);
-      }
-    };
-
-    checkActiveSession();
-
-    // Cross-tab synchronization: if another tab logs in, redirect this tab immediately
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "nomera_token" || e.key === "nomera_user") {
-        checkActiveSession();
-      }
-    };
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [router]);
+    }
+  }, []);
 
   if (existingSession) {
     return (
@@ -64,6 +76,16 @@ export default function LoginCard() {
           <Loader2 className="w-4 h-4 animate-spin text-[#7c3aed]" />
           Redirecting to your active workspace...
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            clearAuth();
+            setExistingSession(null);
+          }}
+          className="mt-3 block w-full text-center text-xs font-semibold text-purple-700 hover:text-purple-900 underline cursor-pointer"
+        >
+          Sign in with a different account
+        </button>
       </div>
     );
   }

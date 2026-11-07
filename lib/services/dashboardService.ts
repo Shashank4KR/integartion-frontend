@@ -1,3 +1,10 @@
+function toArray<T = any>(res: any): T[] {
+  if (Array.isArray(res)) return res;
+  if (res && Array.isArray((res as any).items)) return (res as any).items;
+  if (res && Array.isArray((res as any).data)) return (res as any).data;
+  return [];
+}
+
 import { clearAuth, getToken } from "@/lib/auth";
 import type { UserResponse } from "@/types/auth";
 
@@ -135,19 +142,23 @@ export async function getTeacherEvents(teacherId: string): Promise<any[]> {
 }
 
 export async function getRecentActivities(): Promise<any[]> {
-  return requestJson(`/api/audit/recent-activities`);
+  const res = await requestJson(`/api/audit/recent-activities`);
+  return toArray(res);
 }
 
 export async function getUpcomingEvents(): Promise<any[]> {
-  return requestJson(`/api/events/upcoming`);
+  const res = await requestJson(`/api/events/upcoming`);
+  return toArray(res);
 }
 
 export async function getClasses(): Promise<any[]> {
-  return requestJson(`/api/classes`);
+  const res = await requestJson(`/api/classes`);
+  return toArray(res);
 }
 
 export async function getStudents(): Promise<any[]> {
-  return requestJson(`/api/students`);
+  const res = await requestJson(`/api/students`);
+  return toArray(res);
 }
 
 export async function getStudentTimetable(): Promise<any[]> {

@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapPaginated } from "@/lib/utils/unwrap";
 import type { ParentCreate, ParentResponse } from "@/types/entities/parent";
 
 const BASE = "/api/parents";
@@ -18,9 +19,7 @@ export async function listParents(
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data as ParentResponse[];
-  if (data && Array.isArray(data.items)) return data.items as ParentResponse[];
-  return [];
+  return unwrapArray(data);
 }
 
 export async function listParentsPaginated(
@@ -39,13 +38,7 @@ export async function listParentsPaginated(
   }
 
   const data = await response.json();
-  if (data && Array.isArray(data.items)) {
-    return { items: data.items, total: data.total ?? data.items.length };
-  }
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  return { items: [], total: 0 };
+  return unwrapPaginated(data);
 }
 
 export async function getParent(

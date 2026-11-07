@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 ﻿export async function listAnnouncements(token: string): Promise<any[]> {
   const response = await fetch("/api/announcements", {
     headers: { Authorization: `Bearer ${token}` },
@@ -8,6 +9,7 @@
     throw new Error(data.detail ?? "Failed to fetch announcements.");
   }
 
-  return (await response.json()) as any[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 

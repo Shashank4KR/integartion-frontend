@@ -291,9 +291,9 @@ export default function InvoicesPage() {
   }, [invoices, invoiceType, classGrade, status, search, currentPage]);
 
   const invoiceTotals = useMemo(() => {
-    const amount = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
-    const paid = invoices.reduce((sum, invoice) => sum + invoice.paid, 0);
-    const balance = invoices.reduce((sum, invoice) => sum + invoice.balance, 0);
+    const amount = (Array.isArray(invoices) ? invoices : []).reduce((sum, invoice) => sum + invoice.amount, 0);
+    const paid = (Array.isArray(invoices) ? invoices : []).reduce((sum, invoice) => sum + invoice.paid, 0);
+    const balance = (Array.isArray(invoices) ? invoices : []).reduce((sum, invoice) => sum + invoice.balance, 0);
     return { amount, paid, balance };
   }, [invoices]);
 

@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const BASE = "/api/qr-attendance";
 
 export async function listQRSessions(
@@ -12,7 +13,7 @@ export async function listQRSessions(
     throw new Error(data.detail ?? "Failed to fetch QR sessions.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function createQRSession(

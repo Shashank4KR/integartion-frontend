@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const BASE = "/api/visitors";
 
 export async function listVisitors(
@@ -12,7 +13,7 @@ export async function listVisitors(
     throw new Error(data.detail ?? "Failed to fetch visitors.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getVisitor(

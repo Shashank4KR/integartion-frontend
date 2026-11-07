@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const API_BASE = "/api";
 const BASE = "/api/students";
 
@@ -70,7 +71,7 @@ export async function getAllAssignments(token: string): Promise<AssignmentItem[]
     throw new Error(data.detail ?? "Failed to fetch assignments.");
   }
 
-  return (await response.json()) as AssignmentItem[];
+  return unwrapArray(await response.json());
 }
 
 export async function getAssignmentById(token: string, id: string): Promise<AssignmentItem> {
@@ -133,7 +134,7 @@ export async function getAssignmentSubmissions(
     throw new Error(data.detail ?? "Failed to fetch submissions.");
   }
 
-  return (await response.json()) as AssignmentSubmissionItem[];
+  return unwrapArray(await response.json());
 }
 
 export async function getAssignmentSummary(
@@ -205,7 +206,7 @@ export async function listStudentAssignments(
     throw new Error(data.detail ?? "Failed to fetch student assignments.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function listCurrentStudentAssignments(
@@ -220,7 +221,7 @@ export async function listCurrentStudentAssignments(
     throw new Error(data.detail ?? "Failed to fetch your assignments.");
   }
 
-  return (await response.json()) as StudentAssignment[];
+  return unwrapArray(await response.json());
 }
 
 export async function listStudentSubmissions(
@@ -236,7 +237,7 @@ export async function listStudentSubmissions(
     throw new Error(data.detail ?? "Failed to fetch student submissions.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function listCurrentStudentSubmissions(
@@ -251,5 +252,5 @@ export async function listCurrentStudentSubmissions(
     throw new Error(data.detail ?? "Failed to fetch your submissions.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }

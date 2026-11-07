@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const BASE = "/api/academic-calendar";
 
 export async function listEvents(
@@ -12,7 +13,8 @@ export async function listEvents(
     throw new Error(data.detail ?? "Failed to fetch calendar events.");
   }
 
-  return (await response.json()) as any[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function getEvent(

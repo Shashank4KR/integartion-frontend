@@ -249,10 +249,10 @@ export default function SalaryManagementPage() {
   }, [salaries, department, employeeType, designation, paymentStatus, search]);
 
   const salarySummaryCards = useMemo(() => {
-    const totalPayroll = salaries.reduce((sum, salary) => sum + salary.netSalary, 0);
-    const paidCount = salaries.filter((salary) => salary.status === "Paid").length;
-    const pendingCount = salaries.filter((salary) => salary.status === "Pending").length;
-    const partialCount = salaries.filter((salary) => salary.status === "Partial").length;
+    const totalPayroll = (Array.isArray(salaries) ? salaries : []).reduce((sum, salary) => sum + salary.netSalary, 0);
+    const paidCount = (Array.isArray(salaries) ? salaries : []).filter((salary) => salary.status === "Paid").length;
+    const pendingCount = (Array.isArray(salaries) ? salaries : []).filter((salary) => salary.status === "Pending").length;
+    const partialCount = (Array.isArray(salaries) ? salaries : []).filter((salary) => salary.status === "Partial").length;
 
     return [
       {

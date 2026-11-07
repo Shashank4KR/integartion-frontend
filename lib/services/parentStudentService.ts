@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapPaginated } from "@/lib/utils/unwrap";
 ﻿import type {
   ParentStudentCreate,
   ParentStudentResponse,
@@ -21,9 +22,7 @@ export async function listParentStudents(
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data as ParentStudentResponse[];
-  if (data && Array.isArray(data.items)) return data.items as ParentStudentResponse[];
-  return [];
+  return unwrapArray(data);
 }
 
 export async function listParentStudentsPaginated(
@@ -42,13 +41,7 @@ export async function listParentStudentsPaginated(
   }
 
   const data = await response.json();
-  if (data && Array.isArray(data.items)) {
-    return { items: data.items, total: data.total ?? data.items.length };
-  }
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  return { items: [], total: 0 };
+  return unwrapPaginated(data);
 }
 
 export async function getParentStudent(

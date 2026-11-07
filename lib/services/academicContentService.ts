@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapData } from "@/lib/utils/unwrap";
 const API_BASE = "/api";
 
 export type LessonPlan = {
@@ -79,7 +80,7 @@ export async function getLessonPlans(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch lesson plans");
-  return res.json();
+  return unwrapArray(await res.json());
 }
 
 export async function createLessonPlan(token: string, payload: Partial<LessonPlan>): Promise<LessonPlan> {
@@ -120,7 +121,7 @@ export async function getContentResources(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch content resources");
-  return res.json();
+  return unwrapArray(await res.json());
 }
 
 export async function createContentResource(
@@ -164,7 +165,7 @@ export async function getChapterNotes(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch chapter notes");
-  return res.json();
+  return unwrapArray(await res.json());
 }
 
 export async function uploadChapterNote(token: string, formData: FormData): Promise<ChapterNote> {
@@ -197,7 +198,7 @@ export async function getStudentFeedback(token: string, studentId?: string): Pro
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch student feedback");
-  return res.json();
+  return unwrapArray(await res.json());
 }
 
 export async function createStudentFeedback(

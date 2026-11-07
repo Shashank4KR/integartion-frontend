@@ -68,14 +68,16 @@ export default function StudentDashboardPage() {
 
         if (!mounted) return;
 
+        const toArr = (val: any) => Array.isArray(val) ? val : Array.isArray(val?.items) ? val.items : Array.isArray(val?.data) ? val.data : [];
+
         setProfile(profData);
-        setTimetable(ttData || []);
-        setAssignments(assignData || []);
-        setExamResults(examData || []);
+        setTimetable(toArr(ttData));
+        setAssignments(toArr(assignData));
+        setExamResults(toArr(examData));
         setAttendance(attData);
         setFees(feeData);
-        setSubjects(subjData || []);
-        setNotices(annData || []);
+        setSubjects(toArr(subjData));
+        setNotices(toArr(annData));
       } catch (err) {
         console.error("Error loading student dashboard data:", err);
       } finally {

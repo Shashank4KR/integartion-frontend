@@ -1,3 +1,4 @@
+import { unwrapArray } from "@/lib/utils/unwrap";
 const BASE = "/api/alumni";
 
 export async function listAlumni(
@@ -12,7 +13,7 @@ export async function listAlumni(
     throw new Error(data.detail ?? "Failed to fetch alumni.");
   }
 
-  return (await response.json()) as any[];
+  return unwrapArray(await response.json());
 }
 
 export async function getAlumni(

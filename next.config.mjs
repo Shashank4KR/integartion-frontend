@@ -1,4 +1,18 @@
 /** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV !== "production";
+
+const cspHeader = `
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""};
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  font-src 'self' data: https:;
+  connect-src 'self' https: wss:;
+  frame-ancestors 'none';
+`
+  .replace(/\s{2,}/g, " ")
+  .trim();
+
 const nextConfig = {
   output: "standalone",
   experimental: {
@@ -14,8 +28,7 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors 'none';",
+            value: cspHeader,
           },
           {
             key: "X-Content-Type-Options",

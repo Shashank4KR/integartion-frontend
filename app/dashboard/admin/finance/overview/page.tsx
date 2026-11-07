@@ -588,11 +588,11 @@ export default function FinanceOverviewPage() {
 
   const classOptions = useMemo(() => {
     const set = new Set<string>();
-    classesList.forEach((c) => {
+    (Array.isArray(classesList) ? classesList : []).forEach((c) => {
       const name = `${c.class_name || ""}${c.section ? ` - ${c.section}` : ""}`.trim();
       if (name) set.add(name);
     });
-    transactions.forEach((t) => {
+    (Array.isArray(transactions) ? transactions : []).forEach((t) => {
       if (t.classGrade && t.classGrade !== "Expense" && t.classGrade !== "Refund") {
         set.add(t.classGrade);
       }
@@ -602,10 +602,10 @@ export default function FinanceOverviewPage() {
 
   const academicYearOptions = useMemo(() => {
     const set = new Set<string>();
-    classesList.forEach((c) => {
+    (Array.isArray(classesList) ? classesList : []).forEach((c) => {
       if (c.academic_year) set.add(c.academic_year);
     });
-    transactions.forEach((t) => {
+    (Array.isArray(transactions) ? transactions : []).forEach((t) => {
       if (t.academicYear) set.add(t.academicYear);
     });
     return ["All Academic Years", ...Array.from(set).sort()];
@@ -613,11 +613,11 @@ export default function FinanceOverviewPage() {
 
   const feeTypeOptions = useMemo(() => {
     const set = new Set<string>();
-    feeStructuresList.forEach((f) => {
+    (Array.isArray(feeStructuresList) ? feeStructuresList : []).forEach((f) => {
       const label = f.fee_type || f.name;
       if (label) set.add(label);
     });
-    transactions.forEach((t) => {
+    (Array.isArray(transactions) ? transactions : []).forEach((t) => {
       if (t.category && t.type !== "Expense") set.add(t.category);
       if (t.feeType) set.add(t.feeType);
     });
@@ -625,7 +625,7 @@ export default function FinanceOverviewPage() {
   }, [feeStructuresList, transactions]);
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((t) => {
+    return (Array.isArray(transactions) ? transactions : []).filter((t) => {
       if (classGrade !== "All Classes") {
         if (!t.classGrade || !t.classGrade.toLowerCase().includes(classGrade.toLowerCase())) {
           return false;

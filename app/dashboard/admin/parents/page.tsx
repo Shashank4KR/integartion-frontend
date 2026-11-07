@@ -65,7 +65,7 @@ export default function ParentsPage() {
     load();
   }, [token]);
 
-  const parentUserIds = useMemo(() => new Set(items.map((i) => i.user_id)), [items]);
+  const parentUserIds = useMemo(() => new Set((Array.isArray(items) ? items : []).map((i) => i.user_id)), [items]);
 
   const parentRoleId = useMemo(
     () => users.find((u) => u.role?.role_name?.trim().toUpperCase() === "PARENT")?.role_id ?? "",
@@ -212,7 +212,7 @@ export default function ParentsPage() {
 
   const linkedUsername = (id: string) => users.find((u) => u.id === id)?.username ?? null;
 
-  const filtered = items.filter((item) => {
+  const filtered = (Array.isArray(items) ? items : []).filter((item) => {
     if (!search) return true;
     const term = search.toLowerCase();
     const username = linkedUsername(item.user_id)?.toLowerCase() ?? "";

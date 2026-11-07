@@ -1,3 +1,4 @@
+import { unwrapArray, unwrapPaginated } from "@/lib/utils/unwrap";
 import type { TeacherCreate, TeacherResponse } from "@/types/entities/teacher";
 import type { ClassResponse } from "@/types/entities/class";
 import type { SubjectResponse } from "@/types/entities/subject";
@@ -20,9 +21,7 @@ export async function listTeachers(
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data as TeacherResponse[];
-  if (data && Array.isArray(data.items)) return data.items as TeacherResponse[];
-  return [];
+  return unwrapArray(data);
 }
 
 export async function listTeachersPaginated(
@@ -41,13 +40,7 @@ export async function listTeachersPaginated(
   }
 
   const data = await response.json();
-  if (data && Array.isArray(data.items)) {
-    return { items: data.items, total: data.total ?? data.items.length };
-  }
-  if (Array.isArray(data)) {
-    return { items: data, total: data.length };
-  }
-  return { items: [], total: 0 };
+  return unwrapPaginated(data);
 }
 
 export async function getTeacher(
@@ -134,7 +127,8 @@ export async function getTeacherClasses(
     throw new Error(data.detail ?? "Failed to fetch teacher classes.");
   }
 
-  return (await response.json()) as ClassResponse[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function getTeacherSubjects(
@@ -150,7 +144,8 @@ export async function getTeacherSubjects(
     throw new Error(data.detail ?? "Failed to fetch teacher subjects.");
   }
 
-  return (await response.json()) as SubjectResponse[];
+  const data = await response.json();
+  return unwrapArray(data);
 }
 
 export async function getCurrentTeacher(token: string): Promise<TeacherResponse> {

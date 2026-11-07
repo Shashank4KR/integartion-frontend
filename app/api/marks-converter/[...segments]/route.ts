@@ -3,10 +3,7 @@ import { NextResponse } from "next/server";
 type RouteContext = { params: Promise<{ segments: string[] }> };
 
 async function proxyRequest(request: Request, context: RouteContext) {
-  const backendUrl = process.env.BACKEND_API_URL;
-  if (!backendUrl) {
-    return NextResponse.json({ detail: "Server configuration error: BACKEND_API_URL is not set." }, { status: 500 });
-  }
+  const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   try {
     const { segments } = await context.params;
@@ -15,7 +12,14 @@ async function proxyRequest(request: Request, context: RouteContext) {
     const authHeader = request.headers.get("authorization");
     const contentType = request.headers.get("content-type");
     const body = ["GET", "HEAD"].includes(request.method) ? undefined : await request.text();
-    const response = await fetch(`${backendUrl.replace(/\/$/, "")}/marks-converter/${path}${incomingUrl.search}`, {
+
+    const targetPath = path.startsWith("api/v1/")
+      ? path
+      : path.startsWith("v1/")
+        ? `api/${path}`
+        : `api/v1/marks-converter/${path}`;
+
+    const response = await fetch(`${backendUrl.replace(/\/$/, "")}/${targetPath}${incomingUrl.search}`, {
       method: request.method,
       headers: {
         ...(authHeader ? { Authorization: authHeader } : {}),

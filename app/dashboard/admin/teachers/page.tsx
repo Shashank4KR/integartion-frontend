@@ -83,7 +83,7 @@ export default function TeachersPage() {
     load();
   }, [token]);
 
-  const teacherUserIds = useMemo(() => new Set(items.map((i) => i.user_id)), [items]);
+  const teacherUserIds = useMemo(() => new Set((Array.isArray(items) ? items : []).map((i) => i.user_id)), [items]);
 
   const teacherRoleId = useMemo(
     () => roles.find((r) => r.role_name.trim().toUpperCase() === "TEACHER")?.id ?? "",
@@ -284,7 +284,7 @@ export default function TeachersPage() {
     return phone || "-";
   };
 
-  const filtered = items.filter((item) => {
+  const filtered = (Array.isArray(items) ? items : []).filter((item) => {
     if (!search) return true;
     const term = search.toLowerCase();
     const username = linkedUsername(item.user_id)?.toLowerCase() ?? "";
@@ -801,7 +801,7 @@ export default function TeachersPage() {
                     <p className="text-sm text-slate-500">No classes assigned to this teacher yet.</p>
                   ) : (
                     <div className="space-y-2">
-                      {viewingClasses.map((cls) => (
+                      {(Array.isArray(viewingClasses) ? viewingClasses : []).map((cls) => (
                         <div key={cls.id} className="rounded-lg border border-slate-100 px-4 py-2.5">
                           <span className="text-sm font-medium text-slate-900">{cls.class_name} — {cls.section}</span>
                           <span className="text-xs text-slate-500 ml-2">{cls.academic_year}</span>
@@ -817,7 +817,7 @@ export default function TeachersPage() {
                     <p className="text-sm text-slate-500">No subjects assigned to this teacher yet.</p>
                   ) : (
                     <div className="space-y-2">
-                      {viewingSubjects.map((subj) => (
+                      {(Array.isArray(viewingSubjects) ? viewingSubjects : []).map((subj) => (
                         <div key={subj.id} className="rounded-lg border border-slate-100 px-4 py-2.5">
                           <span className="text-sm font-medium text-slate-900">{subj.subject_code} — {subj.subject_name}</span>
                         </div>
