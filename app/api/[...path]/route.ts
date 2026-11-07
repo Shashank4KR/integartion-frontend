@@ -88,9 +88,14 @@ async function handleProxy(
       }
     }
 
-    // FastAPI mounts its routers at the root (for example, /students and
-    // /auth/login). Adding /api/v1 here sends every catch-all request to a
-    // path that does not exist and turns otherwise valid calls into 404s.
+    // Route to versioned /api/v1 backend endpoints
+    const targetPath = fullPath.startsWith("api/v1/")
+      ? fullPath
+      : fullPath.startsWith("v1/")
+        ? `api/${fullPath}`
+        : fullPath === "health" || fullPath === "ready"
+          ? fullPath
+          : `api/v1/${fullPath}`;
     const baseUrl = backendUrl.replace(/\/+$/, "");
     let response: Response;
     for (let attempt = 0; ; attempt += 1) {
@@ -104,7 +109,7 @@ async function handleProxy(
         if (method === "POST" && fullPath === "chapter-notes/upload" && body) {
           fetchOptions.duplex = "half";
         }
-        response = await fetch(`${baseUrl}/${fullPath}${query}`, fetchOptions);
+        response = await fetch(`${baseUrl}/${targetPath}${query}`, fetchOptions);
         break;
       } catch (error) {
         // Retry only idempotent reads after a brief backend restart/network
