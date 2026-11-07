@@ -52,7 +52,7 @@ export interface CertificateFormData {
   className: string;
   section: string;
   academicYear: string;
-  gender: "Male" | "Female" | "Other";
+  gender?: "Male" | "Female" | "Other" | "";
   fatherName: string;
   motherName: string;
   dob: string;

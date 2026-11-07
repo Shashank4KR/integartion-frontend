@@ -32,38 +32,8 @@ const STORAGE_KEY = "nomera_student_study_reminders";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const DEFAULT_REMINDERS: StudyReminder[] = [
-  {
-    id: "rem-1",
-    subject: "Mathematics",
-    topic: "Calculus & Problem Sets",
-    startTime: "18:00",
-    durationMinutes: 60,
-    days: ["Mon", "Wed", "Fri"],
-    enabled: true,
-    soundType: "CHIME",
-  },
-  {
-    id: "rem-2",
-    subject: "Science & Physics",
-    topic: "Mechanics revision & formulas",
-    startTime: "19:30",
-    durationMinutes: 45,
-    days: ["Mon", "Tue", "Thu", "Sat"],
-    enabled: true,
-    soundType: "BELL",
-  },
-  {
-    id: "rem-3",
-    subject: "English Literature",
-    topic: "Essay drafting & reading",
-    startTime: "20:30",
-    durationMinutes: 30,
-    days: ["Tue", "Thu", "Sun"],
-    enabled: false,
-    soundType: "DIGITAL",
-  },
-];
+// Zero mock reminders. Students schedule their own real study slots.
+const DEFAULT_REMINDERS: StudyReminder[] = [];
 
 export default function StudyTimeReminder() {
   const [reminders, setReminders] = useState<StudyReminder[]>([]);
@@ -87,13 +57,19 @@ export default function StudyTimeReminder() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        setReminders(JSON.parse(raw));
+        const parsed = JSON.parse(raw);
+        // Clean out any legacy mock reminders (rem-1, rem-2, rem-3)
+        const cleaned = Array.isArray(parsed)
+          ? parsed.filter((r) => !["rem-1", "rem-2", "rem-3"].includes(r.id))
+          : [];
+        setReminders(cleaned);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
       } else {
-        setReminders(DEFAULT_REMINDERS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_REMINDERS));
+        setReminders([]);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
       }
     } catch {
-      setReminders(DEFAULT_REMINDERS);
+      setReminders([]);
     }
   }, []);
 

@@ -11,6 +11,7 @@ import {
   getStoredEvents,
   INITIAL_EVENTS,
   saveEventItem,
+  fetchLiveEvents,
 } from "@/lib/services/eventManagementService";
 import { listClasses } from "@/lib/services/classService";
 import { getToken } from "@/lib/auth";
@@ -100,11 +101,18 @@ export default function AdminEventsPage() {
   const [selectedClassInput, setSelectedClassInput] = useState("All Classes");
 
   useEffect(() => {
+    // 1. Immediately purge any legacy mock data and load real stored events
     setEvents(getStoredEvents());
 
-    // Fetch classes list for class targeting
+    // 2. Query real live events from backend PostgreSQL
     const token = getToken();
     if (token) {
+      fetchLiveEvents(token)
+        .then((live) => {
+          if (Array.isArray(live)) setEvents(live);
+        })
+        .catch(() => {});
+
       listClasses(token)
         .then((data) => {
           if (Array.isArray(data)) setClasses(data);

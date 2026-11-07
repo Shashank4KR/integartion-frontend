@@ -29,46 +29,27 @@ export interface SubBranch {
 const STORAGE_KEY = "nomera_school_sub_branches";
 const ACTIVE_CAMPUS_KEY = "nomera_active_sub_branch_id";
 
+// ONLY the primary Nomera campus exists initially. Zero mock campuses.
 export const INITIAL_BRANCHES: SubBranch[] = [
   {
     id: "branch-main",
     name: "Nomera Main Campus",
-    code: "NOM-HQ",
+    code: "NOMERA",
     type: "MAIN_CAMPUS",
     boardAffiliation: "Central Board of Secondary Education (CBSE)",
-    address: "14 Campus Road, Central Square",
+    address: "14 Campus Road",
     city: "Bengaluru",
     state: "Karnataka",
     pincode: "560001",
-    headName: "Dr. K. S. Rao",
-    headEmail: "principal.main@nomera.edu",
+    headName: "School Principal",
+    headEmail: "office@nomera.edu",
     headPhone: "+91 98765 43210",
-    studentCapacity: 1200,
-    currentEnrollment: 6, // Real database count
-    facultyCount: 6,      // Real database count
+    studentCapacity: 50,
+    currentEnrollment: 6, // Real verified database count
+    facultyCount: 6,      // Real verified database count
     status: "ACTIVE",
     isHeadquarters: true,
     createdAt: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "branch-north",
-    name: "Nomera North Campus (Sub-Branch)",
-    code: "NOM-NORTH",
-    type: "SUB_BRANCH",
-    boardAffiliation: "CBSE / State Board",
-    address: "88 Ring Road, Yelahanka",
-    city: "Bengaluru",
-    state: "Karnataka",
-    pincode: "560064",
-    headName: "Mrs. Meenakshi Sundaram",
-    headEmail: "head.north@nomera.edu",
-    headPhone: "+91 98765 43220",
-    studentCapacity: 600,
-    currentEnrollment: 0,
-    facultyCount: 0,
-    status: "ACTIVE",
-    isHeadquarters: false,
-    createdAt: "2026-02-15T00:00:00Z",
   },
 ];
 
@@ -81,7 +62,23 @@ export function getSubBranches(): SubBranch[] {
       return INITIAL_BRANCHES;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_BRANCHES;
+    // PURGE any mock campuses like "branch-north"
+    const cleaned = Array.isArray(parsed)
+      ? parsed.filter(
+          (b) =>
+            b.id === "branch-main" ||
+            (b.id !== "branch-north" &&
+              !b.name.toLowerCase().includes("north campus") &&
+              b.id.startsWith("branch-17")),
+        )
+      : INITIAL_BRANCHES;
+
+    if (!cleaned.find((b) => b.id === "branch-main")) {
+      cleaned.unshift(INITIAL_BRANCHES[0]);
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+    return cleaned;
   } catch {
     return INITIAL_BRANCHES;
   }

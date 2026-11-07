@@ -11,6 +11,7 @@ import TransportGuidelinesCard from "@/components/dashboard/transport/TransportG
 import TransportSummaryChart from "@/components/dashboard/transport/TransportSummaryChart";
 import TransportActivityCard from "@/components/dashboard/transport/TransportActivityCard";
 import TransportQuickNavigation from "@/components/dashboard/transport/TransportQuickNavigation";
+import MetroRouteAudioAnnouncer, { type TransitRoute } from "@/components/dashboard/transport/MetroRouteAudioAnnouncer";
 import TransportOverviewDialogs from "@/components/dashboard/transport/TransportOverviewDialogs";
 import AssignDriverDialog from "@/components/dashboard/transport/AssignDriverDialog";
 import { getToken } from "@/lib/auth";
@@ -173,6 +174,7 @@ export default function TransportOverviewPage() {
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalCapacity, setTotalCapacity] = useState<number>(0);
   const [routeDetails, setRouteDetails] = useState<any[]>([]);
+  const [announcerRoutes, setAnnouncerRoutes] = useState<TransitRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
@@ -246,6 +248,36 @@ export default function TransportOverviewPage() {
         setTotalCapacity(cap);
         setRouteDetails(details);
 
+        const mappedForAnnouncer: TransitRoute[] = (routeRows as any[]).map((r: any, i: number) => ({
+          id: String(r.id || i + 1),
+          routeName: r.route_name || `Route ${i + 1}`,
+          startPoint: r.start_point || "Nomera Main Campus",
+          endPoint: r.end_point || "City",
+          stops: Array.isArray(r.stops) ? r.stops.length : 4,
+          stopsList: Array.isArray(r.stops) ? r.stops : undefined,
+          vehicle: (vehicleRows as any[])[i]?.bus_number,
+        }));
+
+        setAnnouncerRoutes(
+          mappedForAnnouncer.length > 0
+            ? mappedForAnnouncer
+            : [
+                {
+                  id: "route-nomera-line-1",
+                  routeName: "Nomera Campus Metro Line 1",
+                  startPoint: "Nomera Main Campus Gate",
+                  endPoint: "Indiranagar Metro Interchange",
+                  stops: 4,
+                  stopsList: [
+                    { stop_name: "Nomera Main Campus Gate", stop_order: 1 },
+                    { stop_name: "Koramangala 4th Block", stop_order: 2 },
+                    { stop_name: "Domlur Flyover Junction", stop_order: 3 },
+                    { stop_name: "Indiranagar Metro Interchange", stop_order: 4 },
+                  ],
+                },
+              ]
+        );
+
         // Populate dialog options from live data
         setVehicleOptions(
           (vehicleRows as any[]).map((v) => v.bus_number || v.vehicle_number || v.registration_no || String(v.id)).filter(Boolean)
@@ -291,6 +323,10 @@ export default function TransportOverviewPage() {
           ) : null}
 
           <TransportOverviewSummaryCards cards={summaryCards} />
+
+          <div className="mb-6">
+            <MetroRouteAudioAnnouncer routes={announcerRoutes} />
+          </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
             <div className="xl:col-span-2">

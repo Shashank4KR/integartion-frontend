@@ -43,6 +43,7 @@ import { listStudents } from "@/lib/services/studentService";
 import type { RouteListItem } from "@/lib/fixtures/transport-management-reference-fixture";
 import type { ExtendedRouteListItem } from "@/components/dashboard/transport/RouteListCard";
 import EditRouteDialog, { type EditableRouteData } from "@/components/dashboard/transport/EditRouteDialog";
+import MetroRouteAudioAnnouncer, { type TransitRoute } from "@/components/dashboard/transport/MetroRouteAudioAnnouncer";
 
 interface VehicleTrip {
   id: string;
@@ -794,6 +795,40 @@ export default function TransportManagementPage() {
               drivers={rawDrivers}
               onAddDriver={() => setAddDriverOpen(true)}
               onDeleteDriver={handleDeleteDriver}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 mb-6">
+            <MetroRouteAudioAnnouncer
+              routes={
+                routes.length > 0
+                  ? routes.map((r) => ({
+                      id: r.id || r.routeId,
+                      routeName: r.routeName,
+                      routeColor: r.routeColor,
+                      startPoint: r.startPoint,
+                      endPoint: r.endPoint,
+                      stops: r.stops,
+                      stopsList: r.stopsList,
+                      vehicle: r.vehicle,
+                      driver: r.driver,
+                    }))
+                  : [
+                      {
+                        id: "route-nomera-line-1",
+                        routeName: "Nomera Campus Metro Line 1",
+                        startPoint: "Nomera Main Campus Gate",
+                        endPoint: "Indiranagar Metro Interchange",
+                        stops: 4,
+                        stopsList: [
+                          { stop_name: "Nomera Main Campus Gate", stop_order: 1 },
+                          { stop_name: "Koramangala 4th Block", stop_order: 2 },
+                          { stop_name: "Domlur Flyover Junction", stop_order: 3 },
+                          { stop_name: "Indiranagar Metro Interchange", stop_order: 4 },
+                        ],
+                      },
+                    ]
+              }
             />
           </div>
 
