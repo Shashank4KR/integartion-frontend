@@ -2,8 +2,13 @@ import type { StudentCreate, StudentResponse } from "@/types/entities/student";
 
 const BASE = "/api/students";
 
-export async function listStudents(token: string): Promise<StudentResponse[]> {
-  const response = await fetch(`${BASE}`, {
+export async function listStudents(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<StudentResponse[]> {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -12,7 +17,35 @@ export async function listStudents(token: string): Promise<StudentResponse[]> {
     throw new Error(data.detail ?? "Failed to fetch students.");
   }
 
-  return (await response.json()) as StudentResponse[];
+  const data = await response.json();
+  if (Array.isArray(data)) return data as StudentResponse[];
+  if (data && Array.isArray(data.items)) return data.items as StudentResponse[];
+  return [];
+}
+
+export async function listStudentsPaginated(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<{ items: StudentResponse[]; total: number }> {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch students.");
+  }
+
+  const data = await response.json();
+  if (data && Array.isArray(data.items)) {
+    return { items: data.items, total: data.total ?? data.items.length };
+  }
+  if (Array.isArray(data)) {
+    return { items: data, total: data.length };
+  }
+  return { items: [], total: 0 };
 }
 
 export async function getStudent(

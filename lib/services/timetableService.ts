@@ -8,8 +8,11 @@ const BASE = "/api/timetables";
 
 export async function listTimetables(
   token: string,
+  limit = 50,
+  offset = 0,
 ): Promise<TimetableResponse[]> {
-  const response = await fetch(`${BASE}`, {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -18,9 +21,35 @@ export async function listTimetables(
     throw new Error(data.detail ?? "Failed to fetch timetables.");
   }
 
-  const text = await response.text();
-  if (!text) return [];
-  return JSON.parse(text) as TimetableResponse[];
+  const data = await response.json();
+  if (Array.isArray(data)) return data as TimetableResponse[];
+  if (data && Array.isArray(data.items)) return data.items as TimetableResponse[];
+  return [];
+}
+
+export async function listTimetablesPaginated(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<{ items: TimetableResponse[]; total: number }> {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch timetables.");
+  }
+
+  const data = await response.json();
+  if (data && Array.isArray(data.items)) {
+    return { items: data.items, total: data.total ?? data.items.length };
+  }
+  if (Array.isArray(data)) {
+    return { items: data, total: data.length };
+  }
+  return { items: [], total: 0 };
 }
 
 export async function getTimetable(

@@ -2,8 +2,13 @@
 
 const BASE = "/api/admins";
 
-export async function listAdmins(token: string): Promise<AdminResponse[]> {
-  const response = await fetch(`${BASE}`, {
+export async function listAdmins(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<AdminResponse[]> {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -12,7 +17,35 @@ export async function listAdmins(token: string): Promise<AdminResponse[]> {
     throw new Error(data.detail ?? "Failed to fetch admins.");
   }
 
-  return (await response.json()) as AdminResponse[];
+  const data = await response.json();
+  if (Array.isArray(data)) return data as AdminResponse[];
+  if (data && Array.isArray(data.items)) return data.items as AdminResponse[];
+  return [];
+}
+
+export async function listAdminsPaginated(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<{ items: AdminResponse[]; total: number }> {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch admins.");
+  }
+
+  const data = await response.json();
+  if (data && Array.isArray(data.items)) {
+    return { items: data.items, total: data.total ?? data.items.length };
+  }
+  if (Array.isArray(data)) {
+    return { items: data, total: data.length };
+  }
+  return { items: [], total: 0 };
 }
 
 export async function getAdmin(

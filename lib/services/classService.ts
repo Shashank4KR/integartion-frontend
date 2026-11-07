@@ -4,8 +4,13 @@ import type { ClassTeacherSummary } from "@/types/entities/class-teacher-summary
 
 const BASE = "/api/classes";
 
-export async function listClasses(token: string): Promise<ClassResponse[]> {
-  const response = await fetch(`${BASE}`, {
+export async function listClasses(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<ClassResponse[]> {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -14,7 +19,35 @@ export async function listClasses(token: string): Promise<ClassResponse[]> {
     throw new Error(data.detail ?? "Failed to fetch classes.");
   }
 
-  return (await response.json()) as ClassResponse[];
+  const data = await response.json();
+  if (Array.isArray(data)) return data as ClassResponse[];
+  if (data && Array.isArray(data.items)) return data.items as ClassResponse[];
+  return [];
+}
+
+export async function listClassesPaginated(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<{ items: ClassResponse[]; total: number }> {
+  const queryParam = `?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`;
+  const response = await fetch(`${BASE}${queryParam}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as { detail?: string };
+    throw new Error(data.detail ?? "Failed to fetch classes.");
+  }
+
+  const data = await response.json();
+  if (data && Array.isArray(data.items)) {
+    return { items: data.items, total: data.total ?? data.items.length };
+  }
+  if (Array.isArray(data)) {
+    return { items: data, total: data.length };
+  }
+  return { items: [], total: 0 };
 }
 
 export async function getClass(
