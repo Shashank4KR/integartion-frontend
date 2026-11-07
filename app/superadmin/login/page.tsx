@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   ShieldCheck,
@@ -14,7 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
-import { handleSuperAdminAuth } from "@/lib/services/superAdminService";
+import { handleSuperAdminAuth, isSuperAdminAuthenticated } from "@/lib/services/superAdminService";
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
@@ -23,6 +23,12 @@ export default function SuperAdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isSuperAdminAuthenticated()) {
+      router.replace("/superadmin/dashboard");
+    }
+  }, [router]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

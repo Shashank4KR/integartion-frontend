@@ -1,11 +1,72 @@
 "use client";
 
-import { Globe2, ShieldCheck, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Globe2, ShieldCheck, ChevronDown, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import LoginForm from "./LoginForm";
+import { getToken, getStoredUser, getDashboardPathForRole } from "@/lib/auth";
 
 export default function LoginCard() {
+  const router = useRouter();
   const [language, setLanguage] = useState("English");
+  const [existingSession, setExistingSession] = useState<{
+    username: string;
+    role: string;
+    path: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const checkActiveSession = () => {
+      const token = getToken();
+      const user = getStoredUser();
+      if (token && user) {
+        const role = (
+          user.role?.role_name ||
+          (user as any)?.role_name ||
+          user.role_id ||
+          ""
+        )
+          .trim()
+          .toUpperCase();
+        const targetPath = getDashboardPathForRole(role) || "/dashboard";
+        setExistingSession({
+          username: user.username || "Active User",
+          role: user.role?.role_name || role,
+          path: targetPath,
+        });
+        router.replace(targetPath);
+      }
+    };
+
+    checkActiveSession();
+
+    // Cross-tab synchronization: if another tab logs in, redirect this tab immediately
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "nomera_token" || e.key === "nomera_user") {
+        checkActiveSession();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [router]);
+
+  if (existingSession) {
+    return (
+      <div className="relative w-full max-w-[29.375rem] rounded-[28px] border border-purple-200 bg-white p-8 shadow-xl text-center space-y-4">
+        <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl bg-purple-50 text-[#7c3aed]">
+          <ShieldCheck className="h-8 w-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Active Session Detected</h2>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          An account for <strong className="text-purple-700">{existingSession.username}</strong> ({existingSession.role}) is already active in this browser.
+        </p>
+        <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 flex items-center justify-center gap-2 text-xs text-purple-700 font-semibold">
+          <Loader2 className="w-4 h-4 animate-spin text-[#7c3aed]" />
+          Redirecting to your active workspace...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full max-w-[29.375rem] rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_25px_70px_-25px_rgba(15,23,42,0.25)] sm:p-8">

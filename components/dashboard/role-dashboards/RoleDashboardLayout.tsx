@@ -44,16 +44,38 @@ export default function RoleDashboardLayout({
       return;
     }
 
-    if (isAdmin) return;
-
-    fetch("/api/settings/public/system-status")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.maintenance_mode) {
-          setIsMaintenance(true);
+    // Multi-tab sync: prevent role mismatch if another tab logs into another account or logs out
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "nomera_token" || e.key === "nomera_user") {
+        const freshToken = getToken();
+        const freshUser = getStoredUser();
+        if (!freshToken || !freshUser) {
+          window.location.replace("/login");
+          return;
         }
-      })
-      .catch((err) => console.warn("[RoleDashboardLayout] Maintenance check error:", err));
+        const freshRole = (freshUser.role?.role_name || (freshUser as any)?.role_name || "").trim().toUpperCase();
+        if (freshRole !== "ADMIN" && freshRole !== allowedRole) {
+          const userHome = getDashboardPathForRole(freshRole) || "/login";
+          window.location.replace(userHome);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    if (!isAdmin) {
+      fetch("/api/settings/public/system-status")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.maintenance_mode) {
+            setIsMaintenance(true);
+          }
+        })
+        .catch((err) => console.warn("[RoleDashboardLayout] Maintenance check error:", err));
+    }
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, [config.key, isAdmin, router]);
 
   if (isMaintenance && !isAdmin) {

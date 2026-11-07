@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import RoleDropdown from "./RoleDropdown";
 import { handleLogin } from "@/lib/api";
-import { clearAuth, getDashboardPathForRole, saveToken, saveUser } from "@/lib/auth";
+import { clearAuth, getDashboardPathForRole, getStoredUser, getToken, saveToken, saveUser } from "@/lib/auth";
 import { ROLE_LABEL_TO_NAME } from "./RoleDropdown";
 
 type LoginFormProps = {
@@ -26,6 +26,23 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isLoading) return;
+
+    // Safety check: if an account is already logged in on this browser, redirect to its dashboard
+    const activeToken = getToken();
+    const activeUser = getStoredUser();
+    if (activeToken && activeUser) {
+      const activeRole = (
+        activeUser.role?.role_name ||
+        (activeUser as any)?.role_name ||
+        activeUser.role_id ||
+        ""
+      )
+        .trim()
+        .toUpperCase();
+      const target = getDashboardPathForRole(activeRole) || "/dashboard";
+      router.replace(target);
+      return;
+    }
 
     setError(null);
     if (!loginIdOrEmail.trim() || !password) {

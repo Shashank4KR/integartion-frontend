@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
-import { clearAuth, logout, getStoredUser, getToken } from "@/lib/auth";
+import { clearAuth, logout, getStoredUser, getToken, getDashboardPathForRole } from "@/lib/auth";
 import { MobileNavigationContext } from "@/components/shared/layout/MobileNavigationContext";
 
 interface MainLayoutProps {
@@ -38,6 +38,24 @@ export default function MainLayout({
       return;
     }
 
+    // Multi-tab sync: detect if session changed or logged out in another tab
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "nomera_token" || e.key === "nomera_user") {
+        const freshToken = getToken();
+        const freshUser = getStoredUser();
+        if (!freshToken || !freshUser) {
+          window.location.replace("/login");
+          return;
+        }
+        const freshRole = (freshUser.role?.role_name || (freshUser as any)?.role_name || "").trim().toUpperCase();
+        if (freshRole !== "ADMIN" && freshRole !== "SUPER_ADMIN" && freshRole !== "SUPERADMIN") {
+          const userHome = getDashboardPathForRole(freshRole) || "/login";
+          window.location.replace(userHome);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+
     fetch("/api/settings/public/system-status")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -46,6 +64,10 @@ export default function MainLayout({
         }
       })
       .catch((err) => console.warn("[MainLayout] System status fetch error:", err));
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, [router]);
 
   return (
