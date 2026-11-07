@@ -95,8 +95,8 @@ export default function LeftPanel() {
 
         <div className="mt-7 overflow-hidden rounded-[24px] border border-purple-100 shadow-[0_20px_45px_-20px_rgba(109,40,217,0.35)]">
           <img
-            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1400&auto=format&fit=crop"
-            alt="School campus"
+            src="/nomera-campus.jpg"
+            alt="Nomera School Campus"
             className="h-[11.875rem] w-full object-cover"
           />
         </div>
