@@ -1,5 +1,6 @@
-import { toSafeArray } from "@/lib/utils/unwrap";
 "use client";
+
+import { toSafeArray } from "@/lib/utils/unwrap";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import MainLayout from "@/components/shared/layout/MainLayout";
