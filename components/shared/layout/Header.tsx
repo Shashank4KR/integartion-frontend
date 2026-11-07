@@ -89,7 +89,14 @@ export default function DashboardHeader({
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
-  const dashboardRole = pathname.match(/^\/dashboard\/([^/]+)/)?.[1];
+  const dashboardRole = pathname.match(/^\/dashboard\/([^/]+)/)?.[1]?.toLowerCase();
+  const normalizedRole = (role || userRole || "").trim().toUpperCase();
+  const isSchoolAdmin =
+    dashboardRole === "admin" ||
+    normalizedRole === "ADMIN" ||
+    normalizedRole === "SUPER_ADMIN" ||
+    normalizedRole === "SUPERADMIN";
+
   const actionPaths: Record<string, { messages?: string; notifications?: string }> = {
     admin: {
       messages: "/dashboard/admin/messages",
@@ -153,8 +160,12 @@ export default function DashboardHeader({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return SEARCH_INDEX.filter((r) => r.title.toLowerCase().includes(q));
-  }, [query]);
+    const matched = SEARCH_INDEX.filter((r) => r.title.toLowerCase().includes(q));
+    if (!isSchoolAdmin) {
+      return matched.filter((r) => !r.href.startsWith("/dashboard/admin"));
+    }
+    return matched;
+  }, [query, isSchoolAdmin]);
 
   useEffect(() => {
     const handleNotifsViewed = () => {
@@ -502,15 +513,25 @@ export default function DashboardHeader({
 
         {/* Right */}
         <div className="flex items-center gap-3">
-          {/* Active Campus Switcher */}
-          <Link
-            href="/dashboard/admin/branches"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200/80 text-xs font-semibold transition"
-            title="Switch or manage campuses & sub-branches"
-          >
-            <Building2 className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
-            <span className="truncate max-w-[140px]">{activeCampusName}</span>
-          </Link>
+          {/* Active Campus Switcher: ONLY School Admin has path to manage branches; others see secure static badge */}
+          {isSchoolAdmin ? (
+            <Link
+              href="/dashboard/admin/branches"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200/80 text-xs font-semibold transition"
+              title="Manage campuses & sub-branches"
+            >
+              <Building2 className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+              <span className="truncate max-w-[140px]">{activeCampusName}</span>
+            </Link>
+          ) : (
+            <div
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50/70 text-purple-700 border border-purple-200/60 text-xs font-semibold select-none cursor-default"
+              title={`Campus: ${activeCampusName}`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+              <span className="truncate max-w-[140px]">{activeCampusName}</span>
+            </div>
+          )}
           {actions?.notifications && (
             <button
               type="button"

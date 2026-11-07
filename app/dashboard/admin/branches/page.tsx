@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getStoredUser, getDashboardPathForRole } from "@/lib/auth";
 import MainLayout from "@/components/shared/layout/MainLayout";
 import Sidebar from "@/components/shared/layout/Sidebar";
 import DashboardHeader from "@/components/shared/layout/Header";
@@ -36,6 +38,7 @@ import {
 } from "@/lib/services/branchService";
 
 export default function CampusesBranchesPage() {
+  const router = useRouter();
   const [branches, setBranches] = useState<SubBranch[]>([]);
   const [activeCampusId, setActiveId] = useState<string>("branch-main");
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,6 +66,13 @@ export default function CampusesBranchesPage() {
   });
 
   useEffect(() => {
+    const user = getStoredUser();
+    const userRole = (user?.role?.role_name ?? user?.role_id ?? "").trim().toUpperCase();
+    if (!user || (userRole !== "ADMIN" && userRole !== "SUPER_ADMIN" && userRole !== "SUPERADMIN")) {
+      const target = user ? (getDashboardPathForRole(userRole) || "/login") : "/login";
+      router.replace(target);
+      return;
+    }
     setBranches(getSubBranches());
     setActiveId(getActiveCampusId());
 
