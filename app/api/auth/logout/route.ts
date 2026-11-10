@@ -27,10 +27,18 @@ async function handleLogout(request: Request) {
       path: "/",
       maxAge: 0,
     });
+    logoutResponse.cookies.set("nomera_user_role", "", {
+      httpOnly: true,
+      secure: new URL(request.url).protocol === "https:",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
     return logoutResponse;
   } catch {
     const logoutResponse = NextResponse.json({ message: "Logged out" }, { status: 200 });
     logoutResponse.cookies.set("nomera_access_token", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
+    logoutResponse.cookies.set("nomera_user_role", "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
     return logoutResponse;
   }
 }

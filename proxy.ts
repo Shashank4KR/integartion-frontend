@@ -71,6 +71,15 @@ export function proxy(request: NextRequest) {
     return tokenIsValid ? response : token ? clearSessionCookies(response) : response;
   }
 
+  if (pathname.startsWith("/superadmin") && pathname !== "/superadmin/login") {
+    if (!tokenIsValid) {
+      return clearSessionCookies(NextResponse.redirect(new URL("/superadmin/login", request.url)));
+    }
+    if (userRole !== "SUPER_ADMIN" && userRole !== "SUPERADMIN") {
+      return NextResponse.redirect(new URL("/dashboard/admin", request.url));
+    }
+  }
+
   // 2. Protect all /dashboard routes
   if (pathname.startsWith("/dashboard")) {
     if (!tokenIsValid) {
@@ -115,5 +124,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/api/:path*"],
+  matcher: ["/dashboard/:path*", "/superadmin/:path*", "/login", "/api/:path*"],
 };
