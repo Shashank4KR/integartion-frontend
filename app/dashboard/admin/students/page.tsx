@@ -13,6 +13,7 @@ import { listUsers, createUser } from "@/lib/services/userService";
 import { listClasses } from "@/lib/services/classService";
 import { listRoles } from "@/lib/services/roleService";
 import type { StudentResponse } from "@/types/entities/student";
+import { studentDisplayId as formatStudentDisplayId } from "@/lib/utils/studentDisplayId";
 
 type StudentUserOption = { id: string; username: string; email: string };
 
@@ -268,15 +269,13 @@ export default function StudentsPage() {
   const linkedUsername = (id: string) => users.find((u) => u.id === id)?.username ?? null;
   const studentDisplayId = (item: StudentResponse) => {
     const classRecord = classes.find((c) => c.id === item.class_id);
-    const grade = (classRecord?.class_name ?? item.class_name ?? "").replace(/^(class|grade)\s*/i, "").replace(/\s+/g, "");
-    const section = classRecord?.section?.trim().toUpperCase();
-    const year = item.joining_date?.match(/^(\d{4})/)?.[1]?.slice(-2);
-    const roll = item.roll_no?.trim();
-    if (year && grade && section && roll) {
-      const formattedRoll = /^\d+$/.test(roll) ? roll.padStart(3, "0") : roll.toUpperCase();
-      return `S-${year}-${grade}${section}-${formattedRoll}`;
-    }
-    return item.admission_no || "ID pending";
+    return formatStudentDisplayId({
+      joiningDate: item.joining_date,
+      className: classRecord?.class_name ?? item.class_name,
+      section: classRecord?.section,
+      rollNumber: item.roll_no,
+      admissionNumber: item.admission_no,
+    });
   };
 
   const filtered = (Array.isArray(items) ? items : []).filter((item) => {

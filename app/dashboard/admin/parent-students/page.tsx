@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Card from "@/components/shared/Card";
 import SectionHeader from "@/components/shared/SectionHeader";
 import Modal from "@/components/shared/Modal";
@@ -14,7 +14,7 @@ import { listStudents } from "@/lib/services/studentService";
 import { listUsers } from "@/lib/services/userService";
 import { listClasses } from "@/lib/services/classService";
 import type { ParentStudentResponse } from "@/types/entities/parent-student";
-import { shortId } from "@/lib/utils/id";
+import { studentDisplayId } from "@/lib/utils/studentDisplayId";
 
 const RELATIONSHIP_OPTIONS = ["Father", "Mother", "Guardian", "Brother", "Sister", "Other"];
 
@@ -26,7 +26,7 @@ export default function ParentStudentsPage() {
   const [search, setSearch] = useState("");
   const [token, setToken] = useState<string>("");
   const [parents, setParents] = useState<
-    { id: string; user_id: string; phone?: string | null; username: string; email: string }[]
+    { id: string; user_id: string; parent_code?: string; phone?: string | null; username: string; email: string }[]
   >([]);
   const [students, setStudents] = useState<
     {
@@ -36,10 +36,12 @@ export default function ParentStudentsPage() {
       last_name?: string | null;
       admission_no?: string | null;
       class_id?: string | null;
+      roll_no?: string | null;
+      joining_date?: string | null;
       username: string;
     }[]
   >([]);
-  const [classes, setClasses] = useState<{ id: string; class_name: string }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; class_name: string; section: string }[]>([]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -80,6 +82,7 @@ export default function ParentStudentsPage() {
             parentsList.push({
               id: profile.id,
               user_id: profile.user_id,
+              parent_code: profile.parent_code,
               phone: profile.phone,
               username: u.username,
               email: u.email,
@@ -106,11 +109,13 @@ export default function ParentStudentsPage() {
               last_name: s.last_name,
               admission_no: s.admission_no,
               class_id: s.class_id,
-              username: user?.username ?? s.user_id,
+              roll_no: s.roll_no,
+              joining_date: s.joining_date,
+              username: user?.username ?? s.admission_no ?? "Student account",
             };
           }),
         );
-        setClasses(classesData.map((c) => ({ id: c.id, class_name: c.class_name })));
+        setClasses(classesData.map((c) => ({ id: c.id, class_name: c.class_name, section: c.section })));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load parent-student relationships.");
       } finally {
@@ -120,11 +125,26 @@ export default function ParentStudentsPage() {
     load();
   }, [token]);
 
-  const className = (id?: string | null) => classes.find((c) => c.id === id)?.class_name ?? "";
+  const getClass = (id?: string | null) => classes.find((c) => c.id === id);
+  const className = (id?: string | null) => {
+    const classRecord = getClass(id);
+    return classRecord ? `${classRecord.class_name}-${classRecord.section}` : "";
+  };
+  const studentId = (student: (typeof students)[number]) => {
+    const classRecord = getClass(student.class_id);
+    return studentDisplayId({
+      joiningDate: student.joining_date,
+      className: classRecord?.class_name,
+      section: classRecord?.section,
+      rollNumber: student.roll_no,
+      admissionNumber: student.admission_no,
+    });
+  };
 
   const studentLabel = (s: (typeof students)[number]) => {
     const name = [s.first_name, s.last_name].filter(Boolean).join(" ");
-    const parts = [name || s.username, s.admission_no ? `Adm: ${s.admission_no}` : "", className(s.class_id)].filter(Boolean);
+    const roll = s.roll_no ? `Roll: ${s.roll_no}` : "Roll not assigned";
+    const parts = [name || s.username, roll, s.admission_no ? `Adm: ${s.admission_no}` : "", className(s.class_id)].filter(Boolean);
     return parts.join(" • ");
   };
 
@@ -222,6 +242,7 @@ export default function ParentStudentsPage() {
           parentsList.push({
             id: profile.id,
             user_id: profile.user_id,
+            parent_code: profile.parent_code,
             phone: profile.phone,
             username: u.username,
             email: u.email,
@@ -273,7 +294,10 @@ export default function ParentStudentsPage() {
     const parent = parents.find((p) => p.id === item.parent_id);
     const student = students.find((s) => s.id === item.student_id);
     return (
+      (parent?.parent_code?.toLowerCase().includes(term) ?? false) ||
       (parent?.username.toLowerCase().includes(term) ?? false) ||
+      (student ? studentId(student).toLowerCase().includes(term) : false) ||
+      (student?.roll_no?.toLowerCase().includes(term) ?? false) ||
       (student?.username.toLowerCase().includes(term) ?? false) ||
       (item.relationship?.toLowerCase().includes(term) ?? false)
     );
@@ -336,7 +360,6 @@ export default function ParentStudentsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs font-semibold text-slate-500 uppercase">
-                    <th className="px-4 py-3">PS ID</th>
                     <th className="px-4 py-3">Parent ID</th>
                     <th className="px-4 py-3">Parent</th>
                     <th className="px-4 py-3">Student ID</th>
@@ -354,11 +377,8 @@ export default function ParentStudentsPage() {
                         key={item.id}
                         className="border-b border-slate-50 hover:bg-slate-50/50 transition"
                       >
-                        <td className="px-4 py-3 font-mono text-xs" title={item.id}>
-                          {shortId(item.id)}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-xs" title={item.parent_id}>
-                          {shortId(item.parent_id)}
+                        <td className="px-4 py-3 font-mono text-xs font-semibold text-violet-700">
+                          {parent?.parent_code ?? "—"}
                         </td>
                         <td className="px-4 py-3">
                           {parent ? (
@@ -372,8 +392,8 @@ export default function ParentStudentsPage() {
                             "-"
                           )}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs" title={item.student_id}>
-                          {shortId(item.student_id)}
+                        <td className="px-4 py-3 font-mono text-xs font-semibold text-violet-700">
+                          {student ? studentId(student) : "—"}
                         </td>
                         <td className="px-4 py-3">{student ? studentLabel(student) : "-"}</td>
                         <td className="px-4 py-3">{item.relationship}</td>
@@ -417,17 +437,6 @@ export default function ParentStudentsPage() {
                 {formError}
               </p>
             )}
-            {editingItem && (
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700">PS ID</label>
-                <input
-                  type="text"
-                  value={editingItem.id}
-                  readOnly
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600 outline-none"
-                />
-              </div>
-            )}
             <div>
               <label className="mb-1 block text-xs font-semibold text-slate-700">
                 Parent <span className="text-red-500">*</span>
@@ -441,7 +450,7 @@ export default function ParentStudentsPage() {
                 <option value="">Select parent...</option>
                 {parents.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.username}
+                    {p.parent_code ? `${p.parent_code} · ` : ""}{p.username}
                     {p.email ? ` — ${p.email}` : ""}
                     {p.phone ? ` • ${p.phone}` : ""}
                   </option>
