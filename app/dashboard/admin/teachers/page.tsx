@@ -16,7 +16,6 @@ import type { TeacherResponse } from "@/types/entities/teacher";
 import type { ClassResponse } from "@/types/entities/class";
 import type { SubjectResponse } from "@/types/entities/subject";
 import type { UserResponse } from "@/types/entities/user";
-import { shortId } from "@/lib/utils/id";
 
 type TeacherUserOption = { id: string; username: string; email: string };
 
@@ -355,8 +354,6 @@ export default function TeachersPage() {
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs font-semibold text-slate-500 uppercase">
                     <th className="px-4 py-3">Teacher ID</th>
-                    <th className="px-4 py-3">Employee ID</th>
-                    <th className="px-4 py-3">User ID</th>
                     <th className="px-4 py-3">Linked User</th>
                     <th className="px-4 py-3">Qualification</th>
                     <th className="px-4 py-3">Department</th>
@@ -374,9 +371,7 @@ export default function TeachersPage() {
                         key={item.id}
                         className="border-b border-slate-50 hover:bg-slate-50/50 transition"
                       >
-                        <td className="px-4 py-3 font-mono text-[11px] whitespace-nowrap text-slate-700" title={item.id}>{item.id}</td>
                         <td className="px-4 py-3 font-medium text-slate-900">{item.employee_id}</td>
-                        <td className="px-4 py-3 font-mono text-[11px] whitespace-nowrap text-slate-700" title={item.user_id}>{item.user_id}</td>
                         <td className="px-4 py-3">{username ?? "-"}</td>
                         <td className="px-4 py-3">{item.qualification ?? "-"}</td>
                         <td className="px-4 py-3">{departmentName(item.department_id)}</td>
@@ -645,21 +640,12 @@ export default function TeachersPage() {
                   {editingItem ? "Edit Teacher Profile" : "Step 2: Teacher Profile"}
                 </p>
                 {editingItem && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">Teacher ID</label>
                       <input
                         type="text"
-                        value={editingItem.id}
-                        readOnly
-                        className="h-10 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700">User ID</label>
-                      <input
-                        type="text"
-                        value={editingItem.user_id}
+                        value={editingItem.employee_id}
                         readOnly
                         className="h-10 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600 outline-none"
                       />
@@ -767,15 +753,7 @@ export default function TeachersPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">Teacher ID</p>
-                    <p className="text-sm font-mono text-slate-900">{shortId(viewingItem.id)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Employee ID</p>
                     <p className="text-sm font-medium text-slate-900">{viewingItem.employee_id}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">User ID</p>
-                    <p className="text-sm font-mono text-slate-900">{shortId(viewingItem.user_id)}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">Department</p>
@@ -843,7 +821,7 @@ export default function TeachersPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="mb-1 block text-xs font-semibold text-slate-700">
-            Employee ID <span className="text-red-500">*</span>
+            Teacher ID <span className="text-red-500">*</span>
           </label>
           <input
             type="text"

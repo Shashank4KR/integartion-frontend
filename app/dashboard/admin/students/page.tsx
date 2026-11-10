@@ -13,7 +13,6 @@ import { listUsers, createUser } from "@/lib/services/userService";
 import { listClasses } from "@/lib/services/classService";
 import { listRoles } from "@/lib/services/roleService";
 import type { StudentResponse } from "@/types/entities/student";
-import { shortId } from "@/lib/utils/id";
 
 type StudentUserOption = { id: string; username: string; email: string };
 
@@ -267,6 +266,18 @@ export default function StudentsPage() {
 
   const className = (id?: string | null) => (Array.isArray(classes) ? classes : []).find((c) => c.id === id)?.class_name ?? "-";
   const linkedUsername = (id: string) => users.find((u) => u.id === id)?.username ?? null;
+  const studentDisplayId = (item: StudentResponse) => {
+    const classRecord = classes.find((c) => c.id === item.class_id);
+    const grade = (classRecord?.class_name ?? item.class_name ?? "").replace(/^(class|grade)\s*/i, "").replace(/\s+/g, "");
+    const section = classRecord?.section?.trim().toUpperCase();
+    const year = item.joining_date?.match(/^(\d{4})/)?.[1]?.slice(-2);
+    const roll = item.roll_no?.trim();
+    if (year && grade && section && roll) {
+      const formattedRoll = /^\d+$/.test(roll) ? roll.padStart(3, "0") : roll.toUpperCase();
+      return `S-${year}-${grade}${section}-${formattedRoll}`;
+    }
+    return item.admission_no || "ID pending";
+  };
 
   const filtered = (Array.isArray(items) ? items : []).filter((item) => {
     if (!search) return true;
@@ -274,6 +285,7 @@ export default function StudentsPage() {
     const username = linkedUsername(item.user_id)?.toLowerCase() ?? "";
     const fullName = `${item.first_name ?? ""} ${item.last_name ?? ""}`.toLowerCase();
     return (
+      studentDisplayId(item).toLowerCase().includes(term) ||
       (item.admission_no?.toLowerCase().includes(term) ?? false) ||
       fullName.includes(term) ||
       (item.roll_no?.toLowerCase().includes(term) ?? false) ||
@@ -347,8 +359,7 @@ export default function StudentsPage() {
                 <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-left text-xs font-semibold text-slate-500 uppercase">
-                    <th className="px-4 py-3">Admission No</th>
-                    <th className="px-4 py-3">Roll No</th>
+                    <th className="px-4 py-3">Student ID</th>
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Class</th>
                     <th className="px-4 py-3">Linked User</th>
@@ -368,8 +379,9 @@ export default function StudentsPage() {
                         key={item.id}
                         className="border-b border-slate-50 hover:bg-slate-50/50 transition"
                       >
-                        <td className="px-4 py-3 font-medium">{item.admission_no}</td>
-                        <td className="px-4 py-3 font-mono text-xs">{item.roll_no ?? "-"}</td>
+                        <td className="px-4 py-3 font-mono text-xs font-semibold text-violet-700" title="Built from join year, class, section, and roll number">
+                          {studentDisplayId(item)}
+                        </td>
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {[item.first_name, item.last_name].filter(Boolean).join(" ") || "-"}
                         </td>
@@ -643,21 +655,12 @@ export default function StudentsPage() {
                   {editingItem ? "Edit Student Profile" : "Step 2: Student Profile"}
                 </p>
                 {editingItem && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="mb-1 block text-xs font-semibold text-slate-700">Student ID</label>
                       <input
                         type="text"
-                        value={editingItem.id}
-                        readOnly
-                        className="h-10 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700">User ID</label>
-                      <input
-                        type="text"
-                        value={editingItem.user_id}
+                        value={studentDisplayId(editingItem)}
                         readOnly
                         className="h-10 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600 outline-none"
                       />
