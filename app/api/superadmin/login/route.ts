@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       const backendDetail = loginData.detail || loginData.message || "";
       let detail = "Sign-in failed. Check the account status and try again.";
       if (backendDetail === "Incorrect email or password") {
-        detail = "Invalid email or password. The old demo account was never provisioned in the backend; use an active account assigned the SUPER_ADMIN role.";
+        detail = "Invalid email or password. For local demos, confirm demo bootstrap is enabled and the backend has restarted; otherwise use an active SUPER_ADMIN account.";
       } else if (backendDetail.toLowerCase().includes("mfa code required")) {
         detail = "This account requires an authenticator code. Enter the current 6-digit code and try again.";
       } else if (backendDetail === "Invalid MFA code") {
