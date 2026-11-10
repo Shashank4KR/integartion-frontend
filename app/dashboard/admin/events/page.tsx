@@ -63,11 +63,11 @@ const TARGET_ROLES: { label: string; value: TargetAudienceRole }[] = [
   { label: "Parents & Students", value: "PARENTS_AND_STUDENTS" },
 ];
 
-export default function AdminEventsPage() {
+export default function AdminEventsPage({ initialGenre = "ALL" }: { initialGenre?: string }) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [classes, setClasses] = useState<ClassResponse[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterGenre, setFilterGenre] = useState<string>("ALL");
+  const [filterGenre, setFilterGenre] = useState<string>(initialGenre);
   const [filterAudience, setFilterAudience] = useState<string>("ALL");
   const [filterClass, setFilterClass] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
@@ -284,9 +284,13 @@ export default function AdminEventsPage() {
               <Calendar className="w-6 h-6" />
             </span>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Events & Activities Management</h1>
+              <h1 className="text-2xl font-bold text-slate-900">
+                {initialGenre === "COMPETITION" ? "Competitions" : "Events & Activities Management"}
+              </h1>
               <p className="text-xs md:text-sm text-slate-500">
-                Organize school competitions, cultural celebrations, academic seminars, sports meets, and target events by respective class, students, or parents.
+                {initialGenre === "COMPETITION"
+                  ? "Browse and manage school competitions using live event records."
+                  : "Organize school competitions, cultural celebrations, academic seminars, sports meets, and target events by respective class, students, or parents."}
               </p>
             </div>
           </div>
@@ -304,7 +308,7 @@ export default function AdminEventsPage() {
               className="px-4 py-2 rounded-xl bg-[#7c3aed] text-white text-xs font-bold hover:bg-[#6d28d9] transition shadow-md flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Create Event / Activity
+              {initialGenre === "COMPETITION" ? "Create Competition" : "Create Event / Activity"}
             </button>
           </div>
         </div>
