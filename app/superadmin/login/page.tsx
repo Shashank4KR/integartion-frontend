@@ -2,13 +2,14 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { getSuperAdminSession, superAdminLogin } from "@/lib/services/superAdminService";
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -67,7 +68,10 @@ export default function SuperAdminLoginPage() {
               <label className="block text-sm font-medium text-slate-700">Password
                 <span className="mt-2 flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-3 transition focus-within:border-violet-600 focus-within:ring-4 focus-within:ring-violet-100">
                   <LockKeyhole className="h-4 w-4 shrink-0 text-slate-400" />
-                  <input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="w-full bg-transparent py-3 text-slate-900 outline-none placeholder:text-slate-400" placeholder="Enter your password" />
+                  <input required type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="w-full bg-transparent py-3 text-slate-900 outline-none placeholder:text-slate-400" placeholder="Enter your password" />
+                  <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="shrink-0 rounded-md p-1 text-slate-500 transition hover:bg-purple-50 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </span>
               </label>
               <label className="block text-sm font-medium text-slate-700">Authenticator code <span className="font-normal text-slate-500">(if enabled)</span>
