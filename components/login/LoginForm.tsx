@@ -102,7 +102,7 @@ export default function LoginForm({ language, setLanguage }: LoginFormProps) {
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label className="text-xs font-semibold text-slate-700">Password</label>
-          <button type="button" className="text-xs font-semibold text-[#6d28d9]">
+          <button type="button" onClick={() => router.push("/forgot-password")} className="text-xs font-semibold text-[#6d28d9]">
             Forgot Password?
           </button>
         </div>

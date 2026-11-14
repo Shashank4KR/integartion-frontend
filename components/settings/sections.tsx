@@ -28,7 +28,7 @@ import {
   UserRound,
 } from "lucide-react";
 import type { SchoolRole, SettingsUser } from "@/components/settings/SettingsPage";
-import { getToken, getStoredAvatar, saveAvatar, removeAvatar, subscribeAvatarChange } from "@/lib/auth";
+import { getToken, getStoredAvatar, saveAvatar, removeAvatar, subscribeAvatarChange, clearAuth } from "@/lib/auth";
 import {
   changePassword,
   exportAuditLogsCSV,
@@ -539,6 +539,7 @@ export function AccountSecurity(_: SectionProps) {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [showPasswords, setShowPasswords] = useState(false);
 
   const [twoFactor, setTwoFactor] = useState(false);
   const [signInAlerts, setSignInAlerts] = useState(true);
@@ -598,8 +599,8 @@ export function AccountSecurity(_: SectionProps) {
       setPasswordError("Please fill in both current and new password.");
       return;
     }
-    if (newPassword.length < 6) {
-      setPasswordError("New password must be at least 6 characters.");
+    if (newPassword.length < 12 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      setPasswordError("Use at least 12 characters, including a letter and a number.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -618,12 +619,13 @@ export function AccountSecurity(_: SectionProps) {
       await changePassword(token, {
         current_password: currentPassword,
         new_password: newPassword,
+        confirm_password: confirmPassword,
       });
-      setPasswordSuccess("Password updated successfully.");
+      setPasswordSuccess("Password updated. Please sign in again with your new password.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setTimeout(() => setShowPasswordModal(false), 2000);
+      window.setTimeout(() => { clearAuth(); window.location.assign("/login"); }, 1800);
     } catch (err: any) {
       setPasswordError(err?.message || "Failed to update password.");
     } finally {
@@ -682,11 +684,12 @@ export function AccountSecurity(_: SectionProps) {
           {showPasswordModal && (
             <form onSubmit={handlePasswordSubmit} className="my-3 rounded-xl border border-violet-100 bg-violet-50/50 p-4">
               <h4 className="text-xs font-bold uppercase tracking-wider text-violet-900">Update Password</h4>
+              <div className="mt-3 flex justify-end"><button type="button" onClick={() => setShowPasswords((value) => !value)} className="text-xs font-semibold text-violet-700">{showPasswords ? "Hide passwords" : "Show passwords"}</button></div>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <label className="text-xs font-medium text-slate-700">
                   Current password
                   <input
-                    type="password"
+                    type={showPasswords ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
@@ -696,26 +699,32 @@ export function AccountSecurity(_: SectionProps) {
                 <label className="text-xs font-medium text-slate-700">
                   New password
                   <input
-                    type="password"
+                    type={showPasswords ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={12}
                     className={inputClass}
                   />
                 </label>
                 <label className="text-xs font-medium text-slate-700">
                   Confirm new password
                   <input
-                    type="password"
+                    type={showPasswords ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={12}
                     className={inputClass}
                   />
                 </label>
               </div>
+              <p className="mt-2 text-xs text-slate-500">Use at least 12 characters, including a letter and a number.</p>
+              {newPassword && <ul className="mt-1 space-y-0.5 text-xs" aria-live="polite">
+                <li className={newPassword.length >= 12 ? "text-emerald-700" : "text-slate-500"}>{newPassword.length >= 12 ? "✓" : "•"} 12 or more characters</li>
+                <li className={/[A-Za-z]/.test(newPassword) ? "text-emerald-700" : "text-slate-500"}>{/[A-Za-z]/.test(newPassword) ? "✓" : "•"} At least one letter</li>
+                <li className={/\d/.test(newPassword) ? "text-emerald-700" : "text-slate-500"}>{/\d/.test(newPassword) ? "✓" : "•"} At least one number</li>
+              </ul>}
 
               {passwordError && (
                 <p className="mt-2 text-xs font-medium text-rose-600">{passwordError}</p>

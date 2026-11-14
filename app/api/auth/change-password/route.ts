@@ -6,7 +6,11 @@ export async function POST(request: Request) {
   const backendUrl = process.env.BACKEND_API_URL || "http://127.0.0.1:8000";
 
   try {
-    const authHeader = request.headers.get("authorization");
+    const cookieToken = request.headers.get("cookie")?.match(/(?:^|;\s*)nomera_access_token=([^;]+)/)?.[1];
+    const suppliedAuth = request.headers.get("authorization");
+    const authHeader = suppliedAuth && suppliedAuth !== "Bearer cookie-session"
+      ? suppliedAuth
+      : (cookieToken ? `Bearer ${decodeURIComponent(cookieToken)}` : suppliedAuth);
     const body = await request.text();
     const contentType =
       request.headers.get("content-type") || "application/json";

@@ -13,7 +13,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const authHeader = request.headers.get("authorization");
+    const cookieToken = request.headers.get("cookie")?.match(/(?:^|;\s*)nomera_access_token=([^;]+)/)?.[1];
+    const suppliedAuth = request.headers.get("authorization");
+    const authHeader = suppliedAuth && suppliedAuth !== "Bearer cookie-session"
+      ? suppliedAuth
+      : (cookieToken ? `Bearer ${decodeURIComponent(cookieToken)}` : suppliedAuth);
 
     const response = await fetch(`${backendUrl}/auth/me`, {
       method: "GET",

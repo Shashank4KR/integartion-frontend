@@ -88,7 +88,7 @@ export async function updateProfile(
 
 export async function changePassword(
   token: string,
-  payload: { current_password: string; new_password: string },
+  payload: { current_password: string; new_password: string; confirm_password?: string },
 ): Promise<{ message: string }> {
   const response = await fetch(`${AUTH_BASE}/change-password`, {
     method: "POST",
@@ -190,4 +190,4 @@ export async function exportAuditLogsCSV(token: string): Promise<void> {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(blobUrl);
-}
+}
